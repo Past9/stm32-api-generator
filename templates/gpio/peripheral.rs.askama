@@ -1,0 +1,32 @@
+use core::marker::PhantomData;
+use crate::{PowerStatus, Enabled, Disabled};
+
+pub(crate) fn create() -> {{peripheral.struct_name}}<Disabled> {
+  {{peripheral.struct_name}} {
+    power_status: PhantomData
+  }
+}
+
+#[allow(non_camel_case_types)]
+pub struct {{peripheral.struct_name}}<POWER_STATUS> 
+where
+  POWER_STATUS: PowerStatus
+{
+  power_status: PhantomData<POWER_STATUS>
+}
+impl {{peripheral.struct_name}}<Disabled> {
+  pub(crate) fn enable(self) -> {{peripheral.struct_name}}<Enabled> {
+    // Set bit in AHBENR
+    {{peripheral.struct_name}} {
+      power_status: PhantomData
+    }
+  }
+}
+impl {{peripheral.struct_name}}<Enabled> {
+  pub(crate) fn disable(self) -> {{peripheral.struct_name}}<Disabled> {
+    // Clear bit in AHBENR
+    {{peripheral.struct_name}} {
+      power_status: PhantomData
+    }
+  }
+}

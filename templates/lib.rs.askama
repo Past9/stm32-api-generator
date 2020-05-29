@@ -1,0 +1,61 @@
+#![no_std]
+
+use core::{mem, ptr};
+use cortex_m::interrupt;
+
+pub type Result<T> = core::result::Result<T, Error>;
+
+{% for submodule in submodules -%}
+pub mod {{submodule.module_name}};
+{% endfor %}
+
+{% for submodule in submodules -%}
+use {{submodule.module_name}}::{{submodule.struct_name}};
+{% endfor %}
+
+pub struct System {
+  {% for submodule in submodules -%}
+  {{submodule.field_name}}: Option<{{submodule.struct_name}}<Disabled>>,
+  {% endfor %}
+}
+impl System {
+  pub fn new() -> Self {
+    Self {
+      {% for submodule in submodules -%}
+      {{submodule.field_name}}: Some({{submodule.module_name}}::create()),
+      {% endfor %}
+    }
+  }
+
+  {% for submodule in submodules -%}
+  pub fn take_{{submodule.field_name}}(&mut self) -> Result<{{submodule.struct_name}}<Enabled>> {
+    match self.{{submodule.field_name}}.take() {
+      Some(p) => Ok(p.enable()),
+      None => Err(Error::new("{{submodule.struct_name}} is already taken.")),
+    }
+  }
+
+  pub fn return_{{submodule.field_name}}(&mut self, {{submodule.field_name}}: {{submodule.struct_name}}<Enabled>) {
+    self.{{submodule.field_name}} = Some({{submodule.field_name}}.disable());
+  }
+  {% endfor %}
+
+}
+
+pub trait PowerStatus {}
+pub struct Enabled;
+pub struct Disabled;
+impl PowerStatus for Enabled {}
+impl PowerStatus for Disabled {}
+
+
+pub struct Error {
+  pub message: &'static str
+}
+impl Error {
+  pub fn new(message: &'static str) -> Self  {
+    Self {
+      message
+    }
+  }
+}
