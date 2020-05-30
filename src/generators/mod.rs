@@ -1,5 +1,5 @@
 use crate::file::OutputDirectory;
-use anyhow::Result;
+use anyhow::{anyhow, Result};
 use askama::Template;
 use heck::{CamelCase, KebabCase};
 use svd_expander::DeviceSpec;
@@ -54,5 +54,66 @@ impl SubmoduleModel {
       field_name: module_name.to_owned(),
       struct_name: module_name.to_camel_case(),
     }
+  }
+}
+
+pub trait ReadWrite {
+  //fn read_field_reg(&self, path: &str) -> Result<String>;
+  fn set_bit(&self, path: &str) -> Result<String>;
+  fn clear_bit(&self, path: &str) -> Result<String>;
+}
+impl ReadWrite for DeviceSpec {
+  /*
+  fn read_field_reg(&self, path: &str) -> Result<String> {
+    let field = self.get_field(path)?;
+    let address = field.address();
+    Ok(f!(
+      " (unsafe {{ ptr::read_volatile({address} as *const u32) }}) "
+    ))
+  }
+  */
+
+  fn set_bit(&self, path: &str) -> Result<String> {
+    let field = self.get_field(path)?;
+    if field.width != 1 {
+      return Err(anyhow!("Cannot set single bit for a multi-bit field"));
+    }
+
+    let address = field.address();
+    let mask = field.mask();
+
+    Ok(f!(
+      r##"
+    // Set {path} = 1
+    interrupt::free(|_| unsafe {{
+      ptr::write_volatile(
+        {address:#010x} as *mut u32,
+        ptr::read_volatile({address:#010x} as *const u32) | {mask:#034b}
+      )
+    }});
+    "##
+    ))
+  }
+
+  fn clear_bit(&self, path: &str) -> Result<String> {
+    let field = self.get_field(path)?;
+    if field.width != 1 {
+      return Err(anyhow!("Cannot set single bit for a multi-bit field"));
+    }
+
+    let address = field.address();
+    let inverse_mask = !field.mask();
+
+    Ok(f!(
+      r##"
+    // Set {path} = 0
+    interrupt::free(|_| unsafe {{
+      ptr::write_volatile(
+        {address:#010x} as *mut u32,
+        ptr::read_volatile({address:#010x} as *const u32) & {inverse_mask:#034b}
+      )
+    }});
+    "##
+    ))
   }
 }

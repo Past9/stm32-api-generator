@@ -1,6 +1,9 @@
 use std::fs::File;
 use std::io::Read;
 
+#[macro_use]
+extern crate fstrings;
+
 use anyhow::{anyhow, Result};
 use clap::{App, Arg};
 use glob::glob;

@@ -1,5 +1,7 @@
 use core::marker::PhantomData;
 use crate::{PowerStatus, Enabled, Disabled};
+use core::ptr;
+use cortex_m::interrupt;
 
 pub(crate) fn create() -> {{peripheral.struct_name}}<Disabled> {
   {{peripheral.struct_name}} {
@@ -16,7 +18,7 @@ where
 }
 impl {{peripheral.struct_name}}<Disabled> {
   pub(crate) fn enable(self) -> {{peripheral.struct_name}}<Enabled> {
-    // Set bit in AHBENR
+    {{peripheral.enable_writer}}
     {{peripheral.struct_name}} {
       power_status: PhantomData
     }
@@ -24,7 +26,7 @@ impl {{peripheral.struct_name}}<Disabled> {
 }
 impl {{peripheral.struct_name}}<Enabled> {
   pub(crate) fn disable(self) -> {{peripheral.struct_name}}<Disabled> {
-    // Clear bit in AHBENR
+    {{peripheral.disable_writer}}
     {{peripheral.struct_name}} {
       power_status: PhantomData
     }
