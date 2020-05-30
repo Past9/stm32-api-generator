@@ -1,34 +1,114 @@
+use crate::{ set_bit, clear_bit, write_val };
+use crate::gpio::{ PullDirection, DummyAltFunc, OutputType, OutputSpeed };
 use core::marker::PhantomData;
-use crate::{PowerStatus, Enabled, Disabled};
 use core::ptr;
 use cortex_m::interrupt;
 
-pub(crate) fn create() -> {{peripheral.struct_name}}<Disabled> {
+use crate::{Error, Result};
+
+pub(crate) fn create() -> {{peripheral.struct_name}} {
   {{peripheral.struct_name}} {
-    power_status: PhantomData
+    _private: (),
+    {% for pin in peripheral.pins -%}
+    has_{{pin.field_name}}: true,
+    {% endfor %}
   }
 }
 
 #[allow(non_camel_case_types)]
-pub struct {{peripheral.struct_name}}<POWER_STATUS> 
-where
-  POWER_STATUS: PowerStatus
-{
-  power_status: PhantomData<POWER_STATUS>
+pub struct {{peripheral.struct_name}} { 
+  _private: (),
+  {% for pin in peripheral.pins -%}
+  has_{{pin.field_name}}: bool,
+  {% endfor %}
 }
-impl {{peripheral.struct_name}}<Disabled> {
-  pub(crate) fn enable(self) -> {{peripheral.struct_name}}<Enabled> {
+impl {{peripheral.struct_name}} {
+  
+  pub(crate) fn enable(&mut self) {
     {{peripheral.enable_writer}}
-    {{peripheral.struct_name}} {
-      power_status: PhantomData
-    }
   }
-}
-impl {{peripheral.struct_name}}<Enabled> {
-  pub(crate) fn disable(self) -> {{peripheral.struct_name}}<Disabled> {
+
+  pub(crate) fn disable(&mut self) {
     {{peripheral.disable_writer}}
-    {{peripheral.struct_name}} {
-      power_status: PhantomData
+  }
+
+  {% for pin in peripheral.pins %}
+  pub fn take_{{pin.field_name}}(&mut self) -> Result<{{pin.struct_name}}> {
+    match self.has_{{pin.field_name}} {
+      true => {
+        self.has_{{pin.field_name}} = false;
+        Ok({{pin.struct_name}} {
+          _private: ()
+        })
+      },
+      false => Err(Error::new("{{pin.struct_name}} is already taken.")),
+    }
+  }
+
+  pub fn return_{{pin.field_name}}(&mut self, {{pin.field_name}}: {{pin.struct_name}}) -> Result<()> {
+    match self.has_{{pin.field_name}} {
+      false => {
+        self.has_{{pin.field_name}} = true;
+        Ok(())
+      },
+      true => Err(Error::new("{{pin.struct_name}} is already owned by the peripheral.")),
+    }
+  }
+  {% endfor %}
+}
+
+{% for pin in peripheral.pins %} 
+pub struct {{pin.struct_name}} {
+  _private: ()
+}
+impl {{pin.struct_name}} {
+  pub fn as_input(self, pull_dir: PullDirection) -> {{pin.struct_name}}Input {
+    {{pin.as_input_writer}}
+    {{pin.pull_dir_writer}}
+    {{pin.struct_name}}Input { _private: () }
+  }
+
+  pub fn as_output(
+    self, 
+    pull_dir: PullDirection, 
+    output_type: OutputType, 
+    output_speed: OutputSpeed
+  ) -> {{pin.struct_name}}Output {
+    {{pin.as_output_writer}}
+    {{pin.pull_dir_writer}}
+    {{pin.output_type_writer}}
+    {{pin.output_speed_writer}}
+    {{pin.struct_name}}Output { _private: () }
+  }
+
+  pub fn as_analog(self) -> {{pin.struct_name}}Analog {
+    {{pin.as_analog_writer}}
+    {{pin.struct_name}}Analog { _private: () }
+  }
+
+  #[allow(non_camel_case_types)]
+  pub fn as_alt_func<ALT_FUNC>(
+    self, 
+    pull_dir: PullDirection, 
+  ) -> {{pin.struct_name}}AltFunc<ALT_FUNC> 
+  where ALT_FUNC: DummyAltFunc
+  {
+    {{pin.as_alt_func_writer}}
+    {{pin.pull_dir_writer}}
+    {{pin.struct_name}}AltFunc {
+      alt_func: PhantomData
     }
   }
 }
+
+pub struct {{pin.struct_name}}Input { _private: () }
+pub struct {{pin.struct_name}}Output { _private: () }
+pub struct {{pin.struct_name}}Analog { _private: () }
+#[allow(non_camel_case_types)]
+pub struct {{pin.struct_name}}AltFunc<ALT_FUNC> 
+  where ALT_FUNC: DummyAltFunc
+{ 
+  alt_func: PhantomData<ALT_FUNC>
+}
+
+{% endfor %}

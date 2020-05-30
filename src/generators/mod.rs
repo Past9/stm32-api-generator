@@ -59,19 +59,23 @@ impl SubmoduleModel {
 
 pub trait ReadWrite {
   //fn read_field_reg(&self, path: &str) -> Result<String>;
+  fn write_val(&self, path: &str, expr: &str) -> Result<String>;
   fn set_bit(&self, path: &str) -> Result<String>;
   fn clear_bit(&self, path: &str) -> Result<String>;
 }
 impl ReadWrite for DeviceSpec {
-  /*
-  fn read_field_reg(&self, path: &str) -> Result<String> {
+  fn write_val(&self, path: &str, expr: &str) -> Result<String> {
     let field = self.get_field(path)?;
+
     let address = field.address();
+    let mask = field.mask();
+    let inverse_mask = !field.mask();
+    let offset = field.offset;
+
     Ok(f!(
-      " (unsafe {{ ptr::read_volatile({address} as *const u32) }}) "
+      "write_val({address:#010x}, {mask:#034b}, {inverse_mask:#034b}, {offset}, {expr}); // Set {path} = {expr}"
     ))
   }
-  */
 
   fn set_bit(&self, path: &str) -> Result<String> {
     let field = self.get_field(path)?;
@@ -82,38 +86,20 @@ impl ReadWrite for DeviceSpec {
     let address = field.address();
     let mask = field.mask();
 
-    Ok(f!(
-      r##"
-    // Set {path} = 1
-    interrupt::free(|_| unsafe {{
-      ptr::write_volatile(
-        {address:#010x} as *mut u32,
-        ptr::read_volatile({address:#010x} as *const u32) | {mask:#034b}
-      )
-    }});
-    "##
-    ))
+    Ok(f!("set_bit({address:#010x}, {mask:#034b}); // Set {path}"))
   }
 
   fn clear_bit(&self, path: &str) -> Result<String> {
     let field = self.get_field(path)?;
     if field.width != 1 {
-      return Err(anyhow!("Cannot set single bit for a multi-bit field"));
+      return Err(anyhow!("Cannot clear single bit for a multi-bit field"));
     }
 
     let address = field.address();
     let inverse_mask = !field.mask();
 
     Ok(f!(
-      r##"
-    // Set {path} = 0
-    interrupt::free(|_| unsafe {{
-      ptr::write_volatile(
-        {address:#010x} as *mut u32,
-        ptr::read_volatile({address:#010x} as *const u32) & {inverse_mask:#034b}
-      )
-    }});
-    "##
+      "clear_bit({address:#010x}, {inverse_mask:#034b}); // Clear {path}"
     ))
   }
 }

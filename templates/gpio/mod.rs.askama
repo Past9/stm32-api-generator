@@ -1,0 +1,70 @@
+{% for submodule in submodules -%}
+pub mod {{submodule}};
+{% endfor %}
+
+pub trait Mode {}
+pub struct Input;
+pub struct Output;
+pub struct Analog;
+pub struct AltFunc;
+impl Mode for Input {}
+impl Mode for Output {}
+impl Mode for Analog {}
+impl Mode for AltFunc {}
+
+pub enum PullDirection {
+  Up,
+  Down,
+  Floating
+}
+impl PullDirection {
+  fn val(&self) -> u32 {
+    match self {
+      Self::Floating => 0b00,
+      Self::Up => 0b01,
+      Self::Down => 0b10,
+    }
+  }
+}
+
+pub enum OutputType {
+  PushPull,
+  OpenDrain
+}
+impl OutputType {
+  fn val(&self) -> u32 {
+    match self {
+      Self::PushPull => 0,
+      Self::OpenDrain => 1,
+    }
+  }
+}
+
+pub enum OutputSpeed {
+  Low,
+  Medium,
+  High
+}
+impl OutputSpeed {
+  fn val(&self) -> u32 {
+    match self {
+      Self::Low => 0b00,
+      Self::Medium => 0b01,
+      Self::High => 0b11,
+    }
+  }
+}
+
+pub trait DummyAltFunc {}
+
+/*
+pub trait PullDirection {}
+pub struct PullUp;
+pub struct PullDown;
+pub struct Floating;
+pub struct Analog;
+impl PullDirection for PullUp;
+impl PullDirection for PullDown;
+impl PullDirection for Floating;
+impl PullDirection for Analog;
+*/
