@@ -2,15 +2,29 @@
 pub mod {{submodule}};
 {% endfor %}
 
-pub trait Mode {}
-pub struct Input;
-pub struct Output;
-pub struct Analog;
-pub struct AltFunc;
-impl Mode for Input {}
-impl Mode for Output {}
-impl Mode for Analog {}
-impl Mode for AltFunc {}
+pub trait OutputPin {
+  fn write(&mut self, value: DigitalValue);
+}
+
+pub enum DigitalValue {
+  High,
+  Low
+}
+impl DigitalValue {
+  pub fn val(&self) -> u32 {
+    match self {
+      Self::High => 1,
+      Self::Low => 0
+    }
+  }
+
+  pub fn from_bool(val: bool) -> Self {
+    match val {
+      true => DigitalValue::High,
+      false => DigitalValue::Low
+    }
+  } 
+}
 
 pub enum PullDirection {
   Up,

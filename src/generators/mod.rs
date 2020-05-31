@@ -19,6 +19,7 @@ pub fn generate(device_spec: &DeviceSpec, out_dir: &OutputDirectory) -> Result<(
   };
 
   out_dir.publish("src/lib.rs", &lib_template.render()?)?;
+  out_dir.publish(".rustfmt.toml", &RustFmtTemplate {}.render()?)?;
   out_dir.publish(
     "Cargo.toml",
     &CargoTemplate {
@@ -35,6 +36,10 @@ pub fn generate(device_spec: &DeviceSpec, out_dir: &OutputDirectory) -> Result<(
 struct LibTemplate {
   pub submodules: Vec<SubmoduleModel>,
 }
+
+#[derive(Template)]
+#[template(path = ".rustfmt.toml.askama", escape = "none")]
+struct RustFmtTemplate {}
 
 #[derive(Template)]
 #[template(path = "Cargo.toml.askama", escape = "none")]
@@ -73,7 +78,8 @@ impl ReadWrite for DeviceSpec {
     let offset = field.offset;
 
     Ok(f!(
-      "write_val({address:#010x}, {mask:#034b}, {inverse_mask:#034b}, {offset}, {expr}); // Set {path} = {expr}"
+      r##"// Set {path} = {expr}
+    write_val({address:#010x}, {mask:#034b}, {inverse_mask:#034b}, {offset}, {expr});"##
     ))
   }
 
@@ -86,7 +92,10 @@ impl ReadWrite for DeviceSpec {
     let address = field.address();
     let mask = field.mask();
 
-    Ok(f!("set_bit({address:#010x}, {mask:#034b}); // Set {path}"))
+    Ok(f!(
+      r##"// Set {path}
+    set_bit({address:#010x}, {mask:#034b});"##
+    ))
   }
 
   fn clear_bit(&self, path: &str) -> Result<String> {
@@ -99,7 +108,8 @@ impl ReadWrite for DeviceSpec {
     let inverse_mask = !field.mask();
 
     Ok(f!(
-      "clear_bit({address:#010x}, {inverse_mask:#034b}); // Clear {path}"
+      r##"// Clear {path}
+    clear_bit({address:#010x}, {inverse_mask:#034b});"##
     ))
   }
 }

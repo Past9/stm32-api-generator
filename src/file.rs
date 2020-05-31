@@ -105,7 +105,13 @@ pub fn post_process(
     run_command(
       path,
       "cargo",
-      vec!["+nightly", "fix", "--allow-dirty", "--all-features"],
+      vec![
+        "+nightly",
+        "fix",
+        "--allow-dirty",
+        "--allow-no-vcs",
+        "--all-features",
+      ],
     )?;
   }
 

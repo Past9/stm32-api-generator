@@ -1,5 +1,5 @@
 use crate::{ set_bit, clear_bit, write_val };
-use crate::gpio::{ PullDirection, DummyAltFunc, OutputType, OutputSpeed };
+use crate::gpio::{ PullDirection, DummyAltFunc, OutputType, OutputSpeed, DigitalValue, OutputPin };
 use core::marker::PhantomData;
 use core::ptr;
 use cortex_m::interrupt;
@@ -102,8 +102,18 @@ impl {{pin.struct_name}} {
 }
 
 pub struct {{pin.struct_name}}Input { _private: () }
-pub struct {{pin.struct_name}}Output { _private: () }
+
+pub struct {{pin.struct_name}}Output { 
+  _private: () 
+}
+impl OutputPin for {{pin.struct_name}}Output {
+  fn write(&mut self, value: DigitalValue) {
+    {{pin.output_value_writer}}
+  }
+}
+
 pub struct {{pin.struct_name}}Analog { _private: () }
+
 #[allow(non_camel_case_types)]
 pub struct {{pin.struct_name}}AltFunc<ALT_FUNC> 
   where ALT_FUNC: DummyAltFunc
