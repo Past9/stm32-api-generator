@@ -1,5 +1,5 @@
 use crate::{ set_bit, clear_bit, write_val };
-use crate::gpio::{ PullDirection, DummyAltFunc, OutputType, OutputSpeed, DigitalValue, OutputPin };
+use crate::gpio::{ PullDirection, DummyAltFunc, OutputType, OutputSpeed, DigitalValue };
 use core::marker::PhantomData;
 use core::ptr;
 use cortex_m::interrupt;
@@ -23,13 +23,24 @@ pub struct {{peripheral.struct_name}} {
   {% endfor %}
 }
 impl {{peripheral.struct_name}} {
+
+  pub fn owns_everything(&self) -> bool {
+    {% for pin in peripheral.pins -%}
+    self.has_{{pin.field_name}} &&
+    {% endfor %}
+    true
+  }
   
   pub(crate) fn enable(&mut self) {
     {{peripheral.enable_writer}}
   }
 
-  pub(crate) fn disable(&mut self) {
+  pub(crate) fn disable(&mut self) -> Result<()> {
+    if !self.owns_everything() {
+      return Err(Error::new("{{peripheral.struct_name}} must own all of its pins before being disabled."))
+    }
     {{peripheral.disable_writer}}
+    Ok(())
   }
 
   {% for pin in peripheral.pins %}
@@ -106,9 +117,18 @@ pub struct {{pin.struct_name}}Input { _private: () }
 pub struct {{pin.struct_name}}Output { 
   _private: () 
 }
-impl OutputPin for {{pin.struct_name}}Output {
-  fn write(&mut self, value: DigitalValue) {
+impl {{pin.struct_name}}Output {
+  pub fn write(&mut self, value: DigitalValue) {
     {{pin.output_value_writer}}
+  }
+
+  pub fn teardown(self) -> {{pin.struct_name}} {
+    {{pin.reset_output_value_writer}}
+    {{pin.reset_pull_dir_writer}}
+    {{pin.reset_output_type_writer}}
+    {{pin.reset_output_speed_writer}}
+    {{pin.reset_mode_writer}}
+    {{pin.struct_name}} { _private: () } 
   }
 }
 

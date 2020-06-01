@@ -2,10 +2,6 @@
 pub mod {{submodule}};
 {% endfor %}
 
-pub trait OutputPin {
-  fn write(&mut self, value: DigitalValue);
-}
-
 pub enum DigitalValue {
   High,
   Low

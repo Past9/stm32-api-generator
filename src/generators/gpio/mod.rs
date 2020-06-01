@@ -84,6 +84,11 @@ struct PinModel {
   pub output_type_writer: String,
   pub output_speed_writer: String,
   pub output_value_writer: String,
+  pub reset_mode_writer: String,
+  pub reset_pull_dir_writer: String,
+  pub reset_output_type_writer: String,
+  pub reset_output_speed_writer: String,
+  pub reset_output_value_writer: String,
 }
 impl PinModel {
   pub fn new(d: &DeviceSpec, letter: &char, pin_number: i32) -> Result<Self> {
@@ -109,6 +114,11 @@ impl PinModel {
         "output_speed.val()",
       )?,
       output_value_writer: d.write_val(&f!("GPIO{letter}.ODR.ODR{pin_number}"), "value.val()")?,
+      reset_mode_writer: d.reset(&f!("GPIO{letter}.MODER.MODER{pin_number}"))?,
+      reset_pull_dir_writer: d.reset(&f!("GPIO{letter}.PUPDR.PUPDR{pin_number}"))?,
+      reset_output_type_writer: d.reset(&f!("GPIO{letter}.OTYPER.OT{pin_number}"))?,
+      reset_output_speed_writer: d.reset(&f!("GPIO{letter}.OSPEEDR.OSPEEDR{pin_number}"))?,
+      reset_output_value_writer: d.reset(&f!("GPIO{letter}.ODR.ODR{pin_number}"))?,
     })
   }
 }

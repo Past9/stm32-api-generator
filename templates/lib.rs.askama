@@ -8,6 +8,8 @@ pub type Result<T> = core::result::Result<T, Error>;
 pub mod gpio;
 
 {% for submodule in submodules -%}
+// {{["a","b","c","d"]|multi_write("::") }}
+// {{"ASDF"|all_caps("asd",7)}}
 use gpio::{{submodule.module_name}}::{{submodule.struct_name}};
 {% endfor %}
 
@@ -23,6 +25,13 @@ impl System {
       has_{{submodule.field_name}}: true,
       {% endfor %}
     }
+  }
+
+  pub fn owns_everything(&self) -> bool {
+    {% for submodule in submodules -%}
+    self.has_{{submodule.field_name}} &&
+    {% endfor %}
+    true
   }
 
   {% for submodule in submodules -%}
@@ -41,8 +50,8 @@ impl System {
   pub fn deactivate_{{submodule.field_name}}(&mut self, mut {{submodule.field_name}}: {{submodule.struct_name}}) -> Result<()> {
     match self.has_{{submodule.field_name}} {
       false => { 
+        {{submodule.field_name}}.disable()?; 
         self.has_{{submodule.field_name}} = true;
-        {{submodule.field_name}}.disable(); 
         Ok(())
       },
       true => Err(Error::new("{{submodule.struct_name}} is already deactivated.")),
@@ -84,7 +93,7 @@ pub(crate) fn clear_bit(address: u32, inverse_mask: u32) {
   interrupt::free(|_| unsafe {
     ptr::write_volatile(
       address as *mut u32,
-      ptr::read_volatile(address as *const u32) * inverse_mask
+      ptr::read_volatile(address as *const u32) & inverse_mask
     )
   });
 }

@@ -4,6 +4,8 @@ use askama::Template;
 use heck::{CamelCase, KebabCase};
 use svd_expander::DeviceSpec;
 
+mod filters;
+
 pub mod gpio;
 
 pub fn generate(device_spec: &DeviceSpec, out_dir: &OutputDirectory) -> Result<()> {
@@ -63,8 +65,8 @@ impl SubmoduleModel {
 }
 
 pub trait ReadWrite {
-  //fn read_field_reg(&self, path: &str) -> Result<String>;
   fn write_val(&self, path: &str, expr: &str) -> Result<String>;
+  fn reset(&self, path: &str) -> Result<String>;
   fn set_bit(&self, path: &str) -> Result<String>;
   fn clear_bit(&self, path: &str) -> Result<String>;
 }
@@ -80,6 +82,34 @@ impl ReadWrite for DeviceSpec {
     Ok(f!(
       r##"// Set {path} = {expr}
     write_val({address:#010x}, {mask:#034b}, {inverse_mask:#034b}, {offset}, {expr});"##
+    ))
+  }
+
+  fn reset(&self, path: &str) -> Result<String> {
+    let field = self.get_field(path)?;
+
+    let address = field.address();
+    let mask = field.mask();
+    let inverse_mask = !field.mask();
+    let offset = field.offset;
+
+    let register = self.get_register(&field.parent_path())?;
+
+    let register_reset_val = match register.reset_value {
+      Some(rv) => rv,
+      None => 0,
+    };
+
+    let register_reset_mask = match register.reset_mask {
+      Some(rm) => rm,
+      None => u32::MAX,
+    };
+
+    let reset_value = register_reset_mask & register_reset_val & mask >> offset;
+
+    Ok(f!(
+      r##"// Reset {path}
+      write_val({address:#010x}, {mask:#034b}, {inverse_mask:#034b}, {offset}, {reset_value});"##
     ))
   }
 
