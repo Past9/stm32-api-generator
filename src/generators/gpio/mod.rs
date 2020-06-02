@@ -16,7 +16,11 @@ pub fn generate(d: &DeviceSpec, out_dir: &OutputDirectory) -> Result<Vec<String>
     let model = PeripheralModel::new(d, peripheral)?;
     out_dir.publish(
       &f!("src/gpio/{model.module_name}.rs"),
-      &PeripheralTemplate { peripheral: &model }.render()?,
+      &PeripheralTemplate {
+        device: &d,
+        peripheral: &model,
+      }
+      .render()?,
     )?;
 
     submodules.push(model.module_name);
@@ -39,9 +43,16 @@ struct ModTemplate<'a> {
   submodules: &'a Vec<String>,
 }
 
+macro_rules! write_val {
+  ($device:expr, $path:expr, $val:expr) => {
+    $device.write_val(&$path, &$val);
+  };
+}
+
 #[derive(Template)]
 #[template(path = "gpio/peripheral.rs.askama", escape = "none")]
 struct PeripheralTemplate<'a> {
+  device: &'a DeviceSpec,
   peripheral: &'a PeripheralModel,
 }
 
@@ -49,8 +60,7 @@ struct PeripheralModel {
   pub struct_name: String,
   pub module_name: String,
   pub field_name: String,
-  pub enable_writer: String,
-  pub disable_writer: String,
+  pub enable_field: String,
   pub pins: Vec<PinModel>,
 }
 impl PeripheralModel {
@@ -64,8 +74,7 @@ impl PeripheralModel {
       struct_name: p.name.to_camel_case(),
       module_name: p.name.to_snake_case(),
       field_name: p.name.to_snake_case(),
-      enable_writer: d.set_bit(&f!("RCC.AHBENR.IOP{letter}EN"))?,
-      disable_writer: d.clear_bit(&f!("RCC.AHBENR.IOP{letter}EN"))?,
+      enable_field: f!("RCC.AHBENR.IOP{letter}EN"),
       pins: (0..16)
         .map(|n| PinModel::new(d, &letter, n))
         .collect::<Result<Vec<PinModel>>>()?,
@@ -76,13 +85,14 @@ impl PeripheralModel {
 struct PinModel {
   pub struct_name: String,
   pub field_name: String,
-  pub as_input_writer: String,
-  pub as_output_writer: String,
+  pub moder_field: String,
+  pub pupdr_field: String,
+  pub otyper_field: String,
+  pub ospeedr_field: String,
+
   pub as_alt_func_writer: String,
   pub as_analog_writer: String,
-  pub pull_dir_writer: String,
-  pub output_type_writer: String,
-  pub output_speed_writer: String,
+
   pub output_value_writer: String,
   pub reset_mode_writer: String,
   pub reset_pull_dir_writer: String,
@@ -97,23 +107,15 @@ impl PinModel {
     Ok(Self {
       struct_name: pin_name.to_camel_case(),
       field_name: pin_name.to_snake_case(),
-      as_input_writer: d.write_val(&f!("GPIO{letter}.MODER.MODER{pin_number}"), "0b00")?,
-      as_output_writer: d.write_val(&f!("GPIO{letter}.MODER.MODER{pin_number}"), "0b01")?,
-      as_alt_func_writer: d.write_val(&f!("GPIO{letter}.MODER.MODER{pin_number}"), "0b10")?,
-      as_analog_writer: d.write_val(&f!("GPIO{letter}.MODER.MODER{pin_number}"), "0b11")?,
-      pull_dir_writer: d.write_val(
-        &f!("GPIO{letter}.PUPDR.PUPDR{pin_number}"),
-        "pull_dir.val()",
-      )?,
-      output_type_writer: d.write_val(
-        &f!("GPIO{letter}.OTYPER.OT{pin_number}"),
-        "output_type.val()",
-      )?,
-      output_speed_writer: d.write_val(
-        &f!("GPIO{letter}.OSPEEDR.OSPEEDR{pin_number}"),
-        "output_speed.val()",
-      )?,
-      output_value_writer: d.write_val(&f!("GPIO{letter}.ODR.ODR{pin_number}"), "value.val()")?,
+      moder_field: f!("GPIO{letter}.MODER.MODER{pin_number}"),
+      pupdr_field: f!("GPIO{letter}.PUPDR.PUPDR{pin_number}"),
+      otyper_field: f!("GPIO{letter}.OTYPER.OT{pin_number}"),
+      ospeedr_field: f!("GPIO{letter}.OSPEEDR.OSPEEDR{pin_number}"),
+
+      as_alt_func_writer: d.write_val(&f!("GPIO{letter}.MODER.MODER{pin_number}"), "0b10"),
+      as_analog_writer: d.write_val(&f!("GPIO{letter}.MODER.MODER{pin_number}"), "0b11"),
+
+      output_value_writer: d.write_val(&f!("GPIO{letter}.ODR.ODR{pin_number}"), "value.val()"),
       reset_mode_writer: d.reset(&f!("GPIO{letter}.MODER.MODER{pin_number}"))?,
       reset_pull_dir_writer: d.reset(&f!("GPIO{letter}.PUPDR.PUPDR{pin_number}"))?,
       reset_output_type_writer: d.reset(&f!("GPIO{letter}.OTYPER.OT{pin_number}"))?,

@@ -14,6 +14,7 @@ pub fn generate(device_spec: &DeviceSpec, out_dir: &OutputDirectory) -> Result<(
   submodule_names.extend(gpio::generate(device_spec, out_dir)?);
 
   let mut lib_template = LibTemplate {
+    device: &device_spec,
     submodules: submodule_names
       .iter()
       .map(|n| SubmoduleModel::new(n))
@@ -35,7 +36,8 @@ pub fn generate(device_spec: &DeviceSpec, out_dir: &OutputDirectory) -> Result<(
 
 #[derive(Template)]
 #[template(path = "lib.rs.askama", escape = "none")]
-struct LibTemplate {
+struct LibTemplate<'a> {
+  pub device: &'a DeviceSpec,
   pub submodules: Vec<SubmoduleModel>,
 }
 
@@ -65,24 +67,24 @@ impl SubmoduleModel {
 }
 
 pub trait ReadWrite {
-  fn write_val(&self, path: &str, expr: &str) -> Result<String>;
+  fn write_val(&self, path: &str, expr: &str) -> String;
   fn reset(&self, path: &str) -> Result<String>;
-  fn set_bit(&self, path: &str) -> Result<String>;
-  fn clear_bit(&self, path: &str) -> Result<String>;
+  fn set_bit(&self, path: String) -> String;
+  fn clear_bit(&self, path: String) -> String;
 }
 impl ReadWrite for DeviceSpec {
-  fn write_val(&self, path: &str, expr: &str) -> Result<String> {
-    let field = self.get_field(path)?;
+  fn write_val(&self, path: &str, expr: &str) -> String {
+    let field = self.get_field(path).unwrap();
 
     let address = field.address();
     let mask = field.mask();
     let inverse_mask = !field.mask();
     let offset = field.offset;
 
-    Ok(f!(
+    f!(
       r##"// Set {path} = {expr}
     write_val({address:#010x}, {mask:#034b}, {inverse_mask:#034b}, {offset}, {expr});"##
-    ))
+    )
   }
 
   fn reset(&self, path: &str) -> Result<String> {
@@ -113,33 +115,33 @@ impl ReadWrite for DeviceSpec {
     ))
   }
 
-  fn set_bit(&self, path: &str) -> Result<String> {
-    let field = self.get_field(path)?;
+  fn set_bit(&self, path: String) -> String {
+    let field = self.get_field(&path).unwrap();
     if field.width != 1 {
-      return Err(anyhow!("Cannot set single bit for a multi-bit field"));
+      panic!("Cannot set single bit for a multi-bit field");
     }
 
     let address = field.address();
     let mask = field.mask();
 
-    Ok(f!(
+    f!(
       r##"// Set {path}
     set_bit({address:#010x}, {mask:#034b});"##
-    ))
+    )
   }
 
-  fn clear_bit(&self, path: &str) -> Result<String> {
-    let field = self.get_field(path)?;
+  fn clear_bit(&self, path: String) -> String {
+    let field = self.get_field(&path).unwrap();
     if field.width != 1 {
-      return Err(anyhow!("Cannot clear single bit for a multi-bit field"));
+      panic!("Cannot clear single bit for a multi-bit field");
     }
 
     let address = field.address();
     let inverse_mask = !field.mask();
 
-    Ok(f!(
+    f!(
       r##"// Clear {path}
     clear_bit({address:#010x}, {inverse_mask:#034b});"##
-    ))
+    )
   }
 }

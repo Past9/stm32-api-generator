@@ -1,5 +1,9 @@
-use askama::Result;
+use anyhow::anyhow;
+use askama::{Error, Result};
 use std::fmt;
+use svd_expander::{DeviceSpec, SvdExpanderError};
+
+use std::error::Error as ErrorTrait;
 
 pub fn all_caps(s: &dyn fmt::Display, str1: &str, num2: &usize) -> Result<String> {
   let s = s.to_string();
@@ -24,7 +28,7 @@ where
       rv.push_str(separator);
     }
 
-    rv.push_str(&format!("{:?}", item));
+    rv.push_str(&format!("{}", item));
   }
 
   Ok(rv)
