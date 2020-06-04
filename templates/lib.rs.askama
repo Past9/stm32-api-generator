@@ -78,30 +78,45 @@ impl Error {
 
 #[inline]
 pub(crate) fn set_bit(address: u32, mask: u32) {
-  interrupt::free(|_| unsafe {
+  unsafe {
     ptr::write_volatile(
       address as *mut u32,
       ptr::read_volatile(address as *const u32) | mask
     )
-  });
+  }
+}
+
+#[inline]
+pub(crate) fn set_bit_itf(address: u32, mask: u32) {
+  interrupt::free(|_| set_bit(address, mask));
 }
 
 #[inline]
 pub(crate) fn clear_bit(address: u32, inverse_mask: u32) {
-  interrupt::free(|_| unsafe {
+  unsafe {
     ptr::write_volatile(
       address as *mut u32,
       ptr::read_volatile(address as *const u32) & inverse_mask
     )
-  });
+  }
+}
+
+#[inline]
+pub(crate) fn clear_bit_itf(address: u32, inverse_mask: u32) {
+  interrupt::free(|_| clear_bit(address, inverse_mask));
 }
 
 #[inline]
 pub(crate) fn write_val(address: u32, mask: u32, inverse_mask: u32, offset: u32, val: u32) {
-  interrupt::free(|_| unsafe {
+  unsafe {
     ptr::write_volatile(
       address as *mut u32,
       inverse_mask & ptr::read_volatile(address as *const u32) | mask & (val << offset)
-    )
-  });
+    );
+  }
+}
+
+#[inline]
+pub(crate) fn write_val_itf(address: u32, mask: u32, inverse_mask: u32, offset: u32, val: u32) {
+  interrupt::free(|_| write_val(address, mask, inverse_mask, offset, val))
 }

@@ -16,17 +16,6 @@ impl OutputDirectory {
     })
   }
 
-  pub fn walk_into_subdir(&mut self, subdir: &str) -> Result<()> {
-    let mut path_buf = PathBuf::from(&self.dir_path);
-    path_buf.push(subdir);
-    self.dir_path = match path_buf.into_os_string().into_string() {
-      Ok(s) => s,
-      Err(_) => return Err(anyhow!("Could not convert path to string")),
-    };
-
-    Ok(())
-  }
-
   pub fn new_in_subdir(&self, subdir: &str) -> Result<Self> {
     let mut path_buf = PathBuf::from(&self.dir_path);
     path_buf.push(subdir);

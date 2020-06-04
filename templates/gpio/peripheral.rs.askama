@@ -1,10 +1,12 @@
-use crate::{ set_bit, clear_bit, write_val };
+use crate::{ set_bit, set_bit_itf, clear_bit, clear_bit_itf, write_val, write_val_itf };
 use crate::gpio::{ PullDirection, DummyAltFunc, OutputType, OutputSpeed, DigitalValue };
 use core::marker::PhantomData;
 use core::ptr;
 use cortex_m::interrupt;
 
 use crate::{Error, Result};
+
+{% let d = device %}
 
 pub(crate) fn create() -> {{peripheral.struct_name}} {
   {{peripheral.struct_name}} {
@@ -32,14 +34,14 @@ impl {{peripheral.struct_name}} {
   }
   
   pub(crate) fn enable(&mut self) {
-    {{device.set_bit(peripheral.enable_field.clone())}}
+    {{set_bit!(d, self.peripheral.enable_field)}}
   }
 
   pub(crate) fn disable(&mut self) -> Result<()> {
     if !self.owns_everything() {
       return Err(Error::new("{{peripheral.struct_name}} must own all of its pins before being disabled."))
     }
-    {{device.clear_bit(peripheral.enable_field.clone())}}
+    {{clear_bit!(d, self.peripheral.enable_field)}}
     Ok(())
   }
 
@@ -74,8 +76,10 @@ pub struct {{pin.struct_name}} {
 }
 impl {{pin.struct_name}} {
   pub fn as_input(self, pull_dir: PullDirection) -> {{pin.struct_name}}Input {
-    {{write_val!(&self.device, pin.moder_field, "0b00")}}
-    {{write_val!(&self.device, pin.pupdr_field, "pull_dir.val()")}}
+    interrupt::free(|_| {
+      {{write_val!(d, pin.moder_field, "0b00", false)}}
+      {{write_val!(d, pin.pupdr_field, "pull_dir.val()", false)}}
+    });
     {{pin.struct_name}}Input { _private: () }
   }
 
@@ -85,15 +89,17 @@ impl {{pin.struct_name}} {
     output_type: OutputType, 
     output_speed: OutputSpeed
   ) -> {{pin.struct_name}}Output {
-    {{write_val!(&self.device, pin.moder_field, "0b01")}}
-    {{write_val!(&self.device, pin.pupdr_field, "pull_dir.val()")}}
-    {{write_val!(&self.device, pin.otyper_field, "output_type.val()")}}
-    {{write_val!(&self.device, pin.ospeedr_field, "output_speed.val()")}}
+    interrupt::free(|_| {
+      {{write_val!(d, pin.moder_field, "0b01", false)}}
+      {{write_val!(d, pin.pupdr_field, "pull_dir.val()", false)}}
+      {{write_val!(d, pin.otyper_field, "output_type.val()", false)}}
+      {{write_val!(d, pin.ospeedr_field, "output_speed.val()", false)}}
+    });
     {{pin.struct_name}}Output { _private: () }
   }
 
   pub fn as_analog(self) -> {{pin.struct_name}}Analog {
-    {{pin.as_analog_writer}}
+    {{write_val!(d, pin.moder_field, "0b11")}}
     {{pin.struct_name}}Analog { _private: () }
   }
 
@@ -104,8 +110,10 @@ impl {{pin.struct_name}} {
   ) -> {{pin.struct_name}}AltFunc<ALT_FUNC> 
   where ALT_FUNC: DummyAltFunc
   {
-    {{pin.as_alt_func_writer}}
-    {{write_val!(&self.device, pin.pupdr_field, "pull_dir.val()")}}
+    interrupt::free(|_| {
+      {{write_val!(d, pin.moder_field, "0b10", false)}}
+      {{write_val!(d, pin.pupdr_field, "pull_dir.val()", false)}}
+    });
     {{pin.struct_name}}AltFunc {
       alt_func: PhantomData
     }
@@ -119,15 +127,16 @@ pub struct {{pin.struct_name}}Output {
 }
 impl {{pin.struct_name}}Output {
   pub fn write(&mut self, value: DigitalValue) {
-    {{pin.output_value_writer}}
+    {{write_val!(d, pin.odr_field, "value.val()")}}
   }
 
   pub fn teardown(self) -> {{pin.struct_name}} {
-    {{pin.reset_output_value_writer}}
-    {{pin.reset_pull_dir_writer}}
-    {{pin.reset_output_type_writer}}
-    {{pin.reset_output_speed_writer}}
-    {{pin.reset_mode_writer}}
+    interrupt::free(|_| {
+      {{reset!(d, pin.odr_field, false)}}
+      {{reset!(d, pin.otyper_field, false)}}
+      {{reset!(d, pin.ospeedr_field, false)}}
+      {{reset!(d, pin.moder_field, false)}}
+    });
     {{pin.struct_name}} { _private: () } 
   }
 }
