@@ -1,0 +1,11 @@
+[package]
+name = <CRATE NAME HERE>
+version = "0.1.0"
+edition = "2018"
+
+[dependencies.stm32f303-api]
+path = "../stm32-generated-apis/stm32f303-api"
+
+[dependencies]
+panic-semihosting = "0.5.2"
+cortex-m-rt = "0.6.8"

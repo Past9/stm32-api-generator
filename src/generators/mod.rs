@@ -19,6 +19,20 @@ pub fn generate(device_spec: &DeviceSpec, out_dir: &OutputDirectory) -> Result<(
       .collect(),
   };
 
+  out_dir.publish("includes/memory.x", &IncludeMemoryXTemplate {}.render()?)?;
+  out_dir.publish(
+    "includes/openocd.cfg",
+    &IncludeOpenOcdCfgTemplate {}.render()?,
+  )?;
+  out_dir.publish(
+    "includes/openocd.gdb",
+    &IncludeOpenOcdGdbTemplate {}.render()?,
+  )?;
+  out_dir.publish("includes/build.rs", &IncludeBuildRsTemplate {}.render()?)?;
+  out_dir.publish(
+    "includes/Cargo.toml",
+    &IncludeCargoTomlTemplate {}.render()?,
+  )?;
   out_dir.publish("src/lib.rs", &lib_template.render()?)?;
   out_dir.publish(".rustfmt.toml", &RustFmtTemplate {}.render()?)?;
   out_dir.publish(
@@ -31,6 +45,26 @@ pub fn generate(device_spec: &DeviceSpec, out_dir: &OutputDirectory) -> Result<(
 
   Ok(())
 }
+
+#[derive(Template)]
+#[template(path = "includes/memory.x.askama", escape = "none")]
+struct IncludeMemoryXTemplate {}
+
+#[derive(Template)]
+#[template(path = "includes/openocd.cfg.askama", escape = "none")]
+struct IncludeOpenOcdCfgTemplate {}
+
+#[derive(Template)]
+#[template(path = "includes/openocd.gdb.askama", escape = "none")]
+struct IncludeOpenOcdGdbTemplate {}
+
+#[derive(Template)]
+#[template(path = "includes/build.rs.askama", escape = "none")]
+struct IncludeBuildRsTemplate {}
+
+#[derive(Template)]
+#[template(path = "includes/Cargo.toml.askama", escape = "none")]
+struct IncludeCargoTomlTemplate {}
 
 #[derive(Template)]
 #[template(path = "lib.rs.askama", escape = "none")]

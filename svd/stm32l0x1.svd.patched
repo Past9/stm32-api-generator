@@ -1129,7 +1129,7 @@
               <bitOffset>7</bitOffset>
               <bitWidth>1</bitWidth>
               <access>read-write</access>
-            <enumeratedValues><name>REV_OUT</name><usage>read-write</usage><enumeratedValue><name>Forward</name><description>Bit order not affected</description><value>0</value></enumeratedValue><enumeratedValue><name>Reverse</name><description>Bit-reversed output format</description><value>1</value></enumeratedValue></enumeratedValues>
+            <enumeratedValues><name>REV_OUT</name><usage>read-write</usage><enumeratedValue><name>Normal</name><description>Bit order not affected</description><value>0</value></enumeratedValue><enumeratedValue><name>Reversed</name><description>Bit reversed output</description><value>1</value></enumeratedValue></enumeratedValues>
             </field>
             <field>
               <name>REV_IN</name>
@@ -1137,7 +1137,7 @@
               <bitOffset>5</bitOffset>
               <bitWidth>2</bitWidth>
               <access>read-write</access>
-            <enumeratedValues><name>REV_IN</name><usage>read-write</usage><enumeratedValue><name>Forward</name><description>Bit order not affected</description><value>0</value></enumeratedValue><enumeratedValue><name>ReverseByte</name><description>Bit reversal done by byte</description><value>1</value></enumeratedValue><enumeratedValue><name>ReverseHalfWord</name><description>Bit reversal done by half-word</description><value>2</value></enumeratedValue><enumeratedValue><name>ReverseWord</name><description>Bit reversal done by word</description><value>3</value></enumeratedValue></enumeratedValues>
+            <enumeratedValues><name>REV_IN</name><usage>read-write</usage><enumeratedValue><name>Normal</name><description>Bit order not affected</description><value>0</value></enumeratedValue><enumeratedValue><name>Byte</name><description>Bit reversal done by byte</description><value>1</value></enumeratedValue><enumeratedValue><name>HalfWord</name><description>Bit reversal done by half-word</description><value>2</value></enumeratedValue><enumeratedValue><name>Word</name><description>Bit reversal done by word</description><value>3</value></enumeratedValue></enumeratedValues>
             </field>
             <field>
               <name>POLYSIZE</name>
@@ -1145,7 +1145,7 @@
               <bitOffset>3</bitOffset>
               <bitWidth>2</bitWidth>
               <access>read-write</access>
-            <enumeratedValues><name>POLYSIZE</name><usage>read-write</usage><enumeratedValue><name>Polysize32</name><description>32 bit polynomial</description><value>0</value></enumeratedValue><enumeratedValue><name>Polysize16</name><description>16 bit polynomial</description><value>1</value></enumeratedValue><enumeratedValue><name>Polysize8</name><description>8 bit polynomial</description><value>2</value></enumeratedValue><enumeratedValue><name>Polysize7</name><description>7 bit polynomial</description><value>3</value></enumeratedValue></enumeratedValues>
+            <enumeratedValues><name>POLYSIZE</name><usage>read-write</usage><enumeratedValue><name>Polysize32</name><description>32-bit polynomial</description><value>0</value></enumeratedValue><enumeratedValue><name>Polysize16</name><description>16-bit polynomial</description><value>1</value></enumeratedValue><enumeratedValue><name>Polysize8</name><description>8-bit polynomial</description><value>2</value></enumeratedValue><enumeratedValue><name>Polysize7</name><description>7-bit polynomial</description><value>3</value></enumeratedValue></enumeratedValues>
             </field>
             <field>
               <name>RESET</name>
@@ -1167,7 +1167,7 @@
           <resetValue>0xFFFFFFFF</resetValue>
           <fields>
             <field>
-              <name>CRC_INIT</name>
+              <name>INIT</name>
               <description>Programmable initial CRC
               value</description>
               <bitOffset>0</bitOffset>
@@ -5009,7 +5009,7 @@
               <bitOffset>0</bitOffset>
               <bitWidth>3</bitWidth>
               <access>read-write</access>
-            <enumeratedValues><name>WUCKSEL</name><usage>read-write</usage><enumeratedValue><name>Div16</name><description>RTC/16 clock is selected</description><value>0</value></enumeratedValue><enumeratedValue><name>Div8</name><description>RTC/8 clock is selected</description><value>1</value></enumeratedValue><enumeratedValue><name>Div4</name><description>RTC/4 clock is selected</description><value>2</value></enumeratedValue><enumeratedValue><name>Div2</name><description>RTC/2 clock is selected</description><value>3</value></enumeratedValue><enumeratedValue><name>ClockSpare</name><description>ck_spre (usually 1 Hz) clock is selected</description><value>4</value></enumeratedValue><enumeratedValue><name>ClockSpareWithOffset</name><description>ck_spre (usually 1 Hz) clock is selected and 216 is added to the WUT counter value</description><value>6</value></enumeratedValue></enumeratedValues>
+            <enumeratedValues><name>WUCKSEL</name><usage>read-write</usage><enumeratedValue><name>Div16</name><description>RTC/16 clock is selected</description><value>0</value></enumeratedValue><enumeratedValue><name>Div8</name><description>RTC/8 clock is selected</description><value>1</value></enumeratedValue><enumeratedValue><name>Div4</name><description>RTC/4 clock is selected</description><value>2</value></enumeratedValue><enumeratedValue><name>Div2</name><description>RTC/2 clock is selected</description><value>3</value></enumeratedValue><enumeratedValue><name>ClockSpare</name><description>ck_spre (usually 1 Hz) clock is selected</description><value>4</value></enumeratedValue><enumeratedValue><name>ClockSpareWithOffset</name><description>ck_spre (usually 1 Hz) clock is selected and 2^16 is added to the WUT counter value</description><value>6</value></enumeratedValue></enumeratedValues>
             </field>
           </fields>
         </register>
@@ -5709,14 +5709,14 @@
               duration</description>
               <bitOffset>13</bitOffset>
               <bitWidth>2</bitWidth>
-            <enumeratedValues><name>TAMPPRCH</name><usage>read-write</usage><enumeratedValue><name>RTCCLK_1_cycle</name><description>1 RTCCLK cycle</description><value>0</value></enumeratedValue><enumeratedValue><name>RTCCLK_2_cycle</name><description>2 RTCCLK cycles</description><value>1</value></enumeratedValue><enumeratedValue><name>RTCCLK_4_cycle</name><description>4 RTCCLK cycles</description><value>2</value></enumeratedValue><enumeratedValue><name>RTCCLK_8_cycle</name><description>8 RTCCLK cycles</description><value>3</value></enumeratedValue></enumeratedValues>
+            <enumeratedValues><name>TAMPPRCH</name><usage>read-write</usage><enumeratedValue><name>Cycles1</name><description>1 RTCCLK cycle</description><value>0</value></enumeratedValue><enumeratedValue><name>Cycles2</name><description>2 RTCCLK cycles</description><value>1</value></enumeratedValue><enumeratedValue><name>Cycles4</name><description>4 RTCCLK cycles</description><value>2</value></enumeratedValue><enumeratedValue><name>Cycles8</name><description>8 RTCCLK cycles</description><value>3</value></enumeratedValue></enumeratedValues>
             </field>
             <field>
               <name>TAMPFLT</name>
               <description>RTC_TAMPx filter count</description>
               <bitOffset>11</bitOffset>
               <bitWidth>2</bitWidth>
-            <enumeratedValues><name>TAMPFLT</name><usage>read-write</usage><enumeratedValue><name>Immediate</name><description>Tamper event is activated on edge of RTC_TAMPx input transitions to the active level (no internal pull-up on RTC_TAMPx input)</description><value>0</value></enumeratedValue><enumeratedValue><name>Two_Samples</name><description>Tamper event is activated after 2 consecutive samples at the active level</description><value>1</value></enumeratedValue><enumeratedValue><name>Four_Samples</name><description>Tamper event is activated after 4 consecutive samples at the active level</description><value>2</value></enumeratedValue><enumeratedValue><name>Eight_Samples</name><description>Tamper event is activated after 8 consecutive samples at the active level</description><value>3</value></enumeratedValue></enumeratedValues>
+            <enumeratedValues><name>TAMPFLT</name><usage>read-write</usage><enumeratedValue><name>Immediate</name><description>Tamper event is activated on edge of RTC_TAMPx input transitions to the active level (no internal pull-up on RTC_TAMPx input)</description><value>0</value></enumeratedValue><enumeratedValue><name>Samples2</name><description>Tamper event is activated after 2 consecutive samples at the active level</description><value>1</value></enumeratedValue><enumeratedValue><name>Samples4</name><description>Tamper event is activated after 4 consecutive samples at the active level</description><value>2</value></enumeratedValue><enumeratedValue><name>Samples8</name><description>Tamper event is activated after 8 consecutive samples at the active level</description><value>3</value></enumeratedValue></enumeratedValues>
             </field>
             <field>
               <name>TAMPFREQ</name>

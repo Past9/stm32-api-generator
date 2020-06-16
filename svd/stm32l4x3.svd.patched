@@ -2367,6 +2367,7 @@
               <bitOffset>7</bitOffset>
               <bitWidth>1</bitWidth>
               <access>read-write</access>
+            <enumeratedValues><name>REV_OUT</name><usage>read-write</usage><enumeratedValue><name>Normal</name><description>Bit order not affected</description><value>0</value></enumeratedValue><enumeratedValue><name>Reversed</name><description>Bit reversed output</description><value>1</value></enumeratedValue></enumeratedValues>
             </field>
             <field>
               <name>REV_IN</name>
@@ -2374,6 +2375,7 @@
               <bitOffset>5</bitOffset>
               <bitWidth>2</bitWidth>
               <access>read-write</access>
+            <enumeratedValues><name>REV_IN</name><usage>read-write</usage><enumeratedValue><name>Normal</name><description>Bit order not affected</description><value>0</value></enumeratedValue><enumeratedValue><name>Byte</name><description>Bit reversal done by byte</description><value>1</value></enumeratedValue><enumeratedValue><name>HalfWord</name><description>Bit reversal done by half-word</description><value>2</value></enumeratedValue><enumeratedValue><name>Word</name><description>Bit reversal done by word</description><value>3</value></enumeratedValue></enumeratedValues>
             </field>
             <field>
               <name>POLYSIZE</name>
@@ -2381,6 +2383,7 @@
               <bitOffset>3</bitOffset>
               <bitWidth>2</bitWidth>
               <access>read-write</access>
+            <enumeratedValues><name>POLYSIZE</name><usage>read-write</usage><enumeratedValue><name>Polysize32</name><description>32-bit polynomial</description><value>0</value></enumeratedValue><enumeratedValue><name>Polysize16</name><description>16-bit polynomial</description><value>1</value></enumeratedValue><enumeratedValue><name>Polysize8</name><description>8-bit polynomial</description><value>2</value></enumeratedValue><enumeratedValue><name>Polysize7</name><description>7-bit polynomial</description><value>3</value></enumeratedValue></enumeratedValues>
             </field>
             <field>
               <name>RESET</name>
@@ -2402,11 +2405,12 @@
           <resetValue>0xFFFFFFFF</resetValue>
           <fields>
             <field>
-              <name>CRC_INIT</name>
+              <name>INIT</name>
               <description>Programmable initial CRC
               value</description>
               <bitOffset>0</bitOffset>
               <bitWidth>32</bitWidth>
+            <writeConstraint><range><minimum>0</minimum><maximum>4294967295</maximum></range></writeConstraint>
             </field>
           </fields>
         </register>

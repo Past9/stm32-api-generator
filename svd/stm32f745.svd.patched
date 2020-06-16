@@ -20604,9 +20604,12 @@
                      <bitWidth>1</bitWidth>
                   <enumeratedValues><name>RESETW</name><usage>write</usage><enumeratedValue><name>Reset</name><description>Resets the CRC calculation unit and sets the data register to 0xFFFF FFFF</description><value>1</value></enumeratedValue></enumeratedValues>
             </field>
-               <field><name>REV_OUT</name><description>Reverse output data</description><bitOffset>7</bitOffset><bitWidth>1</bitWidth><access>read-write</access></field>
-            <field><name>REV_IN</name><description>Reverse input data</description><bitOffset>5</bitOffset><bitWidth>2</bitWidth><access>read-write</access></field>
-            <field><name>POLYSIZE</name><description>Polynomial size</description><bitOffset>3</bitOffset><bitWidth>2</bitWidth><access>read-write</access></field>
+               <field><name>REV_OUT</name><description>Reverse output data</description><bitOffset>7</bitOffset><bitWidth>1</bitWidth><access>read-write</access><enumeratedValues><name>REV_OUT</name><usage>read-write</usage><enumeratedValue><name>Normal</name><description>Bit order not affected</description><value>0</value></enumeratedValue><enumeratedValue><name>Reversed</name><description>Bit reversed output</description><value>1</value></enumeratedValue></enumeratedValues>
+            </field>
+            <field><name>REV_IN</name><description>Reverse input data</description><bitOffset>5</bitOffset><bitWidth>2</bitWidth><access>read-write</access><enumeratedValues><name>REV_IN</name><usage>read-write</usage><enumeratedValue><name>Normal</name><description>Bit order not affected</description><value>0</value></enumeratedValue><enumeratedValue><name>Byte</name><description>Bit reversal done by byte</description><value>1</value></enumeratedValue><enumeratedValue><name>HalfWord</name><description>Bit reversal done by half-word</description><value>2</value></enumeratedValue><enumeratedValue><name>Word</name><description>Bit reversal done by word</description><value>3</value></enumeratedValue></enumeratedValues>
+            </field>
+            <field><name>POLYSIZE</name><description>Polynomial size</description><bitOffset>3</bitOffset><bitWidth>2</bitWidth><access>read-write</access><enumeratedValues><name>POLYSIZE</name><usage>read-write</usage><enumeratedValue><name>Polysize32</name><description>32-bit polynomial</description><value>0</value></enumeratedValue><enumeratedValue><name>Polysize16</name><description>16-bit polynomial</description><value>1</value></enumeratedValue><enumeratedValue><name>Polysize8</name><description>8-bit polynomial</description><value>2</value></enumeratedValue><enumeratedValue><name>Polysize7</name><description>7-bit polynomial</description><value>3</value></enumeratedValue></enumeratedValues>
+            </field>
             </fields>
             </register>
             <register>
@@ -20619,11 +20622,12 @@
                <resetValue>0x00000000</resetValue>
                <fields>
                   <field>
-                     <name>CRC_INIT</name>
+                     <name>INIT</name>
                      <description>Programmable initial CRC               value</description>
                      <bitOffset>0</bitOffset>
                      <bitWidth>32</bitWidth>
-                  </field>
+                  <writeConstraint><range><minimum>0</minimum><maximum>4294967295</maximum></range></writeConstraint>
+            </field>
                </fields>
             </register>
             <register>
@@ -20640,7 +20644,8 @@
                      <description>Programmable polynomial</description>
                      <bitOffset>0</bitOffset>
                      <bitWidth>32</bitWidth>
-                  </field>
+                  <writeConstraint><range><minimum>0</minimum><maximum>4294967295</maximum></range></writeConstraint>
+            </field>
                </fields>
             </register>
          </registers>
@@ -28697,43 +28702,50 @@
                      <description>AM/PM notation</description>
                      <bitOffset>22</bitOffset>
                      <bitWidth>1</bitWidth>
-                  </field>
+                  <enumeratedValues><name>PM</name><usage>read-write</usage><enumeratedValue><name>AM</name><description>AM or 24-hour format</description><value>0</value></enumeratedValue><enumeratedValue><name>PM</name><description>PM</description><value>1</value></enumeratedValue></enumeratedValues>
+            </field>
                   <field>
                      <name>HT</name>
                      <description>Hour tens in BCD format</description>
                      <bitOffset>20</bitOffset>
                      <bitWidth>2</bitWidth>
-                  </field>
+                  <writeConstraint><range><minimum>0</minimum><maximum>3</maximum></range></writeConstraint>
+            </field>
                   <field>
                      <name>HU</name>
                      <description>Hour units in BCD format</description>
                      <bitOffset>16</bitOffset>
                      <bitWidth>4</bitWidth>
-                  </field>
+                  <writeConstraint><range><minimum>0</minimum><maximum>15</maximum></range></writeConstraint>
+            </field>
                   <field>
                      <name>MNT</name>
                      <description>Minute tens in BCD format</description>
                      <bitOffset>12</bitOffset>
                      <bitWidth>3</bitWidth>
-                  </field>
+                  <writeConstraint><range><minimum>0</minimum><maximum>7</maximum></range></writeConstraint>
+            </field>
                   <field>
                      <name>MNU</name>
                      <description>Minute units in BCD format</description>
                      <bitOffset>8</bitOffset>
                      <bitWidth>4</bitWidth>
-                  </field>
+                  <writeConstraint><range><minimum>0</minimum><maximum>15</maximum></range></writeConstraint>
+            </field>
                   <field>
                      <name>ST</name>
                      <description>Second tens in BCD format</description>
                      <bitOffset>4</bitOffset>
                      <bitWidth>3</bitWidth>
-                  </field>
+                  <writeConstraint><range><minimum>0</minimum><maximum>7</maximum></range></writeConstraint>
+            </field>
                   <field>
                      <name>SU</name>
                      <description>Second units in BCD format</description>
                      <bitOffset>0</bitOffset>
                      <bitWidth>4</bitWidth>
-                  </field>
+                  <writeConstraint><range><minimum>0</minimum><maximum>15</maximum></range></writeConstraint>
+            </field>
                </fields>
             </register>
             <register>
@@ -28750,43 +28762,50 @@
                      <description>Year tens in BCD format</description>
                      <bitOffset>20</bitOffset>
                      <bitWidth>4</bitWidth>
-                  </field>
+                  <writeConstraint><range><minimum>0</minimum><maximum>15</maximum></range></writeConstraint>
+            </field>
                   <field>
                      <name>YU</name>
                      <description>Year units in BCD format</description>
                      <bitOffset>16</bitOffset>
                      <bitWidth>4</bitWidth>
-                  </field>
+                  <writeConstraint><range><minimum>0</minimum><maximum>15</maximum></range></writeConstraint>
+            </field>
                   <field>
                      <name>WDU</name>
                      <description>Week day units</description>
                      <bitOffset>13</bitOffset>
                      <bitWidth>3</bitWidth>
-                  </field>
+                  <writeConstraint><range><minimum>1</minimum><maximum>7</maximum></range></writeConstraint>
+            </field>
                   <field>
                      <name>MT</name>
                      <description>Month tens in BCD format</description>
                      <bitOffset>12</bitOffset>
                      <bitWidth>1</bitWidth>
-                  </field>
+                  <writeConstraint><range><minimum>0</minimum><maximum>1</maximum></range></writeConstraint>
+            </field>
                   <field>
                      <name>MU</name>
                      <description>Month units in BCD format</description>
                      <bitOffset>8</bitOffset>
                      <bitWidth>4</bitWidth>
-                  </field>
+                  <writeConstraint><range><minimum>0</minimum><maximum>15</maximum></range></writeConstraint>
+            </field>
                   <field>
                      <name>DT</name>
                      <description>Date tens in BCD format</description>
                      <bitOffset>4</bitOffset>
                      <bitWidth>2</bitWidth>
-                  </field>
+                  <writeConstraint><range><minimum>0</minimum><maximum>3</maximum></range></writeConstraint>
+            </field>
                   <field>
                      <name>DU</name>
                      <description>Date units in BCD format</description>
                      <bitOffset>0</bitOffset>
                      <bitWidth>4</bitWidth>
-                  </field>
+                  <writeConstraint><range><minimum>0</minimum><maximum>15</maximum></range></writeConstraint>
+            </field>
                </fields>
             </register>
             <register>
@@ -28799,125 +28818,145 @@
                <resetValue>0x00000000</resetValue>
                <fields>
                   <field>
-                     <name>WCKSEL</name>
+                     <name>WUCKSEL</name>
                      <description>Wakeup clock selection</description>
                      <bitOffset>0</bitOffset>
                      <bitWidth>3</bitWidth>
-                  </field>
+                  <enumeratedValues><name>WUCKSEL</name><usage>read-write</usage><enumeratedValue><name>Div16</name><description>RTC/16 clock is selected</description><value>0</value></enumeratedValue><enumeratedValue><name>Div8</name><description>RTC/8 clock is selected</description><value>1</value></enumeratedValue><enumeratedValue><name>Div4</name><description>RTC/4 clock is selected</description><value>2</value></enumeratedValue><enumeratedValue><name>Div2</name><description>RTC/2 clock is selected</description><value>3</value></enumeratedValue><enumeratedValue><name>ClockSpare</name><description>ck_spre (usually 1 Hz) clock is selected</description><value>4</value></enumeratedValue><enumeratedValue><name>ClockSpareWithOffset</name><description>ck_spre (usually 1 Hz) clock is selected and 2^16 is added to the WUT counter value</description><value>6</value></enumeratedValue></enumeratedValues>
+            </field>
                   <field>
                      <name>TSEDGE</name>
                      <description>Time-stamp event active               edge</description>
                      <bitOffset>3</bitOffset>
                      <bitWidth>1</bitWidth>
-                  </field>
+                  <enumeratedValues><name>TSEDGE</name><usage>read-write</usage><enumeratedValue><name>RisingEdge</name><description>RTC_TS input rising edge generates a time-stamp event</description><value>0</value></enumeratedValue><enumeratedValue><name>FallingEdge</name><description>RTC_TS input falling edge generates a time-stamp event</description><value>1</value></enumeratedValue></enumeratedValues>
+            </field>
                   <field>
                      <name>REFCKON</name>
                      <description>Reference clock detection enable (50 or               60 Hz)</description>
                      <bitOffset>4</bitOffset>
                      <bitWidth>1</bitWidth>
-                  </field>
+                  <enumeratedValues><name>REFCKON</name><usage>read-write</usage><enumeratedValue><name>Disabled</name><description>RTC_REFIN detection disabled</description><value>0</value></enumeratedValue><enumeratedValue><name>Enabled</name><description>RTC_REFIN detection enabled</description><value>1</value></enumeratedValue></enumeratedValues>
+            </field>
                   <field>
                      <name>BYPSHAD</name>
                      <description>Bypass the shadow               registers</description>
                      <bitOffset>5</bitOffset>
                      <bitWidth>1</bitWidth>
-                  </field>
+                  <enumeratedValues><name>BYPSHAD</name><usage>read-write</usage><enumeratedValue><name>ShadowReg</name><description>Calendar values (when reading from RTC_SSR, RTC_TR, and RTC_DR) are taken from the shadow registers, which are updated once every two RTCCLK cycles</description><value>0</value></enumeratedValue><enumeratedValue><name>BypassShadowReg</name><description>Calendar values (when reading from RTC_SSR, RTC_TR, and RTC_DR) are taken directly from the calendar counters</description><value>1</value></enumeratedValue></enumeratedValues>
+            </field>
                   <field>
                      <name>FMT</name>
                      <description>Hour format</description>
                      <bitOffset>6</bitOffset>
                      <bitWidth>1</bitWidth>
-                  </field>
+                  <enumeratedValues><name>FMT</name><usage>read-write</usage><enumeratedValue><name>Twenty_Four_Hour</name><description>24 hour/day format</description><value>0</value></enumeratedValue><enumeratedValue><name>AM_PM</name><description>AM/PM hour format</description><value>1</value></enumeratedValue></enumeratedValues>
+            </field>
                   <field>
                      <name>ALRAE</name>
                      <description>Alarm A enable</description>
                      <bitOffset>8</bitOffset>
                      <bitWidth>1</bitWidth>
-                  </field>
+                  <enumeratedValues><name>ALRAE</name><usage>read-write</usage><enumeratedValue><name>Disabled</name><description>Alarm A disabled</description><value>0</value></enumeratedValue><enumeratedValue><name>Enabled</name><description>Alarm A enabled</description><value>1</value></enumeratedValue></enumeratedValues>
+            </field>
                   <field>
                      <name>ALRBE</name>
                      <description>Alarm B enable</description>
                      <bitOffset>9</bitOffset>
                      <bitWidth>1</bitWidth>
-                  </field>
+                  <enumeratedValues><name>ALRBE</name><usage>read-write</usage><enumeratedValue><name>Disabled</name><description>Alarm B disabled</description><value>0</value></enumeratedValue><enumeratedValue><name>Enabled</name><description>Alarm B enabled</description><value>1</value></enumeratedValue></enumeratedValues>
+            </field>
                   <field>
                      <name>WUTE</name>
                      <description>Wakeup timer enable</description>
                      <bitOffset>10</bitOffset>
                      <bitWidth>1</bitWidth>
-                  </field>
+                  <enumeratedValues><name>WUTE</name><usage>read-write</usage><enumeratedValue><name>Disabled</name><description>Wakeup timer disabled</description><value>0</value></enumeratedValue><enumeratedValue><name>Enabled</name><description>Wakeup timer enabled</description><value>1</value></enumeratedValue></enumeratedValues>
+            </field>
                   <field>
                      <name>TSE</name>
                      <description>Time stamp enable</description>
                      <bitOffset>11</bitOffset>
                      <bitWidth>1</bitWidth>
-                  </field>
+                  <enumeratedValues><name>TSE</name><usage>read-write</usage><enumeratedValue><name>Disabled</name><description>Timestamp disabled</description><value>0</value></enumeratedValue><enumeratedValue><name>Enabled</name><description>Timestamp enabled</description><value>1</value></enumeratedValue></enumeratedValues>
+            </field>
                   <field>
                      <name>ALRAIE</name>
                      <description>Alarm A interrupt enable</description>
                      <bitOffset>12</bitOffset>
                      <bitWidth>1</bitWidth>
-                  </field>
+                  <enumeratedValues><name>ALRAIE</name><usage>read-write</usage><enumeratedValue><name>Disabled</name><description>Alarm A interrupt disabled</description><value>0</value></enumeratedValue><enumeratedValue><name>Enabled</name><description>Alarm A interrupt enabled</description><value>1</value></enumeratedValue></enumeratedValues>
+            </field>
                   <field>
                      <name>ALRBIE</name>
                      <description>Alarm B interrupt enable</description>
                      <bitOffset>13</bitOffset>
                      <bitWidth>1</bitWidth>
-                  </field>
+                  <enumeratedValues><name>ALRBIE</name><usage>read-write</usage><enumeratedValue><name>Disabled</name><description>Alarm B Interrupt disabled</description><value>0</value></enumeratedValue><enumeratedValue><name>Enabled</name><description>Alarm B Interrupt enabled</description><value>1</value></enumeratedValue></enumeratedValues>
+            </field>
                   <field>
                      <name>WUTIE</name>
                      <description>Wakeup timer interrupt               enable</description>
                      <bitOffset>14</bitOffset>
                      <bitWidth>1</bitWidth>
-                  </field>
+                  <enumeratedValues><name>WUTIE</name><usage>read-write</usage><enumeratedValue><name>Disabled</name><description>Wakeup timer interrupt disabled</description><value>0</value></enumeratedValue><enumeratedValue><name>Enabled</name><description>Wakeup timer interrupt enabled</description><value>1</value></enumeratedValue></enumeratedValues>
+            </field>
                   <field>
                      <name>TSIE</name>
                      <description>Time-stamp interrupt               enable</description>
                      <bitOffset>15</bitOffset>
                      <bitWidth>1</bitWidth>
-                  </field>
+                  <enumeratedValues><name>TSIE</name><usage>read-write</usage><enumeratedValue><name>Disabled</name><description>Time-stamp Interrupt disabled</description><value>0</value></enumeratedValue><enumeratedValue><name>Enabled</name><description>Time-stamp Interrupt enabled</description><value>1</value></enumeratedValue></enumeratedValues>
+            </field>
                   <field>
                      <name>ADD1H</name>
                      <description>Add 1 hour (summer time               change)</description>
                      <bitOffset>16</bitOffset>
                      <bitWidth>1</bitWidth>
-                  </field>
+                  <enumeratedValues><name>ADD1HW</name><usage>write</usage><enumeratedValue><name>Add1</name><description>Adds 1 hour to the current time. This can be used for summer time change outside initialization mode</description><value>1</value></enumeratedValue></enumeratedValues>
+            </field>
                   <field>
                      <name>SUB1H</name>
                      <description>Subtract 1 hour (winter time               change)</description>
                      <bitOffset>17</bitOffset>
                      <bitWidth>1</bitWidth>
-                  </field>
+                  <enumeratedValues><name>SUB1HW</name><usage>write</usage><enumeratedValue><name>Sub1</name><description>Subtracts 1 hour to the current time. This can be used for winter time change outside initialization mode</description><value>1</value></enumeratedValue></enumeratedValues>
+            </field>
                   <field>
                      <name>BKP</name>
                      <description>Backup</description>
                      <bitOffset>18</bitOffset>
                      <bitWidth>1</bitWidth>
-                  </field>
+                  <enumeratedValues><name>BKP</name><usage>read-write</usage><enumeratedValue><name>DST_Not_Changed</name><description>Daylight Saving Time change has not been performed</description><value>0</value></enumeratedValue><enumeratedValue><name>DST_Changed</name><description>Daylight Saving Time change has been performed</description><value>1</value></enumeratedValue></enumeratedValues>
+            </field>
                   <field>
                      <name>COSEL</name>
                      <description>Calibration output               selection</description>
                      <bitOffset>19</bitOffset>
                      <bitWidth>1</bitWidth>
-                  </field>
+                  <enumeratedValues><name>COSEL</name><usage>read-write</usage><enumeratedValue><name>CalFreq_512Hz</name><description>Calibration output is 512 Hz (with default prescaler setting)</description><value>0</value></enumeratedValue><enumeratedValue><name>CalFreq_1Hz</name><description>Calibration output is 1 Hz (with default prescaler setting)</description><value>1</value></enumeratedValue></enumeratedValues>
+            </field>
                   <field>
                      <name>POL</name>
                      <description>Output polarity</description>
                      <bitOffset>20</bitOffset>
                      <bitWidth>1</bitWidth>
-                  </field>
+                  <enumeratedValues><name>POL</name><usage>read-write</usage><enumeratedValue><name>High</name><description>The pin is high when ALRAF/ALRBF/WUTF is asserted (depending on OSEL[1:0])</description><value>0</value></enumeratedValue><enumeratedValue><name>Low</name><description>The pin is low when ALRAF/ALRBF/WUTF is asserted (depending on OSEL[1:0])</description><value>1</value></enumeratedValue></enumeratedValues>
+            </field>
                   <field>
                      <name>OSEL</name>
                      <description>Output selection</description>
                      <bitOffset>21</bitOffset>
                      <bitWidth>2</bitWidth>
-                  </field>
+                  <enumeratedValues><name>OSEL</name><usage>read-write</usage><enumeratedValue><name>Disabled</name><description>Output disabled</description><value>0</value></enumeratedValue><enumeratedValue><name>AlarmA</name><description>Alarm A output enabled</description><value>1</value></enumeratedValue><enumeratedValue><name>AlarmB</name><description>Alarm B output enabled</description><value>2</value></enumeratedValue><enumeratedValue><name>Wakeup</name><description>Wakeup output enabled</description><value>3</value></enumeratedValue></enumeratedValues>
+            </field>
                   <field>
                      <name>COE</name>
                      <description>Calibration output enable</description>
                      <bitOffset>23</bitOffset>
                      <bitWidth>1</bitWidth>
-                  </field>
+                  <enumeratedValues><name>COE</name><usage>read-write</usage><enumeratedValue><name>Disabled</name><description>Calibration output disabled</description><value>0</value></enumeratedValue><enumeratedValue><name>Enabled</name><description>Calibration output enabled</description><value>1</value></enumeratedValue></enumeratedValues>
+            </field>
                   <field>
                      <name>ITSE</name>
                      <description>timestamp on internal event               enable</description>
@@ -28940,119 +28979,145 @@
                      <bitOffset>0</bitOffset>
                      <bitWidth>1</bitWidth>
                      <access>read-only</access>
-                  </field>
+                  <enumeratedValues><name>ALRAWFR</name><usage>read</usage><enumeratedValue><name>UpdateNotAllowed</name><description>Alarm update not allowed</description><value>0</value></enumeratedValue><enumeratedValue><name>UpdateAllowed</name><description>Alarm update allowed</description><value>1</value></enumeratedValue></enumeratedValues>
+            </field>
                   <field>
                      <name>ALRBWF</name>
                      <description>Alarm B write flag</description>
                      <bitOffset>1</bitOffset>
                      <bitWidth>1</bitWidth>
                      <access>read-only</access>
-                  </field>
+                  <enumeratedValues derivedFrom="ALRAWFR" />
+            </field>
                   <field>
                      <name>WUTWF</name>
                      <description>Wakeup timer write flag</description>
                      <bitOffset>2</bitOffset>
                      <bitWidth>1</bitWidth>
                      <access>read-only</access>
-                  </field>
+                  <enumeratedValues><name>WUTWFR</name><usage>read</usage><enumeratedValue><name>UpdateNotAllowed</name><description>Wakeup timer configuration update not allowed</description><value>0</value></enumeratedValue><enumeratedValue><name>UpdateAllowed</name><description>Wakeup timer configuration update allowed</description><value>1</value></enumeratedValue></enumeratedValues>
+            </field>
                   <field>
                      <name>SHPF</name>
                      <description>Shift operation pending</description>
                      <bitOffset>3</bitOffset>
                      <bitWidth>1</bitWidth>
                      <access>read-write</access>
-                  </field>
+                  <enumeratedValues><name>SHPFR</name><usage>read</usage><enumeratedValue><name>NoShiftPending</name><description>No shift operation is pending</description><value>0</value></enumeratedValue><enumeratedValue><name>ShiftPending</name><description>A shift operation is pending</description><value>1</value></enumeratedValue></enumeratedValues>
+            </field>
                   <field>
                      <name>INITS</name>
                      <description>Initialization status flag</description>
                      <bitOffset>4</bitOffset>
                      <bitWidth>1</bitWidth>
                      <access>read-only</access>
-                  </field>
+                  <enumeratedValues><name>INITSR</name><usage>read</usage><enumeratedValue><name>NotInitalized</name><description>Calendar has not been initialized</description><value>0</value></enumeratedValue><enumeratedValue><name>Initalized</name><description>Calendar has been initialized</description><value>1</value></enumeratedValue></enumeratedValues>
+            </field>
                   <field>
                      <name>RSF</name>
                      <description>Registers synchronization               flag</description>
                      <bitOffset>5</bitOffset>
                      <bitWidth>1</bitWidth>
                      <access>read-write</access>
-                  </field>
+                  <enumeratedValues><name>RSFR</name><usage>read</usage><enumeratedValue><name>NotSynced</name><description>Calendar shadow registers not yet synchronized</description><value>0</value></enumeratedValue><enumeratedValue><name>Synced</name><description>Calendar shadow registers synchronized</description><value>1</value></enumeratedValue></enumeratedValues>
+            <enumeratedValues><name>RSFW</name><usage>write</usage><enumeratedValue><name>Clear</name><description>This flag is cleared by software by writing 0</description><value>0</value></enumeratedValue></enumeratedValues>
+            </field>
                   <field>
                      <name>INITF</name>
                      <description>Initialization flag</description>
                      <bitOffset>6</bitOffset>
                      <bitWidth>1</bitWidth>
                      <access>read-only</access>
-                  </field>
+                  <enumeratedValues><name>INITFR</name><usage>read</usage><enumeratedValue><name>NotAllowed</name><description>Calendar registers update is not allowed</description><value>0</value></enumeratedValue><enumeratedValue><name>Allowed</name><description>Calendar registers update is allowed</description><value>1</value></enumeratedValue></enumeratedValues>
+            </field>
                   <field>
                      <name>INIT</name>
                      <description>Initialization mode</description>
                      <bitOffset>7</bitOffset>
                      <bitWidth>1</bitWidth>
                      <access>read-write</access>
-                  </field>
+                  <enumeratedValues><name>INIT</name><usage>read-write</usage><enumeratedValue><name>FreeRunningMode</name><description>Free running mode</description><value>0</value></enumeratedValue><enumeratedValue><name>InitMode</name><description>Initialization mode used to program time and date register (RTC_TR and RTC_DR), and prescaler register (RTC_PRER). Counters are stopped and start counting from the new value when INIT is reset.</description><value>1</value></enumeratedValue></enumeratedValues>
+            </field>
                   <field>
                      <name>ALRAF</name>
                      <description>Alarm A flag</description>
                      <bitOffset>8</bitOffset>
                      <bitWidth>1</bitWidth>
                      <access>read-write</access>
-                  </field>
+                  <enumeratedValues><name>ALRAFR</name><usage>read</usage><enumeratedValue><name>Match</name><description>This flag is set by hardware when the time/date registers (RTC_TR and RTC_DR) match the Alarm A register (RTC_ALRMAR)</description><value>1</value></enumeratedValue></enumeratedValues>
+            <enumeratedValues><name>ALRAFW</name><usage>write</usage><enumeratedValue><name>Clear</name><description>This flag is cleared by software by writing 0</description><value>0</value></enumeratedValue></enumeratedValues>
+            </field>
                   <field>
                      <name>ALRBF</name>
                      <description>Alarm B flag</description>
                      <bitOffset>9</bitOffset>
                      <bitWidth>1</bitWidth>
                      <access>read-write</access>
-                  </field>
+                  <enumeratedValues><name>ALRBFR</name><usage>read</usage><enumeratedValue><name>Match</name><description>This flag is set by hardware when the time/date registers (RTC_TR and RTC_DR) match the Alarm B register (RTC_ALRMBR)</description><value>1</value></enumeratedValue></enumeratedValues>
+            <enumeratedValues><name>ALRBFW</name><usage>write</usage><enumeratedValue><name>Clear</name><description>This flag is cleared by software by writing 0</description><value>0</value></enumeratedValue></enumeratedValues>
+            </field>
                   <field>
                      <name>WUTF</name>
                      <description>Wakeup timer flag</description>
                      <bitOffset>10</bitOffset>
                      <bitWidth>1</bitWidth>
                      <access>read-write</access>
-                  </field>
+                  <enumeratedValues><name>WUTFR</name><usage>read</usage><enumeratedValue><name>Zero</name><description>This flag is set by hardware when the wakeup auto-reload counter reaches 0</description><value>1</value></enumeratedValue></enumeratedValues>
+            <enumeratedValues><name>WUTFW</name><usage>write</usage><enumeratedValue><name>Clear</name><description>This flag is cleared by software by writing 0</description><value>0</value></enumeratedValue></enumeratedValues>
+            </field>
                   <field>
                      <name>TSF</name>
                      <description>Time-stamp flag</description>
                      <bitOffset>11</bitOffset>
                      <bitWidth>1</bitWidth>
                      <access>read-write</access>
-                  </field>
+                  <enumeratedValues><name>TSFR</name><usage>read</usage><enumeratedValue><name>TimestampEvent</name><description>This flag is set by hardware when a time-stamp event occurs</description><value>1</value></enumeratedValue></enumeratedValues>
+            <enumeratedValues><name>TSFW</name><usage>write</usage><enumeratedValue><name>Clear</name><description>This flag is cleared by software by writing 0</description><value>0</value></enumeratedValue></enumeratedValues>
+            </field>
                   <field>
                      <name>TSOVF</name>
                      <description>Time-stamp overflow flag</description>
                      <bitOffset>12</bitOffset>
                      <bitWidth>1</bitWidth>
                      <access>read-write</access>
-                  </field>
+                  <enumeratedValues><name>TSOVFR</name><usage>read</usage><enumeratedValue><name>Overflow</name><description>This flag is set by hardware when a time-stamp event occurs while TSF is already set</description><value>1</value></enumeratedValue></enumeratedValues>
+            <enumeratedValues><name>TSOVFW</name><usage>write</usage><enumeratedValue><name>Clear</name><description>This flag is cleared by software by writing 0</description><value>0</value></enumeratedValue></enumeratedValues>
+            </field>
                   <field>
                      <name>TAMP1F</name>
                      <description>Tamper detection flag</description>
                      <bitOffset>13</bitOffset>
                      <bitWidth>1</bitWidth>
                      <access>read-write</access>
-                  </field>
+                  <enumeratedValues><name>TAMP1FR</name><usage>read</usage><enumeratedValue><name>Tampered</name><description>This flag is set by hardware when a tamper detection event is detected on the RTC_TAMPx input</description><value>1</value></enumeratedValue></enumeratedValues>
+            <enumeratedValues><name>TAMP1FW</name><usage>write</usage><enumeratedValue><name>Clear</name><description>Flag cleared by software writing 0</description><value>0</value></enumeratedValue></enumeratedValues>
+            </field>
                   <field>
                      <name>TAMP2F</name>
                      <description>RTC_TAMP2 detection flag</description>
                      <bitOffset>14</bitOffset>
                      <bitWidth>1</bitWidth>
                      <access>read-write</access>
-                  </field>
+                  <enumeratedValues derivedFrom="TAMP1FR" />
+            <enumeratedValues derivedFrom="TAMP1FW" />
+            </field>
                   <field>
                      <name>TAMP3F</name>
                      <description>RTC_TAMP3 detection flag</description>
                      <bitOffset>15</bitOffset>
                      <bitWidth>1</bitWidth>
                      <access>read-write</access>
-                  </field>
+                  <enumeratedValues derivedFrom="TAMP1FR" />
+            <enumeratedValues derivedFrom="TAMP1FW" />
+            </field>
                   <field>
                      <name>RECALPF</name>
                      <description>Recalibration pending Flag</description>
                      <bitOffset>16</bitOffset>
                      <bitWidth>1</bitWidth>
                      <access>read-only</access>
-                  </field>
+                  <enumeratedValues><name>RECALPFR</name><usage>read</usage><enumeratedValue><name>Pending</name><description>The RECALPF status flag is automatically set to 1 when software writes to the RTC_CALR register, indicating that the RTC_CALR register is blocked. When the new calibration settings are taken into account, this bit returns to 0</description><value>1</value></enumeratedValue></enumeratedValues>
+            </field>
                </fields>
             </register>
             <register>
@@ -29069,13 +29134,15 @@
                      <description>Asynchronous prescaler               factor</description>
                      <bitOffset>16</bitOffset>
                      <bitWidth>7</bitWidth>
-                  </field>
+                  <writeConstraint><range><minimum>0</minimum><maximum>127</maximum></range></writeConstraint>
+            </field>
                   <field>
                      <name>PREDIV_S</name>
                      <description>Synchronous prescaler               factor</description>
                      <bitOffset>0</bitOffset>
                      <bitWidth>15</bitWidth>
-                  </field>
+                  <writeConstraint><range><minimum>0</minimum><maximum>32767</maximum></range></writeConstraint>
+            </field>
                </fields>
             </register>
             <register>
@@ -29092,7 +29159,8 @@
                      <description>Wakeup auto-reload value               bits</description>
                      <bitOffset>0</bitOffset>
                      <bitWidth>16</bitWidth>
-                  </field>
+                  <writeConstraint><range><minimum>0</minimum><maximum>65535</maximum></range></writeConstraint>
+            </field>
                </fields>
             </register>
             <register>
@@ -29109,85 +29177,99 @@
                      <description>Alarm A date mask</description>
                      <bitOffset>31</bitOffset>
                      <bitWidth>1</bitWidth>
-                  </field>
+                  <enumeratedValues><name>MSK4</name><usage>read-write</usage><enumeratedValue><name>Mask</name><description>Alarm set if the date/day match</description><value>0</value></enumeratedValue><enumeratedValue><name>NotMask</name><description>Date/day don&#8217;t care in Alarm comparison</description><value>1</value></enumeratedValue></enumeratedValues>
+            </field>
                   <field>
                      <name>WDSEL</name>
                      <description>Week day selection</description>
                      <bitOffset>30</bitOffset>
                      <bitWidth>1</bitWidth>
-                  </field>
+                  <enumeratedValues><name>WDSEL</name><usage>read-write</usage><enumeratedValue><name>DateUnits</name><description>DU[3:0] represents the date units</description><value>0</value></enumeratedValue><enumeratedValue><name>WeekDay</name><description>DU[3:0] represents the week day. DT[1:0] is don&#8217;t care.</description><value>1</value></enumeratedValue></enumeratedValues>
+            </field>
                   <field>
                      <name>DT</name>
                      <description>Date tens in BCD format</description>
                      <bitOffset>28</bitOffset>
                      <bitWidth>2</bitWidth>
-                  </field>
+                  <writeConstraint><range><minimum>0</minimum><maximum>3</maximum></range></writeConstraint>
+            </field>
                   <field>
                      <name>DU</name>
                      <description>Date units or day in BCD               format</description>
                      <bitOffset>24</bitOffset>
                      <bitWidth>4</bitWidth>
-                  </field>
+                  <writeConstraint><range><minimum>0</minimum><maximum>15</maximum></range></writeConstraint>
+            </field>
                   <field>
                      <name>MSK3</name>
                      <description>Alarm A hours mask</description>
                      <bitOffset>23</bitOffset>
                      <bitWidth>1</bitWidth>
-                  </field>
+                  <enumeratedValues derivedFrom="MSK4" />
+            </field>
                   <field>
                      <name>PM</name>
                      <description>AM/PM notation</description>
                      <bitOffset>22</bitOffset>
                      <bitWidth>1</bitWidth>
-                  </field>
+                  <enumeratedValues><name>PM</name><usage>read-write</usage><enumeratedValue><name>AM</name><description>AM or 24-hour format</description><value>0</value></enumeratedValue><enumeratedValue><name>PM</name><description>PM</description><value>1</value></enumeratedValue></enumeratedValues>
+            </field>
                   <field>
                      <name>HT</name>
                      <description>Hour tens in BCD format</description>
                      <bitOffset>20</bitOffset>
                      <bitWidth>2</bitWidth>
-                  </field>
+                  <writeConstraint><range><minimum>0</minimum><maximum>3</maximum></range></writeConstraint>
+            </field>
                   <field>
                      <name>HU</name>
                      <description>Hour units in BCD format</description>
                      <bitOffset>16</bitOffset>
                      <bitWidth>4</bitWidth>
-                  </field>
+                  <writeConstraint><range><minimum>0</minimum><maximum>15</maximum></range></writeConstraint>
+            </field>
                   <field>
                      <name>MSK2</name>
                      <description>Alarm A minutes mask</description>
                      <bitOffset>15</bitOffset>
                      <bitWidth>1</bitWidth>
-                  </field>
+                  <enumeratedValues derivedFrom="MSK4" />
+            </field>
                   <field>
                      <name>MNT</name>
                      <description>Minute tens in BCD format</description>
                      <bitOffset>12</bitOffset>
                      <bitWidth>3</bitWidth>
-                  </field>
+                  <writeConstraint><range><minimum>0</minimum><maximum>7</maximum></range></writeConstraint>
+            </field>
                   <field>
                      <name>MNU</name>
                      <description>Minute units in BCD format</description>
                      <bitOffset>8</bitOffset>
                      <bitWidth>4</bitWidth>
-                  </field>
+                  <writeConstraint><range><minimum>0</minimum><maximum>15</maximum></range></writeConstraint>
+            </field>
                   <field>
                      <name>MSK1</name>
                      <description>Alarm A seconds mask</description>
                      <bitOffset>7</bitOffset>
                      <bitWidth>1</bitWidth>
-                  </field>
+                  <enumeratedValues derivedFrom="MSK4" />
+            </field>
                   <field>
                      <name>ST</name>
                      <description>Second tens in BCD format</description>
                      <bitOffset>4</bitOffset>
                      <bitWidth>3</bitWidth>
-                  </field>
+                  <writeConstraint><range><minimum>0</minimum><maximum>7</maximum></range></writeConstraint>
+            </field>
                   <field>
                      <name>SU</name>
                      <description>Second units in BCD format</description>
                      <bitOffset>0</bitOffset>
                      <bitWidth>4</bitWidth>
-                  </field>
+                  <writeConstraint><range><minimum>0</minimum><maximum>15</maximum></range></writeConstraint>
+            </field>
                </fields>
             </register>
             <register>
@@ -29204,85 +29286,99 @@
                      <description>Alarm B date mask</description>
                      <bitOffset>31</bitOffset>
                      <bitWidth>1</bitWidth>
-                  </field>
+                  <enumeratedValues><name>MSK4</name><usage>read-write</usage><enumeratedValue><name>Mask</name><description>Alarm set if the date/day match</description><value>0</value></enumeratedValue><enumeratedValue><name>NotMask</name><description>Date/day don&#8217;t care in Alarm comparison</description><value>1</value></enumeratedValue></enumeratedValues>
+            </field>
                   <field>
                      <name>WDSEL</name>
                      <description>Week day selection</description>
                      <bitOffset>30</bitOffset>
                      <bitWidth>1</bitWidth>
-                  </field>
+                  <enumeratedValues><name>WDSEL</name><usage>read-write</usage><enumeratedValue><name>DateUnits</name><description>DU[3:0] represents the date units</description><value>0</value></enumeratedValue><enumeratedValue><name>WeekDay</name><description>DU[3:0] represents the week day. DT[1:0] is don&#8217;t care.</description><value>1</value></enumeratedValue></enumeratedValues>
+            </field>
                   <field>
                      <name>DT</name>
                      <description>Date tens in BCD format</description>
                      <bitOffset>28</bitOffset>
                      <bitWidth>2</bitWidth>
-                  </field>
+                  <writeConstraint><range><minimum>0</minimum><maximum>3</maximum></range></writeConstraint>
+            </field>
                   <field>
                      <name>DU</name>
                      <description>Date units or day in BCD               format</description>
                      <bitOffset>24</bitOffset>
                      <bitWidth>4</bitWidth>
-                  </field>
+                  <writeConstraint><range><minimum>0</minimum><maximum>15</maximum></range></writeConstraint>
+            </field>
                   <field>
                      <name>MSK3</name>
                      <description>Alarm B hours mask</description>
                      <bitOffset>23</bitOffset>
                      <bitWidth>1</bitWidth>
-                  </field>
+                  <enumeratedValues derivedFrom="MSK4" />
+            </field>
                   <field>
                      <name>PM</name>
                      <description>AM/PM notation</description>
                      <bitOffset>22</bitOffset>
                      <bitWidth>1</bitWidth>
-                  </field>
+                  <enumeratedValues><name>PM</name><usage>read-write</usage><enumeratedValue><name>AM</name><description>AM or 24-hour format</description><value>0</value></enumeratedValue><enumeratedValue><name>PM</name><description>PM</description><value>1</value></enumeratedValue></enumeratedValues>
+            </field>
                   <field>
                      <name>HT</name>
                      <description>Hour tens in BCD format</description>
                      <bitOffset>20</bitOffset>
                      <bitWidth>2</bitWidth>
-                  </field>
+                  <writeConstraint><range><minimum>0</minimum><maximum>3</maximum></range></writeConstraint>
+            </field>
                   <field>
                      <name>HU</name>
                      <description>Hour units in BCD format</description>
                      <bitOffset>16</bitOffset>
                      <bitWidth>4</bitWidth>
-                  </field>
+                  <writeConstraint><range><minimum>0</minimum><maximum>15</maximum></range></writeConstraint>
+            </field>
                   <field>
                      <name>MSK2</name>
                      <description>Alarm B minutes mask</description>
                      <bitOffset>15</bitOffset>
                      <bitWidth>1</bitWidth>
-                  </field>
+                  <enumeratedValues derivedFrom="MSK4" />
+            </field>
                   <field>
                      <name>MNT</name>
                      <description>Minute tens in BCD format</description>
                      <bitOffset>12</bitOffset>
                      <bitWidth>3</bitWidth>
-                  </field>
+                  <writeConstraint><range><minimum>0</minimum><maximum>7</maximum></range></writeConstraint>
+            </field>
                   <field>
                      <name>MNU</name>
                      <description>Minute units in BCD format</description>
                      <bitOffset>8</bitOffset>
                      <bitWidth>4</bitWidth>
-                  </field>
+                  <writeConstraint><range><minimum>0</minimum><maximum>15</maximum></range></writeConstraint>
+            </field>
                   <field>
                      <name>MSK1</name>
                      <description>Alarm B seconds mask</description>
                      <bitOffset>7</bitOffset>
                      <bitWidth>1</bitWidth>
-                  </field>
+                  <enumeratedValues derivedFrom="MSK4" />
+            </field>
                   <field>
                      <name>ST</name>
                      <description>Second tens in BCD format</description>
                      <bitOffset>4</bitOffset>
                      <bitWidth>3</bitWidth>
-                  </field>
+                  <writeConstraint><range><minimum>0</minimum><maximum>7</maximum></range></writeConstraint>
+            </field>
                   <field>
                      <name>SU</name>
                      <description>Second units in BCD format</description>
                      <bitOffset>0</bitOffset>
                      <bitWidth>4</bitWidth>
-                  </field>
+                  <writeConstraint><range><minimum>0</minimum><maximum>15</maximum></range></writeConstraint>
+            </field>
                </fields>
             </register>
             <register>
@@ -29299,7 +29395,8 @@
                      <description>Write protection key</description>
                      <bitOffset>0</bitOffset>
                      <bitWidth>8</bitWidth>
-                  </field>
+                  <writeConstraint><range><minimum>0</minimum><maximum>255</maximum></range></writeConstraint>
+            </field>
                </fields>
             </register>
             <register>
@@ -29316,7 +29413,8 @@
                      <description>Sub second value</description>
                      <bitOffset>0</bitOffset>
                      <bitWidth>16</bitWidth>
-                  </field>
+                  <writeConstraint><range><minimum>0</minimum><maximum>65535</maximum></range></writeConstraint>
+            </field>
                </fields>
             </register>
             <register>
@@ -29333,13 +29431,15 @@
                      <description>Add one second</description>
                      <bitOffset>31</bitOffset>
                      <bitWidth>1</bitWidth>
-                  </field>
+                  <enumeratedValues><name>ADD1SW</name><usage>write</usage><enumeratedValue><name>Add1</name><description>Add one second to the clock/calendar</description><value>1</value></enumeratedValue></enumeratedValues>
+            </field>
                   <field>
                      <name>SUBFS</name>
                      <description>Subtract a fraction of a               second</description>
                      <bitOffset>0</bitOffset>
                      <bitWidth>15</bitWidth>
-                  </field>
+                  <writeConstraint><range><minimum>0</minimum><maximum>32767</maximum></range></writeConstraint>
+            </field>
                </fields>
             </register>
             <register>
@@ -29467,25 +29567,29 @@
                      <description>Increase frequency of RTC by 488.5               ppm</description>
                      <bitOffset>15</bitOffset>
                      <bitWidth>1</bitWidth>
-                  </field>
+                  <enumeratedValues><name>CALP</name><usage>read-write</usage><enumeratedValue><name>NoChange</name><description>No RTCCLK pulses are added</description><value>0</value></enumeratedValue><enumeratedValue><name>IncreaseFreq</name><description>One RTCCLK pulse is effectively inserted every 2^11 pulses (frequency increased by 488.5 ppm)</description><value>1</value></enumeratedValue></enumeratedValues>
+            </field>
                   <field>
                      <name>CALW8</name>
                      <description>Use an 8-second calibration cycle               period</description>
                      <bitOffset>14</bitOffset>
                      <bitWidth>1</bitWidth>
-                  </field>
+                  <enumeratedValues><name>CALW8</name><usage>read-write</usage><enumeratedValue><name>Eight_Second</name><description>When CALW8 is set to &#8216;1&#8217;, the 8-second calibration cycle period is selected</description><value>1</value></enumeratedValue></enumeratedValues>
+            </field>
                   <field>
                      <name>CALW16</name>
                      <description>Use a 16-second calibration cycle               period</description>
                      <bitOffset>13</bitOffset>
                      <bitWidth>1</bitWidth>
-                  </field>
+                  <enumeratedValues><name>CALW16</name><usage>read-write</usage><enumeratedValue><name>Sixteen_Second</name><description>When CALW16 is set to &#8216;1&#8217;, the 16-second calibration cycle period is selected.This bit must not be set to &#8216;1&#8217; if CALW8=1</description><value>1</value></enumeratedValue></enumeratedValues>
+            </field>
                   <field>
                      <name>CALM</name>
                      <description>Calibration minus</description>
                      <bitOffset>0</bitOffset>
                      <bitWidth>9</bitWidth>
-                  </field>
+                  <writeConstraint><range><minimum>0</minimum><maximum>511</maximum></range></writeConstraint>
+            </field>
                </fields>
             </register>
             <register>
@@ -29639,13 +29743,15 @@
                      <description>Mask the most-significant bits starting               at this bit</description>
                      <bitOffset>24</bitOffset>
                      <bitWidth>4</bitWidth>
-                  </field>
+                  <writeConstraint><range><minimum>0</minimum><maximum>15</maximum></range></writeConstraint>
+            </field>
                   <field>
                      <name>SS</name>
                      <description>Sub seconds value</description>
                      <bitOffset>0</bitOffset>
                      <bitWidth>15</bitWidth>
-                  </field>
+                  <writeConstraint><range><minimum>0</minimum><maximum>32767</maximum></range></writeConstraint>
+            </field>
                </fields>
             </register>
             <register>
@@ -29662,13 +29768,15 @@
                      <description>Mask the most-significant bits starting               at this bit</description>
                      <bitOffset>24</bitOffset>
                      <bitWidth>4</bitWidth>
-                  </field>
+                  <writeConstraint><range><minimum>0</minimum><maximum>15</maximum></range></writeConstraint>
+            </field>
                   <field>
                      <name>SS</name>
                      <description>Sub seconds value</description>
                      <bitOffset>0</bitOffset>
                      <bitWidth>15</bitWidth>
-                  </field>
+                  <writeConstraint><range><minimum>0</minimum><maximum>32767</maximum></range></writeConstraint>
+            </field>
                </fields>
             </register>
             <register>
@@ -29708,7 +29816,8 @@
                      <description>BKP</description>
                      <bitOffset>0</bitOffset>
                      <bitWidth>32</bitWidth>
-                  </field>
+                  <writeConstraint><range><minimum>0</minimum><maximum>4294967295</maximum></range></writeConstraint>
+            </field>
                </fields>
             <dim>32</dim><dimIndex>0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31</dimIndex><dimIncrement>0x4</dimIncrement></register>
             </registers>

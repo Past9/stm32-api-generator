@@ -103,21 +103,25 @@ impl {{pin.struct_name}} {
     {{pin.struct_name}}Analog { _private: () }
   }
 
+
+  {% if pin.alt_funcs.len() > 0 %}
   #[allow(non_camel_case_types)]
   pub fn as_alt_func<ALT_FUNC>(
     self, 
     pull_dir: PullDirection, 
   ) -> {{pin.struct_name}}AltFunc<ALT_FUNC> 
-  where ALT_FUNC: DummyAltFunc
+  where ALT_FUNC: {{pin.struct_name}}AltFuncs
   {
     interrupt::free(|_| {
       {{write_val!(d, pin.moder_field, "0b10", false)}}
       {{write_val!(d, pin.pupdr_field, "pull_dir.val()", false)}}
+      {{write_val!(d, pin.afr_field, "ALT_FUNC::AFR_VAL", false)}}
     });
     {{pin.struct_name}}AltFunc {
       alt_func: PhantomData
     }
   }
+  {% endif %}
 }
 
 pub struct {{pin.struct_name}}Input { _private: () }
@@ -133,6 +137,7 @@ impl {{pin.struct_name}}Output {
   pub fn teardown(self) -> {{pin.struct_name}} {
     interrupt::free(|_| {
       {{reset!(d, pin.odr_field, false)}}
+      {{reset!(d, pin.pupdr_field, false)}}
       {{reset!(d, pin.otyper_field, false)}}
       {{reset!(d, pin.ospeedr_field, false)}}
       {{reset!(d, pin.moder_field, false)}}
@@ -143,11 +148,36 @@ impl {{pin.struct_name}}Output {
 
 pub struct {{pin.struct_name}}Analog { _private: () }
 
+{% if pin.alt_funcs.len() > 0 %}
+pub trait {{pin.struct_name}}AltFuncs { 
+  const AFR_VAL: u32;
+  //fn configure(); 
+}
+{% for alt_func in pin.alt_funcs -%}
+pub struct {{pin.struct_name}}{{alt_func.struct_name}}; // {{alt_func.field_name}} {{alt_func.value}}
+impl {{pin.struct_name}}AltFuncs for {{pin.struct_name}}{{alt_func.struct_name}} {
+  const AFR_VAL: u32 = {{alt_func.value}};
+}
+{% endfor %}
+
 #[allow(non_camel_case_types)]
 pub struct {{pin.struct_name}}AltFunc<ALT_FUNC> 
-  where ALT_FUNC: DummyAltFunc
+  where ALT_FUNC: {{pin.struct_name}}AltFuncs
 { 
   alt_func: PhantomData<ALT_FUNC>
 }
+impl <ALT_FUNC> {{pin.struct_name}}AltFunc<ALT_FUNC> 
+  where ALT_FUNC: {{pin.struct_name}}AltFuncs
+{
+  pub fn teardown(self) -> {{pin.struct_name}} {
+    interrupt::free(|_| {
+      {{reset!(d, pin.pupdr_field, false)}}
+      {{reset!(d, pin.afr_field, false)}}
+    });
+    {{pin.struct_name}} { _private: () } 
+  }
+}
+{% endif %}
+
 
 {% endfor %}

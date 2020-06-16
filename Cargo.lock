@@ -894,6 +894,7 @@ dependencies = [
  "fstrings",
  "glob",
  "heck",
+ "regex",
  "svd-expander",
 ]
 

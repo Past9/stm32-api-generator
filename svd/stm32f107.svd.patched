@@ -13201,91 +13201,105 @@
               <description>Receiver enable</description>
               <bitOffset>2</bitOffset>
               <bitWidth>1</bitWidth>
+            <enumeratedValues><name>RE</name><usage>read-write</usage><enumeratedValue><name>Disabled</name><description>MAC receive state machine is disabled after the completion of the reception of the current frame</description><value>0</value></enumeratedValue><enumeratedValue><name>Enabled</name><description>MAC receive state machine is enabled</description><value>1</value></enumeratedValue></enumeratedValues>
             </field>
             <field>
               <name>TE</name>
               <description>Transmitter enable</description>
               <bitOffset>3</bitOffset>
               <bitWidth>1</bitWidth>
+            <enumeratedValues><name>TE</name><usage>read-write</usage><enumeratedValue><name>Disabled</name><description>MAC transmit state machine is disabled after completion of the transmission of the current frame</description><value>0</value></enumeratedValue><enumeratedValue><name>Enabled</name><description>MAC transmit state machine is enabled</description><value>1</value></enumeratedValue></enumeratedValues>
             </field>
             <field>
               <name>DC</name>
               <description>Deferral check</description>
               <bitOffset>4</bitOffset>
               <bitWidth>1</bitWidth>
+            <enumeratedValues><name>DC</name><usage>read-write</usage><enumeratedValue><name>Disabled</name><description>MAC defers until CRS signal goes inactive</description><value>0</value></enumeratedValue><enumeratedValue><name>Enabled</name><description>Deferral check function enabled</description><value>1</value></enumeratedValue></enumeratedValues>
             </field>
             <field>
               <name>BL</name>
               <description>Back-off limit</description>
               <bitOffset>5</bitOffset>
               <bitWidth>2</bitWidth>
+            <enumeratedValues><name>BL</name><usage>read-write</usage><enumeratedValue><name>BL10</name><description>For retransmission n, wait up to 2^min(n, 10) time slots</description><value>0</value></enumeratedValue><enumeratedValue><name>BL8</name><description>For retransmission n, wait up to 2^min(n, 8) time slots</description><value>1</value></enumeratedValue><enumeratedValue><name>BL4</name><description>For retransmission n, wait up to 2^min(n, 4) time slots</description><value>2</value></enumeratedValue><enumeratedValue><name>BL1</name><description>For retransmission n, wait up to 2^min(n, 1) time slots</description><value>3</value></enumeratedValue></enumeratedValues>
             </field>
             <field>
               <name>APCS</name>
-              <description>Automatic pad/CRC
-              stripping</description>
+              <description>Automatic pad/CRC stripping</description>
               <bitOffset>7</bitOffset>
               <bitWidth>1</bitWidth>
+            <enumeratedValues><name>APCS</name><usage>read-write</usage><enumeratedValue><name>Disabled</name><description>MAC passes all incoming frames unmodified</description><value>0</value></enumeratedValue><enumeratedValue><name>Strip</name><description>MAC strips the Pad/FCS field on incoming frames only for lengths less than or equal to 1500 bytes</description><value>1</value></enumeratedValue></enumeratedValues>
             </field>
             <field>
               <name>RD</name>
               <description>Retry disable</description>
               <bitOffset>9</bitOffset>
               <bitWidth>1</bitWidth>
+            <enumeratedValues><name>RD</name><usage>read-write</usage><enumeratedValue><name>Enabled</name><description>MAC attempts retries based on the settings of BL</description><value>0</value></enumeratedValue><enumeratedValue><name>Disabled</name><description>MAC attempts only 1 transmission</description><value>1</value></enumeratedValue></enumeratedValues>
             </field>
             <field>
               <name>IPCO</name>
               <description>IPv4 checksum offload</description>
               <bitOffset>10</bitOffset>
               <bitWidth>1</bitWidth>
+            <enumeratedValues><name>IPCO</name><usage>read-write</usage><enumeratedValue><name>Disabled</name><description>IPv4 checksum offload disabled</description><value>0</value></enumeratedValue><enumeratedValue><name>Offload</name><description>IPv4 checksums are checked in received frames</description><value>1</value></enumeratedValue></enumeratedValues>
             </field>
             <field>
               <name>DM</name>
               <description>Duplex mode</description>
               <bitOffset>11</bitOffset>
               <bitWidth>1</bitWidth>
+            <enumeratedValues><name>DM</name><usage>read-write</usage><enumeratedValue><name>HalfDuplex</name><description>MAC operates in half-duplex mode</description><value>0</value></enumeratedValue><enumeratedValue><name>FullDuplex</name><description>MAC operates in full-duplex mode</description><value>1</value></enumeratedValue></enumeratedValues>
             </field>
             <field>
               <name>LM</name>
               <description>Loopback mode</description>
               <bitOffset>12</bitOffset>
               <bitWidth>1</bitWidth>
+            <enumeratedValues><name>LM</name><usage>read-write</usage><enumeratedValue><name>Normal</name><description>Normal mode</description><value>0</value></enumeratedValue><enumeratedValue><name>Loopback</name><description>MAC operates in loopback mode at the MII</description><value>1</value></enumeratedValue></enumeratedValues>
             </field>
             <field>
               <name>ROD</name>
               <description>Receive own disable</description>
               <bitOffset>13</bitOffset>
               <bitWidth>1</bitWidth>
+            <enumeratedValues><name>ROD</name><usage>read-write</usage><enumeratedValue><name>Enabled</name><description>MAC receives all packets from PHY while transmitting</description><value>0</value></enumeratedValue><enumeratedValue><name>Disabled</name><description>MAC disables reception of frames in half-duplex mode</description><value>1</value></enumeratedValue></enumeratedValues>
             </field>
             <field>
               <name>FES</name>
               <description>Fast Ethernet speed</description>
               <bitOffset>14</bitOffset>
               <bitWidth>1</bitWidth>
+            <enumeratedValues><name>FES</name><usage>read-write</usage><enumeratedValue><name>FES10</name><description>10 Mbit/s</description><value>0</value></enumeratedValue><enumeratedValue><name>FES100</name><description>100 Mbit/s</description><value>1</value></enumeratedValue></enumeratedValues>
             </field>
             <field>
               <name>CSD</name>
               <description>Carrier sense disable</description>
               <bitOffset>16</bitOffset>
               <bitWidth>1</bitWidth>
+            <enumeratedValues><name>CSD</name><usage>read-write</usage><enumeratedValue><name>Enabled</name><description>Errors generated due to loss of carrier</description><value>0</value></enumeratedValue><enumeratedValue><name>Disabled</name><description>No error generated due to loss of carrier</description><value>1</value></enumeratedValue></enumeratedValues>
             </field>
             <field>
               <name>IFG</name>
               <description>Interframe gap</description>
               <bitOffset>17</bitOffset>
               <bitWidth>3</bitWidth>
+            <enumeratedValues><name>IFG</name><usage>read-write</usage><enumeratedValue><name>IFG96</name><description>96 bit times</description><value>0</value></enumeratedValue><enumeratedValue><name>IFG88</name><description>88 bit times</description><value>1</value></enumeratedValue><enumeratedValue><name>IFG80</name><description>48 bit times</description><value>6</value></enumeratedValue><enumeratedValue><name>IFG40</name><description>40 bit times</description><value>7</value></enumeratedValue></enumeratedValues>
             </field>
             <field>
               <name>JD</name>
               <description>Jabber disable</description>
               <bitOffset>22</bitOffset>
               <bitWidth>1</bitWidth>
+            <enumeratedValues><name>JD</name><usage>read-write</usage><enumeratedValue><name>Enabled</name><description>Jabber enabled, transmit frames up to 2048 bytes</description><value>0</value></enumeratedValue><enumeratedValue><name>Disabled</name><description>Jabber disabled, transmit frames up to 16384 bytes</description><value>1</value></enumeratedValue></enumeratedValues>
             </field>
             <field>
               <name>WD</name>
               <description>Watchdog disable</description>
               <bitOffset>23</bitOffset>
               <bitWidth>1</bitWidth>
+            <enumeratedValues><name>WD</name><usage>read-write</usage><enumeratedValue><name>Enabled</name><description>Watchdog enabled, receive frames limited to 2048 bytes</description><value>0</value></enumeratedValue><enumeratedValue><name>Disabled</name><description>Watchdog disabled, receive frames may be up to to 16384 bytes</description><value>1</value></enumeratedValue></enumeratedValues>
             </field>
           </fields>
         </register>
@@ -13304,68 +13318,77 @@
               <description>Promiscuous mode</description>
               <bitOffset>0</bitOffset>
               <bitWidth>1</bitWidth>
+            <enumeratedValues><name>PM</name><usage>read-write</usage><enumeratedValue><name>Disabled</name><description>Normal address filtering</description><value>0</value></enumeratedValue><enumeratedValue><name>Enabled</name><description>Address filters pass all incoming frames regardless of their destination or source address</description><value>1</value></enumeratedValue></enumeratedValues>
             </field>
             <field>
               <name>HU</name>
               <description>Hash unicast</description>
               <bitOffset>1</bitOffset>
               <bitWidth>1</bitWidth>
+            <enumeratedValues><name>HU</name><usage>read-write</usage><enumeratedValue><name>Perfect</name><description>MAC performs a perfect destination address filtering for unicast frames</description><value>0</value></enumeratedValue><enumeratedValue><name>Hash</name><description>MAC performs destination address filtering of received unicast frames according to the hash table</description><value>1</value></enumeratedValue></enumeratedValues>
             </field>
             <field>
               <name>HM</name>
               <description>Hash multicast</description>
               <bitOffset>2</bitOffset>
               <bitWidth>1</bitWidth>
+            <enumeratedValues><name>HM</name><usage>read-write</usage><enumeratedValue><name>Perfect</name><description>MAC performs a perfect destination address filtering for multicast frames</description><value>0</value></enumeratedValue><enumeratedValue><name>Hash</name><description>MAC performs destination address filtering of received multicast frames according to the hash table</description><value>1</value></enumeratedValue></enumeratedValues>
             </field>
             <field>
               <name>DAIF</name>
-              <description>Destination address inverse
-              filtering</description>
+              <description>Destination address unique filtering</description>
               <bitOffset>3</bitOffset>
               <bitWidth>1</bitWidth>
+            <enumeratedValues><name>DAIF</name><usage>read-write</usage><enumeratedValue><name>Normal</name><description>Normal filtering of frames</description><value>0</value></enumeratedValue><enumeratedValue><name>Invert</name><description>Address check block operates in inverse filtering mode for the DA address comparison</description><value>1</value></enumeratedValue></enumeratedValues>
             </field>
             <field>
               <name>PAM</name>
               <description>Pass all multicast</description>
               <bitOffset>4</bitOffset>
               <bitWidth>1</bitWidth>
+            <enumeratedValues><name>PAM</name><usage>read-write</usage><enumeratedValue><name>Disabled</name><description>Filtering of multicast frames depends on HM</description><value>0</value></enumeratedValue><enumeratedValue><name>Enabled</name><description>All received frames with a multicast destination address are passed</description><value>1</value></enumeratedValue></enumeratedValues>
             </field>
             <field>
               <name>BFD</name>
               <description>Broadcast frames disable</description>
               <bitOffset>5</bitOffset>
               <bitWidth>1</bitWidth>
+            <enumeratedValues><name>BFD</name><usage>read-write</usage><enumeratedValue><name>Enabled</name><description>Address filters pass all received broadcast frames</description><value>0</value></enumeratedValue><enumeratedValue><name>Disabled</name><description>Address filters filter all incoming broadcast frames</description><value>1</value></enumeratedValue></enumeratedValues>
             </field>
             <field>
               <name>PCF</name>
               <description>Pass control frames</description>
               <bitOffset>6</bitOffset>
               <bitWidth>2</bitWidth>
+            <enumeratedValues><name>PCF</name><usage>read-write</usage><enumeratedValue><name>PreventAll</name><description>MAC prevents all control frames from reaching the application</description><value>0</value></enumeratedValue><enumeratedValue><name>ForwardAllExceptPause</name><description>MAC forwards all control frames to application except Pause</description><value>1</value></enumeratedValue><enumeratedValue><name>ForwardAll</name><description>MAC forwards all control frames to application even if they fail the address filter</description><value>2</value></enumeratedValue><enumeratedValue><name>ForwardAllFiltered</name><description>MAC forwards control frames that pass the address filter</description><value>3</value></enumeratedValue></enumeratedValues>
             </field>
             <field>
               <name>SAIF</name>
-              <description>Source address inverse
-              filtering</description>
+              <description>Source address inverse filtering</description>
               <bitOffset>8</bitOffset>
               <bitWidth>1</bitWidth>
+            <enumeratedValues><name>SAIF</name><usage>read-write</usage><enumeratedValue><name>Normal</name><description>Source address filter operates normally</description><value>0</value></enumeratedValue><enumeratedValue><name>Invert</name><description>Source address filter operation inverted</description><value>1</value></enumeratedValue></enumeratedValues>
             </field>
             <field>
               <name>SAF</name>
               <description>Source address filter</description>
               <bitOffset>9</bitOffset>
               <bitWidth>1</bitWidth>
+            <enumeratedValues><name>SAF</name><usage>read-write</usage><enumeratedValue><name>Disabled</name><description>Source address ignored</description><value>0</value></enumeratedValue><enumeratedValue><name>Enabled</name><description>MAC drops frames that fail the source address filter</description><value>1</value></enumeratedValue></enumeratedValues>
             </field>
             <field>
               <name>HPF</name>
               <description>Hash or perfect filter</description>
               <bitOffset>10</bitOffset>
               <bitWidth>1</bitWidth>
+            <enumeratedValues><name>HPF</name><usage>read-write</usage><enumeratedValue><name>HashOnly</name><description>If HM or HU is set, only frames that match the Hash filter are passed</description><value>0</value></enumeratedValue><enumeratedValue><name>HashOrPerfect</name><description>If HM or HU is set, frames that match either the perfect filter or the hash filter are passed</description><value>1</value></enumeratedValue></enumeratedValues>
             </field>
             <field>
               <name>RA</name>
               <description>Receive all</description>
               <bitOffset>31</bitOffset>
               <bitWidth>1</bitWidth>
+            <enumeratedValues><name>RA</name><usage>read-write</usage><enumeratedValue><name>Disabled</name><description>MAC receiver passes on to the application only those frames that have passed the SA/DA address file</description><value>0</value></enumeratedValue><enumeratedValue><name>Enabled</name><description>MAC receiver passes oll received frames on to the application</description><value>1</value></enumeratedValue></enumeratedValues>
             </field>
           </fields>
         </register>
@@ -13381,9 +13404,10 @@
           <fields>
             <field>
               <name>HTH</name>
-              <description>Hash table high</description>
+              <description>Upper 32 bits of hash table</description>
               <bitOffset>0</bitOffset>
               <bitWidth>32</bitWidth>
+            <writeConstraint><range><minimum>0</minimum><maximum>4294967295</maximum></range></writeConstraint>
             </field>
           </fields>
         </register>
@@ -13399,9 +13423,10 @@
           <fields>
             <field>
               <name>HTL</name>
-              <description>Hash table low</description>
+              <description>Lower 32 bits of hash table</description>
               <bitOffset>0</bitOffset>
               <bitWidth>32</bitWidth>
+            <writeConstraint><range><minimum>0</minimum><maximum>4294967295</maximum></range></writeConstraint>
             </field>
           </fields>
         </register>
@@ -13420,30 +13445,35 @@
               <description>MII busy</description>
               <bitOffset>0</bitOffset>
               <bitWidth>1</bitWidth>
+            <enumeratedValues><name>MB</name><usage>read-write</usage><enumeratedValue><name>Busy</name><description>This bit is set to 1 by the application to indicate that a read or write access is in progress</description><value>1</value></enumeratedValue></enumeratedValues>
             </field>
             <field>
               <name>MW</name>
               <description>MII write</description>
               <bitOffset>1</bitOffset>
               <bitWidth>1</bitWidth>
+            <enumeratedValues><name>MW</name><usage>read-write</usage><enumeratedValue><name>Read</name><description>Read operation</description><value>0</value></enumeratedValue><enumeratedValue><name>Write</name><description>Write operation</description><value>1</value></enumeratedValue></enumeratedValues>
             </field>
             <field>
               <name>CR</name>
               <description>Clock range</description>
               <bitOffset>2</bitOffset>
               <bitWidth>3</bitWidth>
+            <enumeratedValues><name>CR</name><usage>read-write</usage><enumeratedValue><name>CR_60_100</name><description>60-100MHz HCLK/42</description><value>0</value></enumeratedValue><enumeratedValue><name>CR_100_150</name><description>100-150 MHz HCLK/62</description><value>1</value></enumeratedValue><enumeratedValue><name>CR_20_35</name><description>20-35MHz HCLK/16</description><value>2</value></enumeratedValue><enumeratedValue><name>CR_35_60</name><description>35-60MHz HCLK/16</description><value>3</value></enumeratedValue><enumeratedValue><name>CR_150_168</name><description>150-168MHz HCLK/102</description><value>4</value></enumeratedValue></enumeratedValues>
             </field>
             <field>
               <name>MR</name>
-              <description>MII register</description>
+              <description>MII register - select the desired MII register in the PHY device</description>
               <bitOffset>6</bitOffset>
               <bitWidth>5</bitWidth>
+            <writeConstraint><range><minimum>0</minimum><maximum>31</maximum></range></writeConstraint>
             </field>
             <field>
               <name>PA</name>
-              <description>PHY address</description>
+              <description>PHY address - select which of possible 32 PHYs is being accessed</description>
               <bitOffset>11</bitOffset>
               <bitWidth>5</bitWidth>
+            <writeConstraint><range><minimum>0</minimum><maximum>31</maximum></range></writeConstraint>
             </field>
           </fields>
         </register>
@@ -13459,9 +13489,10 @@
           <fields>
             <field>
               <name>MD</name>
-              <description>MII data</description>
+              <description>MII data read from/written to the PHY</description>
               <bitOffset>0</bitOffset>
               <bitWidth>16</bitWidth>
+            <writeConstraint><range><minimum>0</minimum><maximum>65535</maximum></range></writeConstraint>
             </field>
           </fields>
         </register>
@@ -13476,49 +13507,53 @@
           <resetValue>0x00000000</resetValue>
           <fields>
             <field>
-              <name>FCB_BPA</name>
-              <description>Flow control busy/back pressure
-              activate</description>
+              <name>FCB</name>
+              <description>Flow control busy/back pressure activate</description>
               <bitOffset>0</bitOffset>
               <bitWidth>1</bitWidth>
+            <enumeratedValues><name>FCB</name><usage>read-write</usage><enumeratedValue><name>PauseOrBackPressure</name><description>In full duplex, initiate a Pause control frame. In half duplex, assert back pressure</description><value>1</value></enumeratedValue><enumeratedValue><name>DisableBackPressure</name><description>In half duplex only, deasserts back pressure</description><value>0</value></enumeratedValue></enumeratedValues>
             </field>
             <field>
               <name>TFCE</name>
-              <description>Transmit flow control
-              enable</description>
+              <description>Transmit flow control enable</description>
               <bitOffset>1</bitOffset>
               <bitWidth>1</bitWidth>
+            <enumeratedValues><name>TFCE</name><usage>read-write</usage><enumeratedValue><name>Disabled</name><description>In full duplex, flow control is disabled. In half duplex, back pressure is disabled</description><value>0</value></enumeratedValue><enumeratedValue><name>Enabled</name><description>In full duplex, flow control is enabled. In half duplex, back pressure is enabled</description><value>1</value></enumeratedValue></enumeratedValues>
             </field>
             <field>
               <name>RFCE</name>
-              <description>Receive flow control
-              enable</description>
+              <description>Receive flow control enable</description>
               <bitOffset>2</bitOffset>
               <bitWidth>1</bitWidth>
+            <enumeratedValues><name>RFCE</name><usage>read-write</usage><enumeratedValue><name>Disabled</name><description>Pause frames are not decoded</description><value>0</value></enumeratedValue><enumeratedValue><name>Enabled</name><description>MAC decodes received Pause frames and disables its transmitted for a specified time</description><value>1</value></enumeratedValue></enumeratedValues>
             </field>
             <field>
               <name>UPFD</name>
               <description>Unicast pause frame detect</description>
               <bitOffset>3</bitOffset>
               <bitWidth>1</bitWidth>
+            <enumeratedValues><name>UPFD</name><usage>read-write</usage><enumeratedValue><name>Disabled</name><description>MAC detects only a Pause frame with the multicast address specified in the 802.3x standard</description><value>0</value></enumeratedValue><enumeratedValue><name>Enabled</name><description>MAC additionally detects Pause frames with the station's unicast address</description><value>1</value></enumeratedValue></enumeratedValues>
             </field>
             <field>
               <name>PLT</name>
               <description>Pause low threshold</description>
               <bitOffset>4</bitOffset>
               <bitWidth>2</bitWidth>
+            <enumeratedValues><name>PLT</name><usage>read-write</usage><enumeratedValue><name>PLT4</name><description>Pause time minus 4 slot times</description><value>0</value></enumeratedValue><enumeratedValue><name>PLT28</name><description>Pause time minus 28 slot times</description><value>1</value></enumeratedValue><enumeratedValue><name>PLT144</name><description>Pause time minus 144 slot times</description><value>2</value></enumeratedValue><enumeratedValue><name>PLT256</name><description>Pause time minus 256 slot times</description><value>3</value></enumeratedValue></enumeratedValues>
             </field>
             <field>
               <name>ZQPD</name>
               <description>Zero-quanta pause disable</description>
               <bitOffset>7</bitOffset>
               <bitWidth>1</bitWidth>
+            <enumeratedValues><name>ZQPD</name><usage>read-write</usage><enumeratedValue><name>Enabled</name><description>Normal operation with automatic zero-quanta pause control frame generation</description><value>0</value></enumeratedValue><enumeratedValue><name>Disabled</name><description>Automatic generation of zero-quanta pause control frames is disabled</description><value>1</value></enumeratedValue></enumeratedValues>
             </field>
             <field>
               <name>PT</name>
-              <description>Pass control frames</description>
+              <description>Pause time</description>
               <bitOffset>16</bitOffset>
               <bitWidth>16</bitWidth>
+            <writeConstraint><range><minimum>0</minimum><maximum>65535</maximum></range></writeConstraint>
             </field>
           </fields>
         </register>
@@ -13534,16 +13569,17 @@
           <fields>
             <field>
               <name>VLANTI</name>
-              <description>VLAN tag identifier (for receive
-              frames)</description>
+              <description>VLAN tag identifier (for receive frames)</description>
               <bitOffset>0</bitOffset>
               <bitWidth>16</bitWidth>
+            <writeConstraint><range><minimum>0</minimum><maximum>65535</maximum></range></writeConstraint>
             </field>
             <field>
               <name>VLANTC</name>
               <description>12-bit VLAN tag comparison</description>
               <bitOffset>16</bitOffset>
               <bitWidth>1</bitWidth>
+            <enumeratedValues><name>VLANTC</name><usage>read-write</usage><enumeratedValue><name>VLANTC16</name><description>Full 16 bit VLAN identifiers are used for comparison and filtering</description><value>0</value></enumeratedValue><enumeratedValue><name>VLANTC12</name><description>12 bit VLAN identifies are used for comparison and filtering</description><value>1</value></enumeratedValue></enumeratedValues>
             </field>
           </fields>
         </register>
@@ -13572,18 +13608,21 @@
               <description>Power down</description>
               <bitOffset>0</bitOffset>
               <bitWidth>1</bitWidth>
+            <enumeratedValues><name>PD</name><usage>read-write</usage><enumeratedValue><name>Enabled</name><description>All received frames will be dropped. Cleared automatically when a magic packet or wakeup frame is received</description><value>1</value></enumeratedValue></enumeratedValues>
             </field>
             <field>
               <name>MPE</name>
-              <description>Magic Packet enable</description>
+              <description>Magic packet enable</description>
               <bitOffset>1</bitOffset>
               <bitWidth>1</bitWidth>
+            <enumeratedValues><name>MPE</name><usage>read-write</usage><enumeratedValue><name>Disabled</name><description>No power management event generated due to Magic Packet reception</description><value>0</value></enumeratedValue><enumeratedValue><name>Enabled</name><description>Enable generation of a power management event due to Magic Packet reception</description><value>1</value></enumeratedValue></enumeratedValues>
             </field>
             <field>
               <name>WFE</name>
               <description>Wakeup frame enable</description>
               <bitOffset>2</bitOffset>
               <bitWidth>1</bitWidth>
+            <enumeratedValues><name>WFE</name><usage>read-write</usage><enumeratedValue><name>Disabled</name><description>No power management event generated due to wakeup frame reception</description><value>0</value></enumeratedValue><enumeratedValue><name>Enabled</name><description>Enable generation of a power management event due to wakeup frame reception</description><value>1</value></enumeratedValue></enumeratedValues>
             </field>
             <field>
               <name>MPR</name>
@@ -13602,13 +13641,14 @@
               <description>Global unicast</description>
               <bitOffset>9</bitOffset>
               <bitWidth>1</bitWidth>
+            <enumeratedValues><name>GU</name><usage>read-write</usage><enumeratedValue><name>Disabled</name><description>Normal operation</description><value>0</value></enumeratedValue><enumeratedValue><name>Enabled</name><description>Any unicast packet filtered by the MAC address recognition may be a wakeup frame</description><value>1</value></enumeratedValue></enumeratedValues>
             </field>
             <field>
               <name>WFFRPR</name>
-              <description>Wakeup frame filter register pointer
-              reset</description>
+              <description>Wakeup frame filter register pointer reset</description>
               <bitOffset>31</bitOffset>
               <bitWidth>1</bitWidth>
+            <enumeratedValues><name>WFFRPR</name><usage>read-write</usage><enumeratedValue><name>Reset</name><description>Reset wakeup frame filter register point to 0b000. Automatically cleared</description><value>1</value></enumeratedValue></enumeratedValues>
             </field>
           </fields>
         </register>
@@ -13669,13 +13709,14 @@
               <description>PMT interrupt mask</description>
               <bitOffset>3</bitOffset>
               <bitWidth>1</bitWidth>
+            <enumeratedValues><name>PMTIM</name><usage>read-write</usage><enumeratedValue><name>Unmasked</name><description>PMT Status interrupt generation enabled</description><value>0</value></enumeratedValue><enumeratedValue><name>Masked</name><description>PMT Status interrupt generation disabled</description><value>1</value></enumeratedValue></enumeratedValues>
             </field>
             <field>
               <name>TSTIM</name>
-              <description>Time stamp trigger interrupt
-              mask</description>
+              <description>Time stamp trigger interrupt mask</description>
               <bitOffset>9</bitOffset>
               <bitWidth>1</bitWidth>
+            <enumeratedValues><name>TSTIM</name><usage>read-write</usage><enumeratedValue><name>Unmasked</name><description>Time stamp interrupt generation enabled</description><value>0</value></enumeratedValue><enumeratedValue><name>Masked</name><description>Time stamp interrupt generation disabled</description><value>1</value></enumeratedValue></enumeratedValues>
             </field>
           </fields>
         </register>
@@ -13694,6 +13735,7 @@
               <bitOffset>0</bitOffset>
               <bitWidth>16</bitWidth>
               <access>read-write</access>
+            <writeConstraint><range><minimum>0</minimum><maximum>65535</maximum></range></writeConstraint>
             </field>
             <field>
               <name>MO</name>
@@ -13719,6 +13761,7 @@
               <description>MAC address0 low</description>
               <bitOffset>0</bitOffset>
               <bitWidth>32</bitWidth>
+            <writeConstraint><range><minimum>0</minimum><maximum>4294967295</maximum></range></writeConstraint>
             </field>
           </fields>
         </register>
@@ -13737,24 +13780,28 @@
               <description>MAC address1 high</description>
               <bitOffset>0</bitOffset>
               <bitWidth>16</bitWidth>
+            <writeConstraint><range><minimum>0</minimum><maximum>65535</maximum></range></writeConstraint>
             </field>
             <field>
               <name>MBC</name>
               <description>Mask byte control</description>
               <bitOffset>24</bitOffset>
               <bitWidth>6</bitWidth>
+            <writeConstraint><range><minimum>0</minimum><maximum>63</maximum></range></writeConstraint>
             </field>
             <field>
               <name>SA</name>
               <description>Source address</description>
               <bitOffset>30</bitOffset>
               <bitWidth>1</bitWidth>
+            <enumeratedValues><name>SA</name><usage>read-write</usage><enumeratedValue><name>Destination</name><description>This address is used for comparison with DA fields of the received frame</description><value>0</value></enumeratedValue><enumeratedValue><name>Source</name><description>This address is used for comparison with SA fields of received frames</description><value>1</value></enumeratedValue></enumeratedValues>
             </field>
             <field>
               <name>AE</name>
               <description>Address enable</description>
               <bitOffset>31</bitOffset>
               <bitWidth>1</bitWidth>
+            <enumeratedValues><name>AE</name><usage>read-write</usage><enumeratedValue><name>Disabled</name><description>Address filters ignore this address</description><value>0</value></enumeratedValue><enumeratedValue><name>Enabled</name><description>Address filters use this address</description><value>1</value></enumeratedValue></enumeratedValues>
             </field>
           </fields>
         </register>
@@ -13773,6 +13820,7 @@
               <description>MAC address1 low</description>
               <bitOffset>0</bitOffset>
               <bitWidth>32</bitWidth>
+            <writeConstraint><range><minimum>0</minimum><maximum>4294967295</maximum></range></writeConstraint>
             </field>
           </fields>
         </register>
@@ -13787,29 +13835,33 @@
           <resetValue>0x0050</resetValue>
           <fields>
             <field>
-              <name>ETH_MACA2HR</name>
+              <name>MACA2H</name>
               <description>Ethernet MAC address 2 high
               register</description>
               <bitOffset>0</bitOffset>
               <bitWidth>16</bitWidth>
+            <writeConstraint><range><minimum>0</minimum><maximum>65535</maximum></range></writeConstraint>
             </field>
             <field>
               <name>MBC</name>
               <description>Mask byte control</description>
               <bitOffset>24</bitOffset>
               <bitWidth>6</bitWidth>
+            <writeConstraint><range><minimum>0</minimum><maximum>63</maximum></range></writeConstraint>
             </field>
             <field>
               <name>SA</name>
               <description>Source address</description>
               <bitOffset>30</bitOffset>
               <bitWidth>1</bitWidth>
+            <enumeratedValues><name>SA</name><usage>read-write</usage><enumeratedValue><name>Destination</name><description>This address is used for comparison with DA fields of the received frame</description><value>0</value></enumeratedValue><enumeratedValue><name>Source</name><description>This address is used for comparison with SA fields of received frames</description><value>1</value></enumeratedValue></enumeratedValues>
             </field>
             <field>
               <name>AE</name>
               <description>Address enable</description>
               <bitOffset>31</bitOffset>
               <bitWidth>1</bitWidth>
+            <enumeratedValues><name>AE</name><usage>read-write</usage><enumeratedValue><name>Disabled</name><description>Address filters ignore this address</description><value>0</value></enumeratedValue><enumeratedValue><name>Enabled</name><description>Address filters use this address</description><value>1</value></enumeratedValue></enumeratedValues>
             </field>
           </fields>
         </register>
@@ -13828,6 +13880,7 @@
               <description>MAC address2 low</description>
               <bitOffset>0</bitOffset>
               <bitWidth>31</bitWidth>
+            <writeConstraint><range><minimum>0</minimum><maximum>4294967295</maximum></range></writeConstraint>
             </field>
           </fields>
         </register>
@@ -13846,24 +13899,28 @@
               <description>MAC address3 high</description>
               <bitOffset>0</bitOffset>
               <bitWidth>16</bitWidth>
+            <writeConstraint><range><minimum>0</minimum><maximum>65535</maximum></range></writeConstraint>
             </field>
             <field>
               <name>MBC</name>
               <description>Mask byte control</description>
               <bitOffset>24</bitOffset>
               <bitWidth>6</bitWidth>
+            <writeConstraint><range><minimum>0</minimum><maximum>63</maximum></range></writeConstraint>
             </field>
             <field>
               <name>SA</name>
               <description>Source address</description>
               <bitOffset>30</bitOffset>
               <bitWidth>1</bitWidth>
+            <enumeratedValues><name>SA</name><usage>read-write</usage><enumeratedValue><name>Destination</name><description>This address is used for comparison with DA fields of the received frame</description><value>0</value></enumeratedValue><enumeratedValue><name>Source</name><description>This address is used for comparison with SA fields of received frames</description><value>1</value></enumeratedValue></enumeratedValues>
             </field>
             <field>
               <name>AE</name>
               <description>Address enable</description>
               <bitOffset>31</bitOffset>
               <bitWidth>1</bitWidth>
+            <enumeratedValues><name>AE</name><usage>read-write</usage><enumeratedValue><name>Disabled</name><description>Address filters ignore this address</description><value>0</value></enumeratedValue><enumeratedValue><name>Enabled</name><description>Address filters use this address</description><value>1</value></enumeratedValue></enumeratedValues>
             </field>
           </fields>
         </register>
@@ -13878,10 +13935,11 @@
           <resetValue>0xFFFFFFFF</resetValue>
           <fields>
             <field>
-              <name>MBCA3L</name>
+              <name>MACA3L</name>
               <description>MAC address3 low</description>
               <bitOffset>0</bitOffset>
               <bitWidth>32</bitWidth>
+            <writeConstraint><range><minimum>0</minimum><maximum>4294967295</maximum></range></writeConstraint>
             </field>
           </fields>
         </register>
@@ -13913,24 +13971,28 @@
               <description>Counter reset</description>
               <bitOffset>0</bitOffset>
               <bitWidth>1</bitWidth>
+            <enumeratedValues><name>CR</name><usage>read-write</usage><enumeratedValue><name>Reset</name><description>Reset all counters. Cleared automatically</description><value>1</value></enumeratedValue></enumeratedValues>
             </field>
             <field>
               <name>CSR</name>
               <description>Counter stop rollover</description>
               <bitOffset>1</bitOffset>
               <bitWidth>1</bitWidth>
+            <enumeratedValues><name>CSR</name><usage>read-write</usage><enumeratedValue><name>Disabled</name><description>Counters roll over to zero after reaching the maximum value</description><value>0</value></enumeratedValue><enumeratedValue><name>Enabled</name><description>Counters do not roll over to zero after reaching the maximum value</description><value>1</value></enumeratedValue></enumeratedValues>
             </field>
             <field>
               <name>ROR</name>
               <description>Reset on read</description>
               <bitOffset>2</bitOffset>
               <bitWidth>1</bitWidth>
+            <enumeratedValues><name>ROR</name><usage>read-write</usage><enumeratedValue><name>Disabled</name><description>MMC counters do not reset on read</description><value>0</value></enumeratedValue><enumeratedValue><name>Enabled</name><description>MMC counters reset to zero after read</description><value>1</value></enumeratedValue></enumeratedValues>
             </field>
             <field>
               <name>MCF</name>
               <description>MMC counter freeze</description>
               <bitOffset>31</bitOffset>
               <bitWidth>1</bitWidth>
+            <enumeratedValues><name>MCF</name><usage>read-write</usage><enumeratedValue><name>Unfrozen</name><description>All MMC counters update normally</description><value>0</value></enumeratedValue><enumeratedValue><name>Frozen</name><description>All MMC counters frozen to their current value</description><value>1</value></enumeratedValue></enumeratedValues>
             </field>
           </fields>
         </register>
@@ -13946,22 +14008,19 @@
           <fields>
             <field>
               <name>RFCES</name>
-              <description>Received frames CRC error
-              status</description>
+              <description>Received frames CRC error status</description>
               <bitOffset>5</bitOffset>
               <bitWidth>1</bitWidth>
             </field>
             <field>
               <name>RFAES</name>
-              <description>Received frames alignment error
-              status</description>
+              <description>Received frames alignment error status</description>
               <bitOffset>6</bitOffset>
               <bitWidth>1</bitWidth>
             </field>
             <field>
               <name>RGUFS</name>
-              <description>Received Good Unicast Frames
-              Status</description>
+              <description>Received good Unicast frames status</description>
               <bitOffset>17</bitOffset>
               <bitWidth>1</bitWidth>
             </field>
@@ -13979,22 +14038,19 @@
           <fields>
             <field>
               <name>TGFSCS</name>
-              <description>Transmitted good frames single collision
-              status</description>
+              <description>Transmitted good frames single collision status</description>
               <bitOffset>14</bitOffset>
               <bitWidth>1</bitWidth>
             </field>
             <field>
               <name>TGFMSCS</name>
-              <description>Transmitted good frames more single
-              collision status</description>
+              <description>Transmitted good frames more than single collision status</description>
               <bitOffset>15</bitOffset>
               <bitWidth>1</bitWidth>
             </field>
             <field>
               <name>TGFS</name>
-              <description>Transmitted good frames
-              status</description>
+              <description>Transmitted good frames status</description>
               <bitOffset>21</bitOffset>
               <bitWidth>1</bitWidth>
             </field>
@@ -14012,24 +14068,24 @@
           <fields>
             <field>
               <name>RFCEM</name>
-              <description>Received frame CRC error
-              mask</description>
+              <description>Received frame CRC error mask</description>
               <bitOffset>5</bitOffset>
               <bitWidth>1</bitWidth>
+            <enumeratedValues><name>RFCEM</name><usage>read-write</usage><enumeratedValue><name>Unmasked</name><description>Received-crc-error counter half-full interrupt enabled</description><value>0</value></enumeratedValue><enumeratedValue><name>Masked</name><description>Received-crc-error counter half-full interrupt disabled</description><value>1</value></enumeratedValue></enumeratedValues>
             </field>
             <field>
               <name>RFAEM</name>
-              <description>Received frames alignment error
-              mask</description>
+              <description>Received frames alignment error mask</description>
               <bitOffset>6</bitOffset>
               <bitWidth>1</bitWidth>
+            <enumeratedValues><name>RFAEM</name><usage>read-write</usage><enumeratedValue><name>Unmasked</name><description>Received-alignment-error counter half-full interrupt enabled</description><value>0</value></enumeratedValue><enumeratedValue><name>Masked</name><description>Received-alignment-error counter half-full interrupt disabled</description><value>1</value></enumeratedValue></enumeratedValues>
             </field>
             <field>
               <name>RGUFM</name>
-              <description>Received good unicast frames
-              mask</description>
+              <description>Received good Unicast frames mask</description>
               <bitOffset>17</bitOffset>
               <bitWidth>1</bitWidth>
+            <enumeratedValues><name>RGUFM</name><usage>read-write</usage><enumeratedValue><name>Unmasked</name><description>Received-good-unicast counter half-full interrupt enabled</description><value>0</value></enumeratedValue><enumeratedValue><name>Masked</name><description>Received-good-unicast counter half-full interrupt disabled</description><value>1</value></enumeratedValue></enumeratedValues>
             </field>
           </fields>
         </register>
@@ -14045,24 +14101,24 @@
           <fields>
             <field>
               <name>TGFSCM</name>
-              <description>Transmitted good frames single collision
-              mask</description>
+              <description>Transmitted good frames single collision mask</description>
               <bitOffset>14</bitOffset>
               <bitWidth>1</bitWidth>
+            <enumeratedValues><name>TGFSCM</name><usage>read-write</usage><enumeratedValue><name>Unmasked</name><description>Transmitted-good-single-collision half-full interrupt enabled</description><value>0</value></enumeratedValue><enumeratedValue><name>Masked</name><description>Transmitted-good-single-collision half-full interrupt disabled</description><value>1</value></enumeratedValue></enumeratedValues>
             </field>
             <field>
               <name>TGFMSCM</name>
-              <description>Transmitted good frames more single
-              collision mask</description>
+              <description>Transmitted good frames more than single collision mask</description>
               <bitOffset>15</bitOffset>
               <bitWidth>1</bitWidth>
+            <enumeratedValues><name>TGFMSCM</name><usage>read-write</usage><enumeratedValue><name>Unmasked</name><description>Transmitted-good-multiple-collision half-full interrupt enabled</description><value>0</value></enumeratedValue><enumeratedValue><name>Masked</name><description>Transmitted-good-multiple-collision half-full interrupt disabled</description><value>1</value></enumeratedValue></enumeratedValues>
             </field>
             <field>
               <name>TGFM</name>
-              <description>Transmitted good frames
-              mask</description>
+              <description>Transmitted good frames mask</description>
               <bitOffset>21</bitOffset>
               <bitWidth>1</bitWidth>
+            <enumeratedValues><name>TGFM</name><usage>read-write</usage><enumeratedValue><name>Unmasked</name><description>Transmitted-good counter half-full interrupt enabled</description><value>0</value></enumeratedValue><enumeratedValue><name>Masked</name><description>Transmitted-good counter half-full interrupt disabled</description><value>1</value></enumeratedValue></enumeratedValues>
             </field>
           </fields>
         </register>
@@ -14078,8 +14134,7 @@
           <fields>
             <field>
               <name>TGFSCC</name>
-              <description>Transmitted good frames after a single
-              collision counter</description>
+              <description>Transmitted good frames single collision counter</description>
               <bitOffset>0</bitOffset>
               <bitWidth>32</bitWidth>
             </field>
@@ -14433,60 +14488,70 @@
               <description>Software reset</description>
               <bitOffset>0</bitOffset>
               <bitWidth>1</bitWidth>
+            <enumeratedValues><name>SR</name><usage>read-write</usage><enumeratedValue><name>Reset</name><description>Reset all MAC subsystem internal registers and logic. Cleared automatically</description><value>1</value></enumeratedValue></enumeratedValues>
             </field>
             <field>
               <name>DA</name>
-              <description>DMA Arbitration</description>
+              <description>DMA arbitration</description>
               <bitOffset>1</bitOffset>
               <bitWidth>1</bitWidth>
+            <enumeratedValues><name>DA</name><usage>read-write</usage><enumeratedValue><name>RoundRobin</name><description>Round-robin with Rx:Tx priority given by PM</description><value>0</value></enumeratedValue><enumeratedValue><name>RxPriority</name><description>Rx has priority over Tx</description><value>1</value></enumeratedValue></enumeratedValues>
             </field>
             <field>
               <name>DSL</name>
               <description>Descriptor skip length</description>
               <bitOffset>2</bitOffset>
               <bitWidth>5</bitWidth>
+            <writeConstraint><range><minimum>0</minimum><maximum>31</maximum></range></writeConstraint>
             </field>
             <field>
               <name>PBL</name>
               <description>Programmable burst length</description>
               <bitOffset>8</bitOffset>
               <bitWidth>6</bitWidth>
+            <enumeratedValues><name>PBL</name><usage>read-write</usage><enumeratedValue><name>PBL1</name><description>Maximum of 1 beat per DMA transaction</description><value>1</value></enumeratedValue><enumeratedValue><name>PBL2</name><description>Maximum of 2 beats per DMA transaction</description><value>2</value></enumeratedValue><enumeratedValue><name>PBL4</name><description>Maximum of 4 beats per DMA transaction</description><value>4</value></enumeratedValue><enumeratedValue><name>PBL8</name><description>Maximum of 8 beats per DMA transaction</description><value>8</value></enumeratedValue><enumeratedValue><name>PBL16</name><description>Maximum of 16 beats per DMA transaction</description><value>16</value></enumeratedValue><enumeratedValue><name>PBL32</name><description>Maximum of 32 beats per DMA transaction</description><value>32</value></enumeratedValue></enumeratedValues>
             </field>
             <field>
-              <name>RTPR</name>
-              <description>Rx Tx priority ratio</description>
+              <name>PM</name>
+              <description>Rx-Tx priority ratio</description>
               <bitOffset>14</bitOffset>
               <bitWidth>2</bitWidth>
+            <enumeratedValues><name>PM</name><usage>read-write</usage><enumeratedValue><name>OneToOne</name><description>RxDMA priority over TxDMA is 1:1</description><value>0</value></enumeratedValue><enumeratedValue><name>TwoToOne</name><description>RxDMA priority over TxDMA is 2:1</description><value>1</value></enumeratedValue><enumeratedValue><name>ThreeToOne</name><description>RxDMA priority over TxDMA is 3:1</description><value>2</value></enumeratedValue><enumeratedValue><name>FourToOne</name><description>RxDMA priority over TxDMA is 4:1</description><value>3</value></enumeratedValue></enumeratedValues>
             </field>
             <field>
               <name>FB</name>
               <description>Fixed burst</description>
               <bitOffset>16</bitOffset>
               <bitWidth>1</bitWidth>
+            <enumeratedValues><name>FB</name><usage>read-write</usage><enumeratedValue><name>Variable</name><description>AHB uses SINGLE and INCR burst transfers</description><value>0</value></enumeratedValue><enumeratedValue><name>Fixed</name><description>AHB uses only fixed burst transfers</description><value>1</value></enumeratedValue></enumeratedValues>
             </field>
             <field>
               <name>RDP</name>
               <description>Rx DMA PBL</description>
               <bitOffset>17</bitOffset>
               <bitWidth>6</bitWidth>
+            <enumeratedValues><name>RDP</name><usage>read-write</usage><enumeratedValue><name>RDP1</name><description>1 beat per RxDMA transaction</description><value>1</value></enumeratedValue><enumeratedValue><name>RDP2</name><description>2 beats per RxDMA transaction</description><value>2</value></enumeratedValue><enumeratedValue><name>RDP4</name><description>4 beats per RxDMA transaction</description><value>4</value></enumeratedValue><enumeratedValue><name>RDP8</name><description>8 beats per RxDMA transaction</description><value>8</value></enumeratedValue><enumeratedValue><name>RDP16</name><description>16 beats per RxDMA transaction</description><value>16</value></enumeratedValue><enumeratedValue><name>RDP32</name><description>32 beats per RxDMA transaction</description><value>32</value></enumeratedValue></enumeratedValues>
             </field>
             <field>
               <name>USP</name>
               <description>Use separate PBL</description>
               <bitOffset>23</bitOffset>
               <bitWidth>1</bitWidth>
+            <enumeratedValues><name>USP</name><usage>read-write</usage><enumeratedValue><name>Combined</name><description>PBL value used for both Rx and Tx DMA</description><value>0</value></enumeratedValue><enumeratedValue><name>Separate</name><description>RxDMA uses RDP value, TxDMA uses PBL value</description><value>1</value></enumeratedValue></enumeratedValues>
             </field>
             <field>
               <name>FPM</name>
               <description>4xPBL mode</description>
               <bitOffset>24</bitOffset>
               <bitWidth>1</bitWidth>
+            <enumeratedValues><name>FPM</name><usage>read-write</usage><enumeratedValue><name>x1</name><description>PBL values used as-is</description><value>0</value></enumeratedValue><enumeratedValue><name>x4</name><description>PBL values multiplied by 4</description><value>1</value></enumeratedValue></enumeratedValues>
             </field>
             <field>
               <name>AAB</name>
               <description>Address-aligned beats</description>
               <bitOffset>25</bitOffset>
               <bitWidth>1</bitWidth>
+            <enumeratedValues><name>AAB</name><usage>read-write</usage><enumeratedValue><name>Unaligned</name><description>Bursts are not aligned</description><value>0</value></enumeratedValue><enumeratedValue><name>Aligned</name><description>Align bursts to start address LS bits. First burst alignment depends on FB bit</description><value>1</value></enumeratedValue></enumeratedValues>
             </field>
           </fields>
         </register>
@@ -14505,6 +14570,7 @@
               <description>Transmit poll demand</description>
               <bitOffset>0</bitOffset>
               <bitWidth>32</bitWidth>
+            <enumeratedValues><name>TPD</name><usage>read-write</usage><enumeratedValue><name>Poll</name><description>Poll the transmit descriptor list</description><value>0</value></enumeratedValue></enumeratedValues>
             </field>
           </fields>
         </register>
@@ -14523,6 +14589,7 @@
               <description>Receive poll demand</description>
               <bitOffset>0</bitOffset>
               <bitWidth>32</bitWidth>
+            <enumeratedValues><name>RPD</name><usage>read-write</usage><enumeratedValue><name>Poll</name><description>Poll the receive descriptor list</description><value>0</value></enumeratedValue></enumeratedValues>
             </field>
           </fields>
         </register>
@@ -14541,6 +14608,7 @@
               <description>Start of receive list</description>
               <bitOffset>0</bitOffset>
               <bitWidth>32</bitWidth>
+            <writeConstraint><range><minimum>0</minimum><maximum>4294967295</maximum></range></writeConstraint>
             </field>
           </fields>
         </register>
@@ -14559,6 +14627,7 @@
               <description>Start of transmit list</description>
               <bitOffset>0</bitOffset>
               <bitWidth>32</bitWidth>
+            <writeConstraint><range><minimum>0</minimum><maximum>4294967295</maximum></range></writeConstraint>
             </field>
           </fields>
         </register>
@@ -14579,24 +14648,21 @@
             </field>
             <field>
               <name>TPSS</name>
-              <description>Transmit process stopped
-              status</description>
+              <description>Transmit process stopped status</description>
               <bitOffset>1</bitOffset>
               <bitWidth>1</bitWidth>
               <access>read-write</access>
             </field>
             <field>
               <name>TBUS</name>
-              <description>Transmit buffer unavailable
-              status</description>
+              <description>Transmit buffer unavailable status</description>
               <bitOffset>2</bitOffset>
               <bitWidth>1</bitWidth>
               <access>read-write</access>
             </field>
             <field>
               <name>TJTS</name>
-              <description>Transmit jabber timeout
-              status</description>
+              <description>Transmit jabber timeout status</description>
               <bitOffset>3</bitOffset>
               <bitWidth>1</bitWidth>
               <access>read-write</access>
@@ -14624,16 +14690,14 @@
             </field>
             <field>
               <name>RBUS</name>
-              <description>Receive buffer unavailable
-              status</description>
+              <description>Receive buffer unavailable status</description>
               <bitOffset>7</bitOffset>
               <bitWidth>1</bitWidth>
               <access>read-write</access>
             </field>
             <field>
               <name>RPSS</name>
-              <description>Receive process stopped
-              status</description>
+              <description>Receive process stopped status</description>
               <bitOffset>8</bitOffset>
               <bitWidth>1</bitWidth>
               <access>read-write</access>
@@ -14687,6 +14751,7 @@
               <bitOffset>17</bitOffset>
               <bitWidth>3</bitWidth>
               <access>read-only</access>
+            <enumeratedValues><name>RPS</name><usage>read-write</usage><enumeratedValue><name>Stopped</name><description>Stopped, reset or Stop Receive command issued</description><value>0</value></enumeratedValue><enumeratedValue><name>RunningFetching</name><description>Running, fetching receive transfer descriptor</description><value>1</value></enumeratedValue><enumeratedValue><name>RunningWaiting</name><description>Running, waiting for receive packet</description><value>3</value></enumeratedValue><enumeratedValue><name>Suspended</name><description>Suspended, receive descriptor unavailable</description><value>4</value></enumeratedValue><enumeratedValue><name>RunningWriting</name><description>Running, writing data to host memory buffer</description><value>7</value></enumeratedValue></enumeratedValues>
             </field>
             <field>
               <name>TPS</name>
@@ -14694,6 +14759,7 @@
               <bitOffset>20</bitOffset>
               <bitWidth>3</bitWidth>
               <access>read-only</access>
+            <enumeratedValues><name>TPS</name><usage>read-write</usage><enumeratedValue><name>Stopped</name><description>Stopped, Reset or Stop Transmit command issued</description><value>0</value></enumeratedValue><enumeratedValue><name>RunningFetching</name><description>Running, fetching transmit transfer descriptor</description><value>1</value></enumeratedValue><enumeratedValue><name>RunningWaiting</name><description>Running, waiting for status</description><value>2</value></enumeratedValue><enumeratedValue><name>RunningReading</name><description>Running, reading data from host memory buffer</description><value>3</value></enumeratedValue><enumeratedValue><name>Suspended</name><description>Suspended, transmit descriptor unavailable or transmit buffer underflow</description><value>6</value></enumeratedValue><enumeratedValue><name>Running</name><description>Running, closing transmit descriptor</description><value>7</value></enumeratedValue></enumeratedValues>
             </field>
             <field>
               <name>EBS</name>
@@ -14737,75 +14803,85 @@
           <fields>
             <field>
               <name>SR</name>
-              <description>SR</description>
+              <description>Start/stop receive</description>
               <bitOffset>1</bitOffset>
               <bitWidth>1</bitWidth>
+            <enumeratedValues><name>SR</name><usage>read-write</usage><enumeratedValue><name>Stopped</name><description>Reception is stopped after transfer of the current frame</description><value>0</value></enumeratedValue><enumeratedValue><name>Started</name><description>Reception is placed in the Running state</description><value>1</value></enumeratedValue></enumeratedValues>
             </field>
             <field>
               <name>OSF</name>
-              <description>OSF</description>
+              <description>Operate on second frame</description>
               <bitOffset>2</bitOffset>
               <bitWidth>1</bitWidth>
             </field>
             <field>
               <name>RTC</name>
-              <description>RTC</description>
+              <description>Receive threshold control</description>
               <bitOffset>3</bitOffset>
               <bitWidth>2</bitWidth>
+            <enumeratedValues><name>RTC</name><usage>read-write</usage><enumeratedValue><name>RTC64</name><description>64 bytes</description><value>0</value></enumeratedValue><enumeratedValue><name>RTC32</name><description>32 bytes</description><value>1</value></enumeratedValue><enumeratedValue><name>RTC96</name><description>96 bytes</description><value>2</value></enumeratedValue><enumeratedValue><name>RTC128</name><description>128 bytes</description><value>3</value></enumeratedValue></enumeratedValues>
             </field>
             <field>
               <name>FUGF</name>
-              <description>FUGF</description>
+              <description>Forward undersized good frames</description>
               <bitOffset>6</bitOffset>
               <bitWidth>1</bitWidth>
+            <enumeratedValues><name>FUGF</name><usage>read-write</usage><enumeratedValue><name>Drop</name><description>Rx FIFO drops all frames of less than 64 bytes</description><value>0</value></enumeratedValue><enumeratedValue><name>Forward</name><description>Rx FIFO forwards undersized frames</description><value>1</value></enumeratedValue></enumeratedValues>
             </field>
             <field>
               <name>FEF</name>
-              <description>FEF</description>
+              <description>Forward error frames</description>
               <bitOffset>7</bitOffset>
               <bitWidth>1</bitWidth>
+            <enumeratedValues><name>FEF</name><usage>read-write</usage><enumeratedValue><name>Drop</name><description>Rx FIFO drops frames with error status</description><value>0</value></enumeratedValue><enumeratedValue><name>Forward</name><description>All frames except runt error frames are forwarded to the DMA</description><value>1</value></enumeratedValue></enumeratedValues>
             </field>
             <field>
               <name>ST</name>
-              <description>ST</description>
+              <description>Start/stop transmission</description>
               <bitOffset>13</bitOffset>
               <bitWidth>1</bitWidth>
+            <enumeratedValues><name>ST</name><usage>read-write</usage><enumeratedValue><name>Stopped</name><description>Transmission is placed in the Stopped state</description><value>0</value></enumeratedValue><enumeratedValue><name>Started</name><description>Transmission is placed in Running state</description><value>1</value></enumeratedValue></enumeratedValues>
             </field>
             <field>
               <name>TTC</name>
-              <description>TTC</description>
+              <description>Transmit threshold control</description>
               <bitOffset>14</bitOffset>
               <bitWidth>3</bitWidth>
+            <enumeratedValues><name>TTC</name><usage>read-write</usage><enumeratedValue><name>TTC64</name><description>64 bytes</description><value>0</value></enumeratedValue><enumeratedValue><name>TTC128</name><description>128 bytes</description><value>1</value></enumeratedValue><enumeratedValue><name>TTC192</name><description>192 bytes</description><value>2</value></enumeratedValue><enumeratedValue><name>TTC256</name><description>256 bytes</description><value>3</value></enumeratedValue><enumeratedValue><name>TTC40</name><description>40 bytes</description><value>4</value></enumeratedValue><enumeratedValue><name>TTC32</name><description>32 bytes</description><value>5</value></enumeratedValue><enumeratedValue><name>TTC24</name><description>24 bytes</description><value>6</value></enumeratedValue><enumeratedValue><name>TTC16</name><description>16 bytes</description><value>7</value></enumeratedValue></enumeratedValues>
             </field>
             <field>
               <name>FTF</name>
-              <description>FTF</description>
+              <description>Flush transmit FIFO</description>
               <bitOffset>20</bitOffset>
               <bitWidth>1</bitWidth>
+            <enumeratedValues><name>FTF</name><usage>read-write</usage><enumeratedValue><name>Flush</name><description>Transmit FIFO controller logic is reset to its default values. Cleared automatically</description><value>1</value></enumeratedValue></enumeratedValues>
             </field>
             <field>
               <name>TSF</name>
-              <description>TSF</description>
+              <description>Transmit store and forward</description>
               <bitOffset>21</bitOffset>
               <bitWidth>1</bitWidth>
+            <enumeratedValues><name>TSF</name><usage>read-write</usage><enumeratedValue><name>CutThrough</name><description>Transmission starts when the frame size in the Tx FIFO exceeds TTC threshold</description><value>0</value></enumeratedValue><enumeratedValue><name>StoreForward</name><description>Transmission starts when a full frame is in the Tx FIFO</description><value>1</value></enumeratedValue></enumeratedValues>
             </field>
             <field>
               <name>DFRF</name>
-              <description>DFRF</description>
+              <description>Disable flushing of received frames</description>
               <bitOffset>24</bitOffset>
               <bitWidth>1</bitWidth>
             </field>
             <field>
               <name>RSF</name>
-              <description>RSF</description>
+              <description>Receive store and forward</description>
               <bitOffset>25</bitOffset>
               <bitWidth>1</bitWidth>
+            <enumeratedValues><name>RSF</name><usage>read-write</usage><enumeratedValue><name>CutThrough</name><description>Rx FIFO operates in cut-through mode, subject to RTC bits</description><value>0</value></enumeratedValue><enumeratedValue><name>StoreForward</name><description>Frames are read from Rx FIFO after complete frame has been written</description><value>1</value></enumeratedValue></enumeratedValues>
             </field>
             <field>
               <name>DTCEFD</name>
-              <description>DTCEFD</description>
+              <description>Dropping of TCP/IP checksum error frames disable</description>
               <bitOffset>26</bitOffset>
               <bitWidth>1</bitWidth>
+            <enumeratedValues><name>DTCEFD</name><usage>read-write</usage><enumeratedValue><name>Enabled</name><description>Drop frames with errors only in the receive checksum offload engine</description><value>0</value></enumeratedValue><enumeratedValue><name>Disabled</name><description>Do not drop frames that only have errors in the receive checksum offload engine</description><value>1</value></enumeratedValue></enumeratedValues>
             </field>
           </fields>
         </register>
@@ -14827,34 +14903,31 @@
             </field>
             <field>
               <name>TPSIE</name>
-              <description>Transmit process stopped interrupt
-              enable</description>
+              <description>Transmit process stopped interrupt enable</description>
               <bitOffset>1</bitOffset>
               <bitWidth>1</bitWidth>
             </field>
             <field>
               <name>TBUIE</name>
-              <description>Transmit buffer unavailable interrupt
-              enable</description>
+              <description>Transmit buffer unavailable interrupt enable</description>
               <bitOffset>2</bitOffset>
               <bitWidth>1</bitWidth>
             </field>
             <field>
               <name>TJTIE</name>
-              <description>Transmit jabber timeout interrupt
-              enable</description>
+              <description>Transmit jabber timeout interrupt enable</description>
               <bitOffset>3</bitOffset>
               <bitWidth>1</bitWidth>
             </field>
             <field>
               <name>ROIE</name>
-              <description>Overflow interrupt enable</description>
+              <description>Receive overflow interrupt enable</description>
               <bitOffset>4</bitOffset>
               <bitWidth>1</bitWidth>
             </field>
             <field>
               <name>TUIE</name>
-              <description>Underflow interrupt enable</description>
+              <description>Transmit underflow interrupt enable</description>
               <bitOffset>5</bitOffset>
               <bitWidth>1</bitWidth>
             </field>
@@ -14866,57 +14939,49 @@
             </field>
             <field>
               <name>RBUIE</name>
-              <description>Receive buffer unavailable interrupt
-              enable</description>
+              <description>Receive buffer unavailable interrupt enable</description>
               <bitOffset>7</bitOffset>
               <bitWidth>1</bitWidth>
             </field>
             <field>
               <name>RPSIE</name>
-              <description>Receive process stopped interrupt
-              enable</description>
+              <description>Receive process stopped interrupt enable</description>
               <bitOffset>8</bitOffset>
               <bitWidth>1</bitWidth>
             </field>
             <field>
               <name>RWTIE</name>
-              <description>receive watchdog timeout interrupt
-              enable</description>
+              <description>Receive watchdog timeout interrupt enable</description>
               <bitOffset>9</bitOffset>
               <bitWidth>1</bitWidth>
             </field>
             <field>
               <name>ETIE</name>
-              <description>Early transmit interrupt
-              enable</description>
+              <description>Early transmit interrupt enable</description>
               <bitOffset>10</bitOffset>
               <bitWidth>1</bitWidth>
             </field>
             <field>
               <name>FBEIE</name>
-              <description>Fatal bus error interrupt
-              enable</description>
+              <description>Fatal bus error interrupt enable</description>
               <bitOffset>13</bitOffset>
               <bitWidth>1</bitWidth>
             </field>
             <field>
               <name>ERIE</name>
-              <description>Early receive interrupt
-              enable</description>
+              <description>Early receive interrupt enable</description>
               <bitOffset>14</bitOffset>
               <bitWidth>1</bitWidth>
             </field>
             <field>
               <name>AISE</name>
-              <description>Abnormal interrupt summary
-              enable</description>
+              <description>Abnormal interrupt summary enable</description>
               <bitOffset>15</bitOffset>
               <bitWidth>1</bitWidth>
             </field>
             <field>
               <name>NISE</name>
-              <description>Normal interrupt summary
-              enable</description>
+              <description>Normal interrupt summary enable</description>
               <bitOffset>16</bitOffset>
               <bitWidth>1</bitWidth>
             </field>
@@ -14934,29 +14999,25 @@
           <fields>
             <field>
               <name>MFC</name>
-              <description>Missed frames by the
-              controller</description>
+              <description>Missed frames by the controller</description>
               <bitOffset>0</bitOffset>
               <bitWidth>16</bitWidth>
             </field>
             <field>
               <name>OMFC</name>
-              <description>Overflow bit for missed frame
-              counter</description>
+              <description>Overflow bit for missed frame counter</description>
               <bitOffset>16</bitOffset>
               <bitWidth>1</bitWidth>
             </field>
             <field>
               <name>MFA</name>
-              <description>Missed frames by the
-              application</description>
+              <description>Missed frames by the application</description>
               <bitOffset>17</bitOffset>
               <bitWidth>11</bitWidth>
             </field>
             <field>
               <name>OFOC</name>
-              <description>Overflow bit for FIFO overflow
-              counter</description>
+              <description>Overflow bit for FIFO overflow counter</description>
               <bitOffset>28</bitOffset>
               <bitWidth>1</bitWidth>
             </field>
@@ -14974,8 +15035,7 @@
           <fields>
             <field>
               <name>HTDAP</name>
-              <description>Host transmit descriptor address
-              pointer</description>
+              <description>Host transmit descriptor address pointer</description>
               <bitOffset>0</bitOffset>
               <bitWidth>32</bitWidth>
             </field>
@@ -14993,8 +15053,7 @@
           <fields>
             <field>
               <name>HRDAP</name>
-              <description>Host receive descriptor address
-              pointer</description>
+              <description>Host receive descriptor address pointer</description>
               <bitOffset>0</bitOffset>
               <bitWidth>32</bitWidth>
             </field>
@@ -15012,8 +15071,7 @@
           <fields>
             <field>
               <name>HTBAP</name>
-              <description>Host transmit buffer address
-              pointer</description>
+              <description>Host transmit buffer address pointer</description>
               <bitOffset>0</bitOffset>
               <bitWidth>32</bitWidth>
             </field>
@@ -15031,8 +15089,7 @@
           <fields>
             <field>
               <name>HRBAP</name>
-              <description>Host receive buffer address
-              pointer</description>
+              <description>Host receive buffer address pointer</description>
               <bitOffset>0</bitOffset>
               <bitWidth>32</bitWidth>
             </field>
@@ -15041,7 +15098,7 @@
       </registers>
     </peripheral>
     <peripheral>
-      <name>USB_OTG_GLOBAL</name>
+      <name>OTG_FS_GLOBAL</name>
       <description>USB on the go full speed</description>
       <groupName>USB_OTG</groupName>
       <baseAddress>0x50000000</baseAddress>
@@ -18320,7 +18377,7 @@
       </registers>
     </peripheral>
     <peripheral>
-      <name>USB_OTG_DEVICE</name>
+      <name>OTG_FS_DEVICE</name>
       <description>USB on the go full speed</description>
       <groupName>USB_OTG</groupName>
       <baseAddress>0x50000800</baseAddress>
@@ -20153,7 +20210,7 @@
       </registers>
     </peripheral>
     <peripheral>
-      <name>USB_OTG_PWRCLK</name>
+      <name>OTG_FS_PWRCLK</name>
       <description>USB on the go full speed</description>
       <groupName>USB_OTG</groupName>
       <baseAddress>0x50000E00</baseAddress>
