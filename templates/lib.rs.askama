@@ -5,6 +5,7 @@ use cortex_m::interrupt;
 
 pub type Result<T> = core::result::Result<T, Error>;
 
+pub mod clocks;
 pub mod gpio;
 
 {% for submodule in submodules -%}
@@ -12,13 +13,15 @@ use gpio::{{submodule.module_name}}::{{submodule.struct_name}};
 {% endfor %}
 
 pub struct System {
+  clock_config: clocks::ClockConfig,
   {% for submodule in submodules -%}
   has_{{submodule.field_name}}: bool,
   {% endfor %}
 }
 impl System {
-  pub fn new() -> Self {
+  pub fn new(clock_config: clocks::ClockConfig) -> Self {
     Self {
+      clock_config,
       {% for submodule in submodules -%}
       has_{{submodule.field_name}}: true,
       {% endfor %}

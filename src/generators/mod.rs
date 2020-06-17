@@ -4,10 +4,13 @@ use askama::Template;
 use heck::{CamelCase, KebabCase};
 use svd_expander::DeviceSpec;
 
+pub mod clocks;
 pub mod gpio;
 
 pub fn generate(device_spec: &DeviceSpec, out_dir: &OutputDirectory) -> Result<()> {
   let mut submodule_names: Vec<String> = Vec::new();
+
+  clocks::generate(device_spec, out_dir)?;
 
   submodule_names.extend(gpio::generate(device_spec, out_dir)?);
 

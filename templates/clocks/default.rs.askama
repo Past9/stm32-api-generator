@@ -1,0 +1,8 @@
+
+
+pub struct ClockConfig { }
+impl ClockConfig {
+  pub fn sysclk_freq(&self) -> u32 {
+    8_000_000
+  }
+}
