@@ -12,7 +12,7 @@ enum ClockOutputNameSelection {
 
 enum ClockComponent {
   Oscillator(Oscillator),
-  Demux(Demux),
+  Multiplexer(Multiplexer),
   Divider(Divider),
   Multiplier(Multiplier),
   Tap(Tap),
@@ -21,7 +21,7 @@ enum ClockComponent {
 #[derive(Deserialize, Debug, Clone)]
 pub struct ClockSchematic {
   oscillators: HashMap<String, Oscillator>,
-  demuxers: HashMap<String, Demux>,
+  multiplexers: HashMap<String, Multiplexer>,
   dividers: HashMap<String, Divider>,
   multipliers: HashMap<String, Multiplier>,
   taps: HashMap<String, Tap>,
@@ -44,7 +44,7 @@ impl ClockSchematic {
     self.check_no_duplicate_names()?;
     self.check_all_inputs_exist()?;
     self.check_all_outputs_are_used()?;
-    self.check_demuxer_defaults_exist()?;
+    self.check_multiplexer_defaults_exist()?;
     self.check_divider_defaults_exist()?;
     self.check_multiplier_defaults_exist()?;
     self.check_no_loops()?;
@@ -59,8 +59,8 @@ impl ClockSchematic {
       return Some(ClockComponent::Oscillator(c.clone()));
     }
 
-    if let Some((_, c)) = self.demuxers.iter().find(|(n, _)| **n == comp_name) {
-      return Some(ClockComponent::Demux(c.clone()));
+    if let Some((_, c)) = self.multiplexers.iter().find(|(n, _)| **n == comp_name) {
+      return Some(ClockComponent::Multiplexer(c.clone()));
     }
 
     if let Some((_, c)) = self.dividers.iter().find(|(n, _)| **n == comp_name) {
@@ -84,7 +84,7 @@ impl ClockSchematic {
 
     next.extend(
       self
-        .demuxers
+        .multiplexers
         .iter()
         .filter(|(_, c)| c.inputs.contains(&comp_name))
         .map(|(n, _)| n.clone()),
@@ -128,7 +128,7 @@ impl ClockSchematic {
       .oscillators
       .keys()
       .map(|k| k.clone())
-      .chain(self.demuxers.keys().map(|n| n.clone()))
+      .chain(self.multiplexers.keys().map(|n| n.clone()))
       .chain(self.dividers.keys().map(|n| n.clone()))
       .chain(self.multipliers.keys().map(|n| n.clone()))
       .chain(
@@ -152,7 +152,7 @@ impl ClockSchematic {
 
   fn list_inputs(&self) -> Vec<String> {
     let mut inputs = self
-      .demuxers
+      .multiplexers
       .values()
       .flat_map(|d| d.inputs.iter().map(|i| i.clone()))
       .chain(self.dividers.values().map(|i| i.input.clone()))
@@ -250,18 +250,18 @@ impl ClockSchematic {
     Ok(())
   }
 
-  fn check_demuxer_defaults_exist(&self) -> Result<()> {
-    let demuxers_with_bad_defaults = self
-      .demuxers
+  fn check_multiplexer_defaults_exist(&self) -> Result<()> {
+    let multiplexers_with_bad_defaults = self
+      .multiplexers
       .iter()
       .filter(|(_, d)| !d.inputs.contains(&d.default))
       .map(|(n, _)| n.clone())
       .collect::<Vec<String>>();
 
-    if demuxers_with_bad_defaults.len() > 0 {
+    if multiplexers_with_bad_defaults.len() > 0 {
       return Err(anyhow!(
-        "Demuxers have default inputs not in their input lists: {}",
-        demuxers_with_bad_defaults.join(", ")
+        "Multiplexers have default inputs not in their input lists: {}",
+        multiplexers_with_bad_defaults.join(", ")
       ));
     }
 
@@ -411,7 +411,7 @@ pub struct Oscillator {
 }
 
 #[derive(Deserialize, Debug, Clone)]
-pub struct Demux {
+pub struct Multiplexer {
   inputs: Vec<String>,
   default: String,
 }
@@ -449,7 +449,7 @@ mod tests {
             frequency: 8000000
           )
         },
-        demuxers: {
+        multiplexers: {
           "PllSourceMux": (
             inputs: [ "Hse" ],
             default: "Hse"
@@ -496,10 +496,10 @@ mod tests {
     assert_eq!(1, spec.oscillators.len());
     assert_eq!(8_000_000, spec.oscillators["Hse"].frequency);
 
-    assert_eq!(1, spec.demuxers.len());
-    assert_eq!(1, spec.demuxers["PllSourceMux"].inputs.len());
-    assert_eq!("Hse", spec.demuxers["PllSourceMux"].default);
-    assert_eq!("Hse", spec.demuxers["PllSourceMux"].inputs[0]);
+    assert_eq!(1, spec.multiplexers.len());
+    assert_eq!(1, spec.multiplexers["PllSourceMux"].inputs.len());
+    assert_eq!("Hse", spec.multiplexers["PllSourceMux"].default);
+    assert_eq!("Hse", spec.multiplexers["PllSourceMux"].inputs[0]);
 
     assert_eq!(1, spec.dividers.len());
     assert_eq!("PllSourceMux", spec.dividers["PllDiv"].input);
@@ -540,7 +540,7 @@ mod tests {
     };
 
     match spec.get_component("PllSourceMux") {
-      Some(ClockComponent::Demux(_)) => {}
+      Some(ClockComponent::Multiplexer(_)) => {}
       _ => panic!("Returned wrong component"),
     };
 
@@ -649,7 +649,7 @@ mod tests {
             frequency: 8000000
           )
         },
-        demuxers: {},
+        multiplexers: {},
         dividers: {},
         multipliers: {},
         taps: {
@@ -680,7 +680,7 @@ mod tests {
             frequency: 8000000
           )
         },
-        demuxers: {},
+        multiplexers: {},
         dividers: {},
         multipliers: {},
         taps: {
@@ -708,7 +708,7 @@ mod tests {
             frequency: 8000000
           )
         },
-        demuxers: {},
+        multiplexers: {},
         dividers: {},
         multipliers: {},
         taps: {
@@ -744,7 +744,7 @@ mod tests {
             frequency: 8000000
           )
         },
-        demuxers: {},
+        multiplexers: {},
         dividers: {},
         multipliers: {},
         taps: {
@@ -780,7 +780,7 @@ mod tests {
             frequency: 8000000
           )
         },
-        demuxers: {},
+        multiplexers: {},
         dividers: {},
         multipliers: {},
         taps: {}
@@ -805,7 +805,7 @@ mod tests {
             frequency: 8000000
           )
         },
-        demuxers: {},
+        multiplexers: {},
         dividers: {},
         multipliers: {},
         taps: {
@@ -827,7 +827,7 @@ mod tests {
   }
 
   #[test]
-  fn rejects_nonexistent_demuxer_default() {
+  fn rejects_nonexistent_multiplexer_default() {
     let res = ClockSchematic::from_ron(
       r#"
       ClockSchematic(
@@ -836,8 +836,8 @@ mod tests {
             frequency: 8000000
           )
         },
-        demuxers: {
-          "Demux": (
+        multiplexers: {
+          "Mux": (
             inputs: [ "Hse" ],
             default: "Bogus"
           )
@@ -846,7 +846,7 @@ mod tests {
         multipliers: {},
         taps: {
           "Tap1": (
-            input: "Demux",
+            input: "Mux",
             max: 0,
             terminal: true
           ),
@@ -857,7 +857,7 @@ mod tests {
 
     assert!(res.is_err());
     assert_eq!(
-      "Demuxers have default inputs not in their input lists: Demux",
+      "Multiplexers have default inputs not in their input lists: Mux",
       res.unwrap_err().to_string()
     );
   }
@@ -872,7 +872,7 @@ mod tests {
             frequency: 8000000
           )
         },
-        demuxers: {},
+        multiplexers: {},
         dividers: {
           "Div": (
             input: "Hse",
@@ -909,7 +909,7 @@ mod tests {
             frequency: 8000000
           )
         },
-        demuxers: {},
+        multiplexers: {},
         dividers: {},
         multipliers: {
           "Mul": (
@@ -946,7 +946,7 @@ mod tests {
             frequency: 8000000
           )
         },
-        demuxers: {
+        multiplexers: {
           "PllSourceMux": (
             inputs: [ "Hse", "PllMul" ],
             default: "Hse"

@@ -5,7 +5,7 @@ ClockSchematic(
 		"Hsi": (frequency: 8000000),
 		"Lsi": (frequency: 40000),
 	},
-	demuxers: {
+	multiplexers: {
 		"RtcClockMux": (inputs: ["HseRtc", "Lse", "Lsi"], default: "Lsi"),
 		"PllSourceMux": (inputs: ["HsiPll", "HsePll"], default: "HsiPll"),
 		"I2SSourceMux": (inputs: ["I2SExt", "SysClk"], default: "SysClk"),
