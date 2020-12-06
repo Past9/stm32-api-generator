@@ -5,8 +5,8 @@ use heck::{CamelCase, KebabCase};
 use svd_expander::DeviceSpec;
 
 pub mod clocks;
+pub mod fields;
 pub mod gpio;
-mod util;
 
 pub fn generate(device_spec: &DeviceSpec, out_dir: &OutputDirectory) -> Result<()> {
   /*
