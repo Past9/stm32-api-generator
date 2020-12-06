@@ -86,7 +86,7 @@ impl ClockSchematic {
       self
         .multiplexers
         .iter()
-        .filter(|(_, c)| c.inputs.contains(&comp_name))
+        .filter(|(_, c)| c.inputs.keys().any(|k| k == &comp_name))
         .map(|(n, _)| n.clone()),
     );
 
@@ -154,7 +154,7 @@ impl ClockSchematic {
     let mut inputs = self
       .multiplexers
       .values()
-      .flat_map(|d| d.inputs.iter().map(|i| i.clone()))
+      .flat_map(|d| d.inputs.iter().map(|i| i.0.clone()))
       .chain(self.dividers.values().map(|i| i.input.clone()))
       .chain(self.multipliers.values().map(|i| i.input.clone()))
       .chain(self.taps.values().map(|i| i.input.clone()))
@@ -166,7 +166,7 @@ impl ClockSchematic {
   }
 
   fn check_valid_names(&self) -> Result<()> {
-    let allowed_chars: &'static str = "abcdefghijklmnopqrstuvwxyz0123456789";
+    let allowed_chars: &'static str = "abcdefghijklmnopqrstuvwxyz0123456789_";
 
     let mut names = self.list_inputs();
     names.append(&mut self.list_outputs(ClockOutputNameSelection::Everything));
@@ -254,7 +254,7 @@ impl ClockSchematic {
     let multiplexers_with_bad_defaults = self
       .multiplexers
       .iter()
-      .filter(|(_, d)| !d.inputs.contains(&d.default))
+      .filter(|(_, d)| !d.inputs.keys().any(|k| k == &d.default))
       .map(|(n, _)| n.clone())
       .collect::<Vec<String>>();
 
@@ -272,7 +272,7 @@ impl ClockSchematic {
     let dividers_with_bad_defaults = self
       .dividers
       .iter()
-      .filter(|(_, d)| !d.values.contains(&d.default))
+      .filter(|(_, d)| !d.values.values().any(|v| v.divisor() == d.default as f32))
       .map(|(n, _)| n.clone())
       .collect::<Vec<String>>();
 
@@ -290,7 +290,7 @@ impl ClockSchematic {
     let multipliers_with_bad_defaults = self
       .multipliers
       .iter()
-      .filter(|(_, m)| !m.values.contains(&m.default))
+      .filter(|(_, m)| !m.values.values().any(|v| v.factor() == m.default as f32))
       .map(|(n, _)| n.clone())
       .collect::<Vec<String>>();
 
@@ -411,23 +411,71 @@ pub struct Oscillator {
 }
 
 #[derive(Deserialize, Debug, Clone)]
+pub struct MultiplexerInput(String, u32, #[serde(default)] Option<String>);
+impl MultiplexerInput {
+  pub fn path(&self) -> String {
+    self.0.clone()
+  }
+
+  pub fn bit_value(&self) -> u32 {
+    self.1.clone()
+  }
+
+  pub fn alias(&self) -> Option<String> {
+    self.2.clone()
+  }
+}
+
+#[derive(Deserialize, Debug, Clone)]
 pub struct Multiplexer {
-  inputs: Vec<String>,
+  inputs: HashMap<String, MultiplexerInput>,
   default: String,
+}
+
+#[derive(Deserialize, Debug, Clone)]
+pub struct DividerOption(f32, String, u32);
+impl DividerOption {
+  pub fn divisor(&self) -> f32 {
+    self.0
+  }
+
+  pub fn path(&self) -> String {
+    self.1.clone()
+  }
+
+  pub fn bit_value(&self) -> u32 {
+    self.2
+  }
 }
 
 #[derive(Deserialize, Debug, Clone)]
 pub struct Divider {
   input: String,
-  default: u64,
-  values: Vec<u64>,
+  default: f32,
+  values: HashMap<String, DividerOption>,
+}
+
+#[derive(Deserialize, Debug, Clone)]
+pub struct MultiplierOption(f32, String, u32);
+impl MultiplierOption {
+  pub fn factor(&self) -> f32 {
+    self.0
+  }
+
+  pub fn path(&self) -> String {
+    self.1.clone()
+  }
+
+  pub fn bit_value(&self) -> u32 {
+    self.2
+  }
 }
 
 #[derive(Deserialize, Debug, Clone)]
 pub struct Multiplier {
   input: String,
-  default: u64,
-  values: Vec<u64>,
+  default: f32,
+  values: HashMap<String, MultiplierOption>,
 }
 
 #[derive(Deserialize, Debug, Clone)]
@@ -445,43 +493,49 @@ mod tests {
   const BASIC_RON: &'static str = r#"
       ClockSchematic(
         oscillators: {
-          "Hse": (
+          "hse": (
             frequency: 8000000
           )
         },
         multiplexers: {
-          "PllSourceMux": (
-            inputs: [ "Hse" ],
-            default: "Hse"
+          "pll_source_mux": (
+            inputs: { 
+              "hse": ("path", 1)
+            },
+            default: "hse"
           )
         },
         dividers: {
-          "PllDiv": (
-            input: "PllSourceMux",
+          "pll_div": (
+            input: "pll_source_mux",
+            values: {
+              "no_div": (1, "path", 0)
+            },
             default: 1,
-            values: [1]
           )
         },
         multipliers: {
-          "PllMul": (
-            input: "PllDiv", 
-            default: 3,
-            values: [2,3,4]
+          "pll_mul": (
+            input: "pll_div", 
+            values: {
+              "no_mul": (2, "path", 1)
+            },
+            default: 2,
           )
         },
         taps: {
-          "Tap1": (
-            input: "PllMul", 
+          "tap1": (
+            input: "pll_mul", 
             max: 1000000, 
             terminal: false
           ),
-          "Tap2": (
-            input: "Tap1", 
+          "tap2": (
+            input: "tap1", 
             max: 0, 
             terminal: true
           ),
-          "Tap3": (
-            input: "Tap1", 
+          "tap3": (
+            input: "tap1", 
             max: 0, 
             terminal: true
           )
@@ -491,80 +545,101 @@ mod tests {
 
   #[test]
   fn deserializes_spec_string() {
-    let spec: ClockSchematic = ron::from_str(BASIC_RON).unwrap();
+    let spec = ClockSchematic::from_ron(BASIC_RON).unwrap();
 
+    // Check oscillators
     assert_eq!(1, spec.oscillators.len());
-    assert_eq!(8_000_000, spec.oscillators["Hse"].frequency);
+    assert_eq!(8_000_000, spec.oscillators["hse"].frequency);
 
+    // Check multiplexers
     assert_eq!(1, spec.multiplexers.len());
-    assert_eq!(1, spec.multiplexers["PllSourceMux"].inputs.len());
-    assert_eq!("Hse", spec.multiplexers["PllSourceMux"].default);
-    assert_eq!("Hse", spec.multiplexers["PllSourceMux"].inputs[0]);
+    assert_eq!(1, spec.multiplexers["pll_source_mux"].inputs.len());
+    assert_eq!("hse", spec.multiplexers["pll_source_mux"].default);
+    assert_eq!(1, spec.multiplexers["pll_source_mux"].inputs.len());
+    assert_eq!(
+      "path",
+      spec.multiplexers["pll_source_mux"].inputs["hse"].path()
+    );
+    assert_eq!(
+      1,
+      spec.multiplexers["pll_source_mux"].inputs["hse"].bit_value()
+    );
 
+    // Check dividers
     assert_eq!(1, spec.dividers.len());
-    assert_eq!("PllSourceMux", spec.dividers["PllDiv"].input);
-    assert_eq!(1, spec.dividers["PllDiv"].default);
-    assert_eq!(1, spec.dividers["PllDiv"].values.len());
-    assert_eq!(1, spec.dividers["PllDiv"].values[0]);
+    assert_eq!("pll_source_mux", spec.dividers["pll_div"].input);
+    assert_eq!(1f32, spec.dividers["pll_div"].default);
+    assert_eq!(1, spec.dividers["pll_div"].values.len());
+    assert_eq!(1f32, spec.dividers["pll_div"].values["no_div"].divisor());
+    assert_eq!("path", spec.dividers["pll_div"].values["no_div"].path());
+    assert_eq!(0, spec.dividers["pll_div"].values["no_div"].bit_value());
 
+    // Check multipliers
     assert_eq!(1, spec.multipliers.len());
-    assert_eq!("PllDiv", spec.multipliers["PllMul"].input);
-    assert_eq!(3, spec.multipliers["PllMul"].default);
-    assert_eq!(3, spec.multipliers["PllMul"].values.len());
-    assert_eq!(2, spec.multipliers["PllMul"].values[0]);
-    assert_eq!(3, spec.multipliers["PllMul"].values[1]);
-    assert_eq!(4, spec.multipliers["PllMul"].values[2]);
+    assert_eq!("pll_div", spec.multipliers["pll_mul"].input);
+    assert_eq!(2f32, spec.multipliers["pll_mul"].default);
+    assert_eq!(1, spec.multipliers["pll_mul"].values.len());
+    assert_eq!(2f32, spec.multipliers["pll_mul"].values["no_mul"].factor());
+    assert_eq!("path", spec.multipliers["pll_mul"].values["no_mul"].path());
+    assert_eq!(1, spec.multipliers["pll_mul"].values["no_mul"].bit_value());
 
+    // Check taps
     assert_eq!(3, spec.taps.len());
 
-    assert_eq!("PllMul", spec.taps["Tap1"].input);
-    assert_eq!(1000000, spec.taps["Tap1"].max);
-    assert_eq!(false, spec.taps["Tap1"].terminal);
+    assert_eq!("pll_mul", spec.taps["tap1"].input);
+    assert_eq!(1000000, spec.taps["tap1"].max);
+    assert_eq!(false, spec.taps["tap1"].terminal);
 
-    assert_eq!("Tap1", spec.taps["Tap2"].input);
-    assert_eq!(0, spec.taps["Tap2"].max);
-    assert_eq!(true, spec.taps["Tap2"].terminal);
+    assert_eq!("tap1", spec.taps["tap2"].input);
+    assert_eq!(0, spec.taps["tap2"].max);
+    assert_eq!(true, spec.taps["tap2"].terminal);
 
-    assert_eq!("Tap1", spec.taps["Tap3"].input);
-    assert_eq!(0, spec.taps["Tap3"].max);
-    assert_eq!(true, spec.taps["Tap3"].terminal);
+    assert_eq!("tap1", spec.taps["tap3"].input);
+    assert_eq!(0, spec.taps["tap3"].max);
+    assert_eq!(true, spec.taps["tap3"].terminal);
   }
 
   #[test]
   fn gets_components_by_name() {
-    let spec: ClockSchematic = ron::from_str(BASIC_RON).unwrap();
+    let spec = ClockSchematic::from_ron(BASIC_RON).unwrap();
 
-    match spec.get_component("Hse") {
+    match spec.get_component("hse") {
       Some(ClockComponent::Oscillator(_)) => {}
+      None => panic!("Returned None"),
       _ => panic!("Returned wrong component"),
     };
 
-    match spec.get_component("PllSourceMux") {
+    match spec.get_component("pll_source_mux") {
       Some(ClockComponent::Multiplexer(_)) => {}
+      None => panic!("Returned None"),
       _ => panic!("Returned wrong component"),
     };
 
-    match spec.get_component("PllDiv") {
+    match spec.get_component("pll_div") {
       Some(ClockComponent::Divider(_)) => {}
+      None => panic!("Returned None"),
       _ => panic!("Returned wrong component"),
     };
 
-    match spec.get_component("PllMul") {
+    match spec.get_component("pll_mul") {
       Some(ClockComponent::Multiplier(_)) => {}
+      None => panic!("Returned None"),
       _ => panic!("Returned wrong component"),
     };
 
-    match spec.get_component("Tap1") {
+    match spec.get_component("tap1") {
       Some(ClockComponent::Tap(_)) => {}
+      None => panic!("Returned None"),
       _ => panic!("Returned wrong component"),
     };
 
-    match spec.get_component("Tap2") {
+    match spec.get_component("tap2") {
       Some(ClockComponent::Tap(_)) => {}
+      None => panic!("Returned None"),
       _ => panic!("Returned wrong component"),
     };
 
-    match spec.get_component("Bogus") {
+    match spec.get_component("bogus") {
       None => {}
       _ => panic!("Returned wrong component"),
     };
@@ -572,18 +647,18 @@ mod tests {
 
   #[test]
   fn gets_next_components() {
-    let spec: ClockSchematic = ron::from_str(BASIC_RON).unwrap();
+    let spec = ClockSchematic::from_ron(BASIC_RON).unwrap();
 
-    assert_eq!(vec!["PllSourceMux"], spec.get_next("Hse"));
-    assert_eq!(vec!["PllDiv"], spec.get_next("PllSourceMux"));
-    assert_eq!(vec!["PllMul"], spec.get_next("PllDiv"));
-    assert_eq!(vec!["Tap1"], spec.get_next("PllMul"));
+    assert_eq!(vec!["pll_source_mux"], spec.get_next("hse"));
+    assert_eq!(vec!["pll_div"], spec.get_next("pll_source_mux"));
+    assert_eq!(vec!["pll_mul"], spec.get_next("pll_div"));
+    assert_eq!(vec!["tap1"], spec.get_next("pll_mul"));
 
-    let mut taps = spec.get_next("Tap1");
+    let mut taps = spec.get_next("tap1");
     taps.sort();
-    assert_eq!(vec!["Tap2", "Tap3"], taps);
+    assert_eq!(vec!["tap2", "tap3"], taps);
 
-    assert_eq!(Vec::<String>::new(), spec.get_next("Bogus"));
+    assert_eq!(Vec::<String>::new(), spec.get_next("bogus"));
   }
 
   #[test]
@@ -595,13 +670,13 @@ mod tests {
     assert_eq!(
       outputs,
       vec![
-        "Hse",
-        "PllDiv",
-        "PllMul",
-        "PllSourceMux",
-        "Tap1",
-        "Tap2",
-        "Tap3"
+        "hse",
+        "pll_div",
+        "pll_mul",
+        "pll_source_mux",
+        "tap1",
+        "tap2",
+        "tap3"
       ]
     );
   }
@@ -613,7 +688,7 @@ mod tests {
 
     outputs.sort();
     assert_eq!(
-      vec!["Hse", "PllDiv", "PllMul", "PllSourceMux", "Tap1"],
+      vec!["hse", "pll_div", "pll_mul", "pll_source_mux", "tap1"],
       outputs
     );
   }
@@ -624,7 +699,7 @@ mod tests {
     let mut outputs = spec.list_outputs(ClockOutputNameSelection::TerminalTapsOnly);
     outputs.sort();
 
-    assert_eq!(vec!["Tap2", "Tap3"], outputs);
+    assert_eq!(vec!["tap2", "tap3"], outputs);
   }
 
   #[test]
@@ -634,7 +709,7 @@ mod tests {
 
     inputs.sort();
     assert_eq!(
-      vec!["Hse", "PllDiv", "PllMul", "PllSourceMux", "Tap1"],
+      vec!["hse", "pll_div", "pll_mul", "pll_source_mux", "tap1"],
       inputs
     );
   }
@@ -838,7 +913,9 @@ mod tests {
         },
         multiplexers: {
           "Mux": (
-            inputs: [ "Hse" ],
+            inputs: { 
+              "Hse": ("path", 0) 
+            },
             default: "Bogus"
           )
         },
@@ -877,7 +954,9 @@ mod tests {
           "Div": (
             input: "Hse",
             default: 2,
-            values: [1]
+            values: {
+              "no_div": (1, "path", 0)
+            }
           )
         },
         multipliers: {},
@@ -915,7 +994,9 @@ mod tests {
           "Mul": (
             input: "Hse",
             default: 2,
-            values: [1]
+            values: {
+              "no_mul": (1, "path", 0)
+            }
           )
         },
         taps: {
@@ -948,7 +1029,10 @@ mod tests {
         },
         multiplexers: {
           "PllSourceMux": (
-            inputs: [ "Hse", "PllMul" ],
+            inputs: { 
+              "Hse": ("path", 0), 
+              "PllMul": ("path", 1)
+            },
             default: "Hse"
           )
         },
@@ -956,14 +1040,20 @@ mod tests {
           "PllDiv": (
             input: "PllSourceMux",
             default: 1,
-            values: [1]
+            values: {
+              "no_div": (1, "path", 0)
+            }
           )
         },
         multipliers: {
           "PllMul": (
             input: "PllDiv", 
             default: 3,
-            values: [2,3,4]
+            values: {
+              "no_div": (2, "path", 0),
+              "mul1": (3, "path", 1),
+              "mul2": (4, "path", 2)
+            }
           )
         },
         taps: {
