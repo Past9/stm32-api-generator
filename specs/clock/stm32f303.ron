@@ -1,69 +1,175 @@
 ClockSchematic(
 	oscillators: {
-		"Hse": (frequency: 8000000),
-		"Lse": (frequency: 32768),
-		"Hsi": (frequency: 8000000),
-		"Lsi": (frequency: 40000),
+		"hse": (frequency: 8000000),
+		"lse": (frequency: 32768),
+		"hsi": (frequency: 8000000),
+		"lsi": (frequency: 40000),
 	},
 	multiplexers: {
-		"RtcClockMux": (inputs: ["HseRtc", "Lse", "Lsi"], default: "Lsi"),
-		"PllSourceMux": (inputs: ["HsiPll", "HsePll"], default: "HsiPll"),
-		"I2SSourceMux": (inputs: ["I2SExt", "SysClk"], default: "SysClk"),
-		"McoSourceMux": (inputs: ["Hsi", "Lse", "Hse", "PllClkMco", "Lsi", "SysClk"], default: "SysClk"),
-		"SystemClockMux": (inputs: ["Hsi", "Hse", "PllMul"], default: "PllMul"),
-		"Tim1SourceMux": (inputs: ["PllMulTim1", "PClk2"], default: "PClk2"),
-		"I2C1ClockMux": (inputs: ["Hsi", "SysClk"], default: "Hsi"),
-		"I2C2ClockMux": (inputs: ["Hsi", "SysClk"], default: "Hsi"),
-		"Usart1ClockMux": (inputs: ["SysClk", "Hsi", "Lse", "PClk2"], default: "PClk2"),
-		"Usart2ClockMux": (inputs: ["SysClk", "Hsi", "Lse", "PClk1"], default: "PClk1"),
-		"Usart3ClockMux": (inputs: ["SysClk", "Hsi", "Lse", "PClk1"], default: "PClk1"),
-		"Uart4ClockMux": (inputs: ["SysClk", "Hsi", "Lse", "PClk1"], default: "PClk1"),
-		"Uart5ClockMux": (inputs: ["SysClk", "Hsi", "Lse", "PClk1"], default: "PClk1"),
+		"rtc_clock_mux": (inputs: {
+      "off": ("rcc.bdcr.rtcsel", 0),
+      "lse": ("rcc.bdcr.rtcsel", 1), 
+      "lsi": ("rcc.bdcr.rtcsel", 2),
+      "hse_rtc": ("rcc.bdcr.rtcsel", 3, "hse")
+    }, default: "off"),
+		"pll_source_mux": (inputs: {
+      "hsi_pll": ("rcc.cfgr.pllsrc", 0, "hsi"), 
+      "hse_pll": ("rcc.cfgr.pllsrc", 1, "hse")
+    }, default: "hsi_pll"),
+		"i2s_source_mux": (inputs: {
+      "i2s_ext": ("rcc.cfgr.i2ssrc", 1, "external"), 
+      "sys_clk": ("rcc.cfgr.i2ssrc", 0)
+    }, default: "sys_clk"),
+		"mco_source_mux": (inputs: {
+      "off": ("rcc.cfgr.mco", 0)
+      "lsi": ("rcc.cfgr.mco", 2)
+      "lse": ("rcc.cfgr.mco", 3), 
+      "sys_clk" ("rcc.cfgr.mco", 4):
+      "hsi": ("rcc.cfgr.mco", 5), 
+      "hse": ("rcc.cfgr.mco", 6), 
+      "pll_clk_mco": ("rcc.cfgr.mco", 7, "pll"), 
+    }, default: "off"),
+		"system_clock_mux": (inputs: {
+      "hsi": ("rcc.cfgr.sw", 0), 
+      "hse": ("rcc.cfgr.sw", 1), 
+      "pll_mul": ("rcc.cfgr.sw", 2, "pll"),  
+    }, default: "hsi"),
+		"tim1_source_mux": (inputs: { 
+      "p_clk2": ("rcc.cfgr3.tim1sw", 0), 
+      "pll_mul_timers": ("rcc.cfgr3.tim1sw", 1, "pll"), 
+    }, default: "p_clk_2"),
+		"tim8_source_mux": (inputs: { 
+      "p_clk2": ("rcc.cfgr3.tim8sw", 0), 
+      "pll_mul_timers": ("rcc.cfgr3.tim8sw", 1, "pll"), 
+    }, default: "p_clk_2"),
+		"i2c1_clock_mux": (inputs: {
+      "hsi": ("rcc.sfgr3.i2c1sw", 0), 
+      "sys_clk": ("rcc.sfgr3.i2c1sw", 1),
+    }, default: "hsi"),
+		"i2c2_clock_mux": (inputs: {
+      "hsi": ("rcc.sfgr3.i2c2sw", 0), 
+      "sys_clk": ("rcc.sfgr3.i2c2sw", 1),
+    }, default: "hsi"),
+		"usart1_clock_mux": (inputs: {
+      "p_clk2": ("rcc.cfgr3.usart1sw", 0)
+      "sys_clk": ("rcc.cfgr3.usart1sw", 1), 
+      "lse": ("rcc.cfgr3.usart1sw", 2), 
+      "hsi": ("rcc.cfgr3.usart1sw", 3), 
+    }, default: "p_clk2"),
+		"usart2_clock_mux": (inputs: {
+      "p_clk2": ("rcc.cfgr3.usart2sw", 0)
+      "sys_clk": ("rcc.cfgr3.usart2sw", 1), 
+      "lse": ("rcc.cfgr3.usart2sw", 2), 
+      "hsi": ("rcc.cfgr3.usart2sw", 3), 
+    }, default: "p_clk2"),
+		"usart3_clock_mux": (inputs: {
+      "p_clk2": ("rcc.cfgr3.usart3sw", 0)
+      "sys_clk": ("rcc.cfgr3.usart3sw", 1), 
+      "lse": ("rcc.cfgr3.usart3sw", 2), 
+      "hsi": ("rcc.cfgr3.usart3sw", 3), 
+    }, default: "p_clk2"),
+		"uart4_clock_mux": (inputs: {
+      "p_clk1": ("rcc.cfgr3.uart4sw", 0, "pclk"),
+      "sys_clk": ("rcc.cfgr3.uart4sw", 1), 
+      "lse": ("rcc.cfgr3.uart4sw", 2), 
+      "hsi": ("rcc.cfgr3.uart4sw", 3), 
+    }, default: "p_clk1"),
+		"uart5_clock_mux": (inputs: {
+      "p_clk1": ("rcc.cfgr3.uart5sw", 0, "pclk"),
+      "sys_clk": ("rcc.cfgr3.uart5sw", 1), 
+      "lse": ("rcc.cfgr3.uart5sw", 2), 
+      "hsi": ("rcc.cfgr3.uart5sw", 3), 
+    }, default: "p_clk1"),
 	},
 	dividers: {
-		"HseRtc": (input: "Hse", default: 32, values: [32]),
-		"HsiPll": (input: "Hsi", default: 2, values: [2]),
-		"HsePll": (input: "Hse", default: 1, values: [1]),
-		"PllClkMco": (input: "Hse", default: 2, values: [2]),
-		"AhbPrescaler": (input: "SysClk", default: 1, values: [1,2,4,8,16,32,64,128,256,512]),
-		"HClkToCortexSystemTimer": (input: "HClk", default: 1, values: [1,8]),
-		"Apb1Prescaler": (input: "HClk", default: 1, values: [1,2,4,8,16]),
-		"Apb2Prescaler": (input: "HClk", default: 1, values: [1,2,4,8,16]),
-    "UsbPrescaler": (input: "PllMul", default: 1, values: [1]),
-    "Adc1And2Prescaler": (input: "PllMul", default: 1, values: [1])
-    "Adc3And4Prescaler": (input: "PllMul", default: 1, values: [1])
+		"hse_rtc": (input: "hse", default: 32),
+		"hsi_pll": (input: "hsi", default: 2),
+		"hse_pll": (input: "hse", default: 1),
+		"pll_clk_mco": (input: "hse", default: 2),
+		"ahb_prescaler": (input: "sys_clk", values: {
+      "no_div": (1, "rcc.cfgr.hpre", 0),
+      "div_2": (2, "rcc.cfgr.hpre", 8),
+      "div_4": (4, "rcc.cfgr.hpre", 9),
+      "div_8": (8, "rcc.cfgr.hpre", 10),
+      "div_16": (16, "rcc.cfgr.hpre", 11),
+      "div_64": (64, "rcc.cfgr.hpre", 12),
+      "div_128": (128, "rcc.cfgr.hpre", 13),
+      "div_256": (256, "rcc.cfgr.hpre", 14),
+      "div_512": (512, "rcc.cfgr.hpre", 15),
+    }, default: 1),
+		"h_clk_to_cortex_system_timer": (input: "h_clk", values: {
+      "no_div": (1, "stk.ctrl.clksource", 0),
+      "div_8": (8, "stk.ctrl.clksource", 1)
+    }, default: 1),
+		"apb1_prescaler": (input: "h_clk", values: {
+      "no_div": (1, "rcc.cfgr.ppre1", 0),
+      "div_2": (2, "rcc.cfgr.ppre1", 4),
+      "div_4": (4, "rcc.cfgr.ppre1", 5),
+      "div_8": (8, "rcc.cfgr.ppre1", 6),
+      "div_16": (16, "rcc.cfgr.ppre1", 7),
+    }, default: 1),
+		"apb2_prescaler": (input: "h_clk", values: {
+      "no_div": (1, "rcc.cfgr.ppre1", 0),
+      "div_2": (2, "rcc.cfgr.ppre1", 4),
+      "div_4": (4, "rcc.cfgr.ppre1", 5),
+      "div_8": (8, "rcc.cfgr.ppre1", 6),
+      "div_16": (16, "rcc.cfgr.ppre1", 7),
+    }, default: 1),
+    "usb_prescaler": (input: "pll_mul", values: {
+      "no_div": (1, "rcc.cfgr.usbpre", 0),
+      "div_1p5": (1.5, "rcc.cfgr.usbpre", 1),
+    }, default: 1),
+    "adc1_and_2_prescaler": (input: "pll_mul", default: 1)
+    "adc3_and_4_prescaler": (input: "pll_mul", default: 1)
 	},
 	multipliers: {
-		"PllMul": (input: "Pll", default: 9, values: [2,3,4,5,6,7,8,9,10,11,12,13,14,15,16]),
-		"Apb1PrescalerApb1TimerClocks": (input: "Apb1Prescaler", default: 1, values: [1]),
-		"Apb2PrescalerApb2TimerClocks": (input: "Apb2Prescaler", default: 1, values: [1])
+		"pll_mul": (input: "pll", default: 9, values: {
+      "mul_2": ("rcc.cfgr.pllmul", 0, 2),
+      "mul_3": ("rcc.cfgr.pllmul", 1, 3),
+      "mul_4": ("rcc.cfgr.pllmul", 2, 4),
+      "mul_5": ("rcc.cfgr.pllmul", 3, 5),
+      "mul_6": ("rcc.cfgr.pllmul", 4, 6),
+      "mul_7": ("rcc.cfgr.pllmul", 5, 7),
+      "mul_8": ("rcc.cfgr.pllmul", 6, 8),
+      "mul_9": ("rcc.cfgr.pllmul", 7, 9),
+      "mul_10": ("rcc.cfgr.pllmul", 8, 10),
+      "mul_11": ("rcc.cfgr.pllmul", 9, 11),
+      "mul_12": ("rcc.cfgr.pllmul", 10, 12),
+      "mul_13": ("rcc.cfgr.pllmul", 11, 13),
+      "mul_14": ("rcc.cfgr.pllmul", 12, 14),
+      "mul_15": ("rcc.cfgr.pllmul", 13, 15),
+      "mul_16": ("rcc.cfgr.pllmul", 14, 16)
+    }, default: "mul_2"),
+		"pll_mul_timers": (input: "pll_mul", default: 2),
+		"apb1_prescaler_apb1_timer_clocks": (input: "apb1_prescaler", default: 1),
+		"apb2_prescaler_apb2_timer_clocks": (input: "apb2_prescaler", default: 1)
 	},
   taps: {
-    "Pll": (input: "PllSourceMux", max: 0, terminal: false),
-    "ToRtc": (input: "RtcClockMux", max: 0, terminal: true),
-    "ToIwdg": (input: "Lsi", max: 0, terminal: true),
-    "ToFlItfClk": (input: "Hsi", max: 0, terminal: true),
-    "ToI2S": (input: "I2SSourceMux", max: 0, terminal: true),
-    "Mco": (input: "McoSourceMux", max: 0, terminal: true),
-    "SysClk": (input: "SystemClockMux", max: 0, terminal: false),
-    "HClk": (input: "AhbPrescaler", max: 72000000, terminal: false),
-    "ToUsart1": (input: "Usart1ClockMux", max: 0, terminal: true),
-    "ToUsart2": (input: "Usart2ClockMux", max: 0, terminal: true),
-    "ToUsart3": (input: "Usart3ClockMux", max: 0, terminal: true),
-    "ToUart4": (input: "Uart4ClockMux", max: 0, terminal: true),
-    "ToUart5": (input: "Uart5ClockMux", max: 0, terminal: true),
-    "ToI2C1": (input: "I2C1ClockMux", max: 0, terminal: true),
-    "ToI2C2": (input: "I2C2ClockMux", max: 0, terminal: true),
-    "ToTim1": (input: "Tim1SourceMux", max: 0, terminal: true),
-    "ToAhbCoreAndMemoryAndDma": (input: "HClk", max: 0, terminal: true),
-    "ToCortexSystemTimer": (input: "HClkToCortexSystemTimer", max: 0, terminal: true),
-    "FClkCortexClock": (input: "HClk", max: 0, terminal: true),
-    "PClk1": (input: "Apb1Prescaler", max: 36000000, terminal: true),
-    "PClk2": (input: "Apb2Prescaler", max: 36000000, terminal: true),
-    "ToUsb": (input: "UsbPrescaler", max: 0, terminal: true),
-    "ToAdc1And2": (input: "Adc1And2Prescaler", max: 0, terminal: true),
-    "ToAdc3And4": (input: "Adc3And4Prescaler", max: 0, terminal: true),
-    "ToApb1TimerClocks": (input: "Apb1PrescalerApb1TimerClocks", max: 0, terminal: true),
-    "ToApb2TimerClocks": (input: "Apb2PrescalerApb2TimerClocks", max: 0, terminal: true),
+    "pll": (input: "pll_source_mux", max: 0, terminal: false),
+    "to_rtc": (input: "rtc_clock_mux", max: 0, terminal: true),
+    "to_iwdg": (input: "lsi", max: 0, terminal: true),
+    "to_fl_itf_clk": (input: "hsi", max: 0, terminal: true),
+    "to_i2s": (input: "i2s_source_mux", max: 0, terminal: true),
+    "mco": (input: "mco_source_mux", max: 0, terminal: true),
+    "sys_clk": (input: "system_clock_mux", max: 0, terminal: false),
+    "h_clk": (input: "ahb_prescaler", max: 72000000, terminal: false),
+    "to_usart1": (input: "usart1_clock_mux", max: 0, terminal: true),
+    "to_usart2": (input: "usart2_clock_mux", max: 0, terminal: true),
+    "to_usart3": (input: "usart3_clock_mux", max: 0, terminal: true),
+    "to_uart4": (input: "uart4_clock_mux", max: 0, terminal: true),
+    "to_uart5": (input: "uart5_clock_mux", max: 0, terminal: true),
+    "to_i2c1": (input: "i2c1_clock_mux", max: 0, terminal: true),
+    "to_i2c2": (input: "i2c2_clock_mux", max: 0, terminal: true),
+    "to_tim1": (input: "tim1_source_mux", max: 0, terminal: true),
+    "to_ahb_core_and_memory_and_dma": (input: "h_clk", max: 0, terminal: true),
+    "to_cortex_system_timer": (input: "h_clk_to_cortex_system_timer", max: 0, terminal: true),
+    "f_clk_cortex_clock": (input: "h_clk", max: 0, terminal: true),
+    "p_clk1": (input: "apb1_prescaler", max: 36000000, terminal: true),
+    "p_clk2": (input: "apb2_prescaler", max: 36000000, terminal: true),
+    "to_usb": (input: "usb_prescaler", max: 0, terminal: true),
+    "to_adc1_and_2": (input: "adc1_and_2_prescaler", max: 0, terminal: true),
+    "to_adc3_and_4": (input: "adc3_and_4_prescaler", max: 0, terminal: true),
+    "to_apb1_timer_clocks": (input: "apb1_prescaler_apb1_timer_clocks", max: 0, terminal: true),
+    "to_apb2_timer_clocks": (input: "apb2_prescaler_apb2_timer_clocks", max: 0, terminal: true),
   }
 )
