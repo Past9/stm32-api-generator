@@ -1,8 +1,10 @@
-use std::fs::File;
-use std::io::Read;
-
 #[macro_use]
 extern crate fstrings;
+#[macro_use]
+mod logging;
+
+use std::fs::File;
+use std::io::Read;
 
 use anyhow::{anyhow, Result};
 use clap::{App, Arg};
@@ -18,7 +20,7 @@ mod generators;
 fn main() {
   match run() {
     Ok(()) => {}
-    Err(err) => println!("{}", err.to_string()),
+    Err(err) => error!("{}", err.to_string()),
   }
 }
 
@@ -123,7 +125,7 @@ fn run() -> Result<()> {
         Err(_) => return Err(anyhow!("Could not convert OS String to String")),
       };
 
-      println!("Loading {}", &path_str);
+      info!("Loading {}", &path_str);
 
       // Load and parse the SVD file
       let xml = &mut String::new();
@@ -146,7 +148,7 @@ fn run() -> Result<()> {
   }
 
   if !found_file {
-    println!("No files found");
+    error!("No files found");
   }
 
   Ok(())

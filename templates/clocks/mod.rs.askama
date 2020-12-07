@@ -1,5 +1,8 @@
 
 
-mod clock_config;
+pub struct ClockConfig {
+  
+}
+impl ClockConfig {
 
-pub use clock_config::*;
+}

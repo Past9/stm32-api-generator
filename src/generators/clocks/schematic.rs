@@ -28,13 +28,21 @@ pub struct ClockSchematic {
 }
 impl ClockSchematic {
   pub fn from_ron_file<P: AsRef<Path>>(path: P) -> Result<ClockSchematic> {
-    let sch = Self::from_ron(&fs::read_to_string(path)?)?;
+    info!(
+      "Parsing clock schematic from file '{}'",
+      match path.as_ref().to_str() {
+        Some(s) => s,
+        None => "(could not create string from path)",
+      }
+    );
+    let mut sch: ClockSchematic = ron::from_str(&fs::read_to_string(path)?)?;
     sch.validate()?;
     Ok(sch)
   }
 
   pub fn from_ron<S: Into<String>>(ron: S) -> Result<ClockSchematic> {
-    let sch: ClockSchematic = ron::from_str(&ron.into())?;
+    info!("Parsing clock schematic from RON string");
+    let mut sch: ClockSchematic = ron::from_str(&ron.into())?;
     sch.validate()?;
     Ok(sch)
   }
@@ -50,6 +58,14 @@ impl ClockSchematic {
     self.check_no_loops()?;
 
     Ok(())
+  }
+
+  pub fn get_oscillators(&self) -> Vec<(String, Oscillator)> {
+    self
+      .oscillators
+      .iter()
+      .map(|(k, v)| (k.clone(), v.clone()))
+      .collect()
   }
 
   pub fn get_all_components(&self) -> Vec<(String, ClockComponent)> {
@@ -248,7 +264,10 @@ impl ClockSchematic {
       .iter()
       .filter_map(|i| match outputs.contains(i) {
         true => None,
-        false => Some(i.clone()),
+        false => match i.as_str() {
+          "off" => None,
+          _ => Some(i.clone()),
+        },
       })
       .collect::<Vec<String>>();
 
@@ -306,6 +325,9 @@ impl ClockSchematic {
     let dividers_with_bad_defaults = self
       .dividers
       .iter()
+      // Filter out any that have no values, the default will be used as the sole value
+      .filter(|(_, d)| d.values.len() > 0)
+      // Find any where the default isn't in the values list
       .filter(|(_, d)| !d.values.values().any(|v| v.divisor() == d.default as f32))
       .map(|(n, _)| n.clone())
       .collect::<Vec<String>>();
@@ -324,6 +346,9 @@ impl ClockSchematic {
     let multipliers_with_bad_defaults = self
       .multipliers
       .iter()
+      // Filter out any that have no values, the default will be used as the sole value
+      .filter(|(_, m)| m.values.len() > 0)
+      // Find any where the default isn't in the values list
       .filter(|(_, m)| !m.values.values().any(|v| v.factor() == m.default as f32))
       .map(|(n, _)| n.clone())
       .collect::<Vec<String>>();
@@ -452,6 +477,11 @@ impl ClockSchematic {
 pub struct Oscillator {
   frequency: u64,
 }
+impl Oscillator {
+  pub fn frequency(&self) -> u64 {
+    self.frequency
+  }
+}
 
 #[derive(Deserialize, Debug, Clone)]
 pub struct MultiplexerInput(String, u32, #[serde(default)] Option<String>);
@@ -504,6 +534,7 @@ impl DividerOption {
 pub struct Divider {
   input: String,
   default: f32,
+  #[serde(default)]
   values: HashMap<String, DividerOption>,
 }
 impl Divider {
@@ -540,6 +571,7 @@ impl MultiplierOption {
 pub struct Multiplier {
   input: String,
   default: f32,
+  #[serde(default)]
   values: HashMap<String, MultiplierOption>,
 }
 impl Multiplier {
@@ -566,7 +598,6 @@ pub struct Tap {
 #[cfg(test)]
 mod tests {
   use super::*;
-  use ron;
 
   const BASIC_RON: &'static str = r#"
       ClockSchematic(

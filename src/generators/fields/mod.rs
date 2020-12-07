@@ -1,4 +1,4 @@
-use anyhow::{anyhow, Result};
+use anyhow::{Result};
 use serde::Deserialize;
 use svd_expander::DeviceSpec;
 
@@ -52,7 +52,7 @@ mod tests {
 
   #[test]
   fn deserializes_from_ron() {
-    let spec =
+    let _spec =
       DeviceSpec::from_xml(&fs::read_to_string("./specs/svd/arm_device.svd").unwrap()).unwrap();
 
     let ron = r#"

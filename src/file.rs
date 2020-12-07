@@ -38,7 +38,9 @@ impl OutputDirectory {
   pub fn publish(&self, rel_file_path: &str, file_content: &str) -> Result<()> {
     // Add the relative file path to the output directory base path
     let mut file_path_buf = PathBuf::from(&self.dir_path);
+
     file_path_buf.push(rel_file_path);
+    info!("Publishing file '{:?}'", file_path_buf);
 
     // Ensure the file's parent directory exists
     create_dir_all(match file_path_buf.parent() {
@@ -57,6 +59,7 @@ impl OutputDirectory {
 }
 
 pub fn run_command(path: &str, command: &str, args: Vec<&str>) -> Result<()> {
+  info!("Executing command: {}$ {}", path, command);
   let output = Command::new(command)
     .current_dir(path)
     .args(args)
@@ -90,7 +93,7 @@ pub fn post_process(
   build_docs: bool,
 ) -> Result<()> {
   if run_fix {
-    println!("Fixing...");
+    info!("Fixing...");
     run_command(
       path,
       "cargo",
@@ -105,27 +108,27 @@ pub fn post_process(
   }
 
   if run_format {
-    println!("Formatting...");
+    info!("Formatting...");
     run_command(path, "cargo", vec!["+nightly", "fmt"])?;
   }
 
   if run_check {
-    println!("Checking...");
+    info!("Checking...");
     run_command(path, "cargo", vec!["check", "--all-features"])?;
   }
 
   if build_release {
-    println!("Building in release mode...");
+    info!("Building in release mode...");
     run_command(path, "cargo", vec!["build", "--release", "--all-features"])?;
   }
 
   if build_debug {
-    println!("Building in debug mode...");
+    info!("Building in debug mode...");
     run_command(path, "cargo", vec!["build", "--all-features"])?;
   }
 
   if build_docs {
-    println!("Building documentation...");
+    info!("Building documentation...");
     run_command(path, "cargo", vec!["doc", "--all-features"])?;
   }
 
