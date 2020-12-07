@@ -10,7 +10,7 @@ enum ClockOutputNameSelection {
   Everything,
 }
 
-enum ClockComponent {
+pub enum ClockComponent {
   Oscillator(Oscillator),
   Multiplexer(Multiplexer),
   Divider(Divider),
@@ -52,7 +52,41 @@ impl ClockSchematic {
     Ok(())
   }
 
-  fn get_component<S: Into<String>>(&self, name: S) -> Option<ClockComponent> {
+  pub fn get_all_components(&self) -> Vec<(String, ClockComponent)> {
+    let oscillators = self
+      .oscillators
+      .iter()
+      .map(|(k, v)| (k.clone(), ClockComponent::Oscillator(v.clone())));
+
+    let multiplexers = self
+      .multiplexers
+      .iter()
+      .map(|(k, v)| (k.clone(), ClockComponent::Multiplexer(v.clone())));
+
+    let dividers = self
+      .dividers
+      .iter()
+      .map(|(k, v)| (k.clone(), ClockComponent::Divider(v.clone())));
+
+    let multipliers = self
+      .multipliers
+      .iter()
+      .map(|(k, v)| (k.clone(), ClockComponent::Multiplier(v.clone())));
+
+    let taps = self
+      .taps
+      .iter()
+      .map(|(k, v)| (k.clone(), ClockComponent::Tap(v.clone())));
+
+    oscillators
+      .chain(multiplexers)
+      .chain(dividers)
+      .chain(multipliers)
+      .chain(taps)
+      .collect()
+  }
+
+  pub fn get_component<S: Into<String>>(&self, name: S) -> Option<ClockComponent> {
     let comp_name = name.into();
 
     if let Some((_, c)) = self.oscillators.iter().find(|(n, _)| **n == comp_name) {
@@ -304,7 +338,7 @@ impl ClockSchematic {
     Ok(())
   }
 
-  fn check_no_loops(&self) -> Result<()> {
+  pub fn get_paths(&self) -> Vec<Vec<String>> {
     const MAX_DEPTH: usize = 32;
 
     // Each oscillator is the start of a path.
@@ -322,9 +356,43 @@ impl ClockSchematic {
       paths = new_paths;
     }
 
-    // Look for loops inside all the generated paths.
+    paths
+  }
+
+  fn make_paths(&self, path: &Vec<String>) -> Vec<Vec<String>> {
+    match path.iter().last() {
+      Some(l) => {
+        // Get the possible next moves from the last path element.
+        let next = self.get_next(l);
+
+        match next.len() {
+          // If there's no next item, then we're at the end of the path so we
+          // just return what we were given.
+          0 => vec![path.clone()],
+          // Multiply the original path into multiple copies, one for each
+          // potential next move, then append those next moves to each. We
+          // now have independent copies of each possible path.
+          _ => next
+            .iter()
+            .map(|n| {
+              let mut new_path = path.clone();
+              new_path.push(n.clone());
+              new_path
+            })
+            .collect(),
+        }
+      }
+      // If there was no last element, that means we were given an
+      // empty path. There's nowhere to go, so just return an empty
+      // one as well.
+      None => Vec::new(),
+    }
+  }
+
+  fn check_no_loops(&self) -> Result<()> {
+    // Look for loops inside all the paths.
     let mut loops: Vec<Vec<String>> = Vec::new();
-    for path in paths.iter() {
+    for path in self.get_paths().iter() {
       if let Some(lp) = Self::find_loop(path) {
         loops.push(lp);
       }
@@ -351,39 +419,11 @@ impl ClockSchematic {
     }
   }
 
-  fn make_paths(&self, path: &Vec<String>) -> Vec<Vec<String>> {
-    match path.iter().last() {
-      Some(l) => {
-        // Get the possible next moves from the last path element.
-        let next = self.get_next(l);
-
-        // Multiply the original path into multiple copies, one for each
-        // potential next move, then append those next moves to each. We
-        // now have independent copies of each possible path.
-        next
-          .iter()
-          .map(|n| {
-            let mut new_path = path.clone();
-            new_path.push(n.clone());
-            new_path
-          })
-          .collect()
-      }
-      // If there was no last element, that means we were given an
-      // empty path. There's nowhere to go, so just return an empty
-      // one as well.
-      None => Vec::new(),
-    }
-  }
-
   fn find_loop(path: &Vec<String>) -> Option<Vec<String>> {
-    let mut path_loop = Vec::new();
-
     // Loop over every item except the last one in the path we were given. Each of these
     // is potentially the start of a loop.
-    'outer: for (i, start_name) in path.iter().take(path.len() - 1).enumerate() {
-      // Clear `path_loop` so we can store a new potential loop in it.
-      path_loop = vec![start_name.clone()];
+    for (i, start_name) in path.iter().take(path.len() - 1).enumerate() {
+      let mut path_loop = vec![start_name.clone()];
 
       // Loop over every item after our starting item and append it to `path_loop`.
       for next_name in path[i + 1..].iter() {
@@ -392,16 +432,19 @@ impl ClockSchematic {
         // If an item after the starting item is the same as the starting item,
         // we've found a loop and can stop searching.
         if start_name == next_name {
-          break 'outer;
+          match path_loop.len() > 0 {
+            true => {
+              return Some(path_loop);
+            }
+            false => {
+              return None;
+            }
+          }
         }
       }
     }
 
-    // If we found a loop, return it.
-    match path_loop.len() > 0 {
-      true => Some(path_loop),
-      false => None,
-    }
+    None
   }
 }
 
@@ -431,6 +474,15 @@ pub struct Multiplexer {
   inputs: HashMap<String, MultiplexerInput>,
   default: String,
 }
+impl Multiplexer {
+  pub fn inputs(&self) -> &HashMap<String, MultiplexerInput> {
+    &self.inputs
+  }
+
+  pub fn default(&self) -> &String {
+    &self.default
+  }
+}
 
 #[derive(Deserialize, Debug, Clone)]
 pub struct DividerOption(f32, String, u32);
@@ -454,6 +506,19 @@ pub struct Divider {
   default: f32,
   values: HashMap<String, DividerOption>,
 }
+impl Divider {
+  pub fn input(&self) -> String {
+    self.input.clone()
+  }
+
+  pub fn default(&self) -> f32 {
+    self.default
+  }
+
+  pub fn values(&self) -> HashMap<String, DividerOption> {
+    self.values.clone()
+  }
+}
 
 #[derive(Deserialize, Debug, Clone)]
 pub struct MultiplierOption(f32, String, u32);
@@ -476,6 +541,19 @@ pub struct Multiplier {
   input: String,
   default: f32,
   values: HashMap<String, MultiplierOption>,
+}
+impl Multiplier {
+  pub fn input(&self) -> String {
+    self.input.clone()
+  }
+
+  pub fn default(&self) -> f32 {
+    self.default
+  }
+
+  pub fn values(&self) -> HashMap<String, MultiplierOption> {
+    self.values.clone()
+  }
 }
 
 #[derive(Deserialize, Debug, Clone)]
@@ -1014,6 +1092,70 @@ mod tests {
     assert_eq!(
       "Multipliers have default values not in their value lists: Mul",
       res.unwrap_err().to_string()
+    );
+  }
+
+  #[test]
+  fn gets_all_paths() {
+    let spec = ClockSchematic::from_ron(
+      r#"
+      ClockSchematic(
+        oscillators: {
+          "Hse": (
+            frequency: 8000000
+          )
+        },
+        multiplexers: {
+          "PllSourceMux": (
+            inputs: { 
+              "Hse": ("path", 0), 
+            },
+            default: "Hse"
+          )
+        },
+        dividers: {
+          "PllDiv": (
+            input: "PllSourceMux",
+            default: 1,
+            values: {
+              "no_div": (1, "path", 0)
+            }
+          )
+        },
+        multipliers: {
+          "PllMul": (
+            input: "PllSourceMux", 
+            default: 3,
+            values: {
+              "no_div": (2, "path", 0),
+              "mul1": (3, "path", 1),
+              "mul2": (4, "path", 2)
+            }
+          )
+        },
+        taps: {
+          "Tap1": (
+            input: "PllDiv", 
+            max: 1000000, 
+            terminal: true
+          ),
+          "Tap2": (
+            input: "PllMul", 
+            max: 0, 
+            terminal: true
+          )
+        }
+      )
+    "#,
+    )
+    .unwrap();
+
+    assert_eq!(
+      vec![
+        vec!["Hse", "PllSourceMux", "PllDiv", "Tap1"],
+        vec!["Hse", "PllSourceMux", "PllMul", "Tap2"]
+      ],
+      spec.get_paths()
     );
   }
 
