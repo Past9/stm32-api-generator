@@ -68,6 +68,14 @@ impl ClockSchematic {
       .collect()
   }
 
+  pub fn get_multiplexers(&self) -> Vec<(String, Multiplexer)> {
+    self
+      .multiplexers
+      .iter()
+      .map(|(k, v)| (k.clone(), v.clone()))
+      .collect()
+  }
+
   pub fn get_all_components(&self) -> Vec<(String, ClockComponent)> {
     let oscillators = self
       .oscillators
@@ -497,6 +505,13 @@ impl MultiplexerInput {
   pub fn alias(&self) -> Option<String> {
     self.2.clone()
   }
+
+  pub fn public_name(&self, key_name: &String) -> String {
+    match self.alias() {
+      Some(a) => a,
+      None => key_name.clone(),
+    }
+  }
 }
 
 #[derive(Deserialize, Debug, Clone)]
@@ -509,8 +524,15 @@ impl Multiplexer {
     &self.inputs
   }
 
-  pub fn default(&self) -> &String {
+  pub fn default_name(&self) -> &String {
     &self.default
+  }
+
+  pub fn default_input(&self) -> Result<(String, MultiplexerInput)> {
+    match self.inputs.iter().find(|(k, v)| **k == self.default) {
+      Some((k, v)) => Ok((k.clone(), v.clone())),
+      None => Err(anyhow!("Multiplexer default input not in map")),
+    }
   }
 }
 

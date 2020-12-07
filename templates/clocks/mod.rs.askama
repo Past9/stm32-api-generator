@@ -1,8 +1,67 @@
 
+{% for mux in multiplexers %}
+#[derive(Clone)]
+pub enum {{mux.struct_name}}Input {
+  {% for mux_in in mux.inputs -%}
+  {{mux_in.struct_name}},
+  {% endfor %}
+}
+{% endfor %}
+
+
 
 pub struct ClockConfig {
+  // Oscillator frequencies 
+  {% for osc in oscillators -%}
+  {{osc.name}}_freq: u64,
+  {% endfor %}
   
+  // Multiplexer inputs
+  {% for mux in multiplexers -%}
+  {{mux.field_name}}_input: {{mux.struct_name}}Input,
+  {% endfor %}
 }
 impl ClockConfig {
+  pub fn with_freqs(
+    {% for osc in oscillators -%}
+    {{osc.name}}_freq: u64,
+    {% endfor %}
+  ) -> ClockConfig {
+    ClockConfig {
+      // Oscillator frequencies 
+      {% for osc in oscillators -%}
+      {{osc.name}}_freq,
+      {% endfor %}
 
+      // Multiplexer inputs
+      {% for mux in multiplexers -%}
+      {{mux.field_name}}_input: {{mux.struct_name}}Input::{{mux.default.struct_name}},
+      {% endfor %}
+    }
+  }
+
+  pub fn new() -> ClockConfig {
+    Self::with_freqs(
+      {% for osc in oscillators -%}
+      {{osc.default_freq}},
+      {% endfor %}
+    )
+  }
+
+  {% for osc in oscillators %}
+  pub fn get_{{osc.name}}_freq(&self) -> u64 {
+    self.{{osc.name}}_freq
+  }
+  {% endfor %}
+  
+  {% for mux in multiplexers %}
+  pub fn get_{{mux.field_name}}_input(&self) -> &{{mux.struct_name}}Input {
+    &self.{{mux.field_name}}_input
+  }
+  
+  pub fn set_{{mux.field_name}}_input(&mut self, input: &{{mux.struct_name}}Input) {
+
+  }
+  {% endfor %}
+  
 }

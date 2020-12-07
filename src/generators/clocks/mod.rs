@@ -1,4 +1,3 @@
-mod generator;
 mod schematic;
 
 use std::path::Path;
@@ -48,8 +47,7 @@ impl<'a> ClockGenerator<'a> {
   }
 
   pub fn generate(&self, out_dir: &OutputDirectory) -> Result<()> {
-    let _tpl = ClocksTemplate::new(&self.schematic);
-    let clocks_file = ClocksTemplate::new(&self.schematic).render()?;
+    let clocks_file = ClocksTemplate::new(self.spec, &self.schematic)?.render()?;
 
     out_dir.publish(&f!("src/clocks.rs"), &clocks_file)?;
 
@@ -119,7 +117,6 @@ impl<'a> ClockGenerator<'a> {
           .iter()
           .map(|(_, v)| (v.path(), v.bit_value(), name.clone()))
           .collect::<Vec<(String, u32, String)>>(),
-        _ => vec![],
         (name, ClockComponent::Multiplier(m)) => m
           .values()
           .iter()
@@ -156,36 +153,91 @@ impl<'a> ClockGenerator<'a> {
 
 mod templates {
   use super::ClockSchematic;
-  use crate::generators::clocks::schematic;
+  use crate::generators::{clocks::schematic, fields::WriteInstruction};
+  use anyhow::Result;
   use askama::Template;
+  use heck::{CamelCase, SnakeCase};
+  use svd_expander::DeviceSpec;
 
   #[derive(Template)]
   #[template(path = "clocks/mod.rs.askama", escape = "none")]
   pub struct ClocksTemplate {
-    oscillators: Vec<Oscillator>,
+    oscillators: Vec<Osc>,
+    multiplexers: Vec<Mux>,
   }
   impl ClocksTemplate {
-    pub fn new(schematic: &ClockSchematic) -> ClocksTemplate {
-      ClocksTemplate {
+    pub fn new(spec: &DeviceSpec, schematic: &ClockSchematic) -> Result<ClocksTemplate> {
+      Ok(ClocksTemplate {
         oscillators: schematic
           .get_oscillators()
           .iter()
-          .map(|t| Oscillator::new(t))
+          .map(|(k, v)| Osc::new(k, v))
           .collect(),
+        multiplexers: schematic
+          .get_multiplexers()
+          .iter()
+          .map(|(k, v)| Mux::new(spec, k, v))
+          .collect::<Result<Vec<Mux>>>()?,
+      })
+    }
+  }
+
+  pub struct Osc {
+    name: String,
+    default_freq: u64,
+  }
+  impl Osc {
+    pub fn new(name: &String, oscillator: &schematic::Oscillator) -> Osc {
+      Osc {
+        name: name.to_snake_case(),
+        default_freq: oscillator.frequency(),
       }
     }
   }
 
-  pub struct Oscillator {
-    name: String,
-    default_freq: u64,
+  pub struct Mux {
+    struct_name: String,
+    field_name: String,
+    inputs: Vec<MuxIn>,
+    default: MuxIn,
   }
-  impl Oscillator {
-    pub fn new(o: &(String, schematic::Oscillator)) -> Oscillator {
-      Oscillator {
-        name: o.0.clone(),
-        default_freq: o.1.frequency(),
-      }
+  impl Mux {
+    pub fn new(
+      spec: &DeviceSpec,
+      name: &String,
+      multiplexer: &schematic::Multiplexer,
+    ) -> Result<Mux> {
+      let default_input = multiplexer.default_input()?;
+
+      Ok(Mux {
+        struct_name: name.to_camel_case(),
+        field_name: name.to_snake_case(),
+        inputs: multiplexer
+          .inputs()
+          .iter()
+          .map(|(k, v)| MuxIn::new(spec, k, v))
+          .collect::<Result<Vec<MuxIn>>>()?,
+        default: MuxIn::new(spec, &default_input.0, &default_input.1)?,
+      })
+    }
+  }
+
+  pub struct MuxIn {
+    struct_name: String,
+    field_name: String,
+    write_code: String,
+  }
+  impl MuxIn {
+    pub fn new(
+      spec: &DeviceSpec,
+      name: &String,
+      input: &schematic::MultiplexerInput,
+    ) -> Result<MuxIn> {
+      Ok(MuxIn {
+        struct_name: input.public_name(name).to_camel_case(),
+        field_name: input.public_name(name).to_snake_case(),
+        write_code: WriteInstruction::Set(input.path(), input.bit_value()).to_code(spec)?,
+      })
     }
   }
 }

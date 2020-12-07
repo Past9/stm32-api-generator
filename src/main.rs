@@ -144,12 +144,16 @@ fn run() -> Result<()> {
         build_debug,
         build_docs,
       )?;
+
+      success!("Generated crate for device {}", spec.name);
     }
   }
 
   if !found_file {
     error!("No files found");
   }
+
+  success!("All crates generated successfully.");
 
   Ok(())
 }
