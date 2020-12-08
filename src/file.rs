@@ -40,7 +40,7 @@ impl OutputDirectory {
     let mut file_path_buf = PathBuf::from(&self.dir_path);
 
     file_path_buf.push(rel_file_path);
-    info!("Publishing file '{:?}'", file_path_buf);
+    info!("Publishing file {}", file_path_buf.to_string_lossy());
 
     // Ensure the file's parent directory exists
     create_dir_all(match file_path_buf.parent() {

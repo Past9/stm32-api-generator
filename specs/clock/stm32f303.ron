@@ -69,13 +69,13 @@ ClockSchematic(
       "hsi": ("rcc.cfgr3.usart3sw", 3), 
     }, default: "p_clk2"),
 		"uart4_clock_mux": (inputs: {
-      "p_clk1": ("rcc.cfgr3.uart4sw", 0, Some("pclk")),
+      "p_clk1": ("rcc.cfgr3.uart4sw", 0, Some("p_clk")),
       "sys_clk": ("rcc.cfgr3.uart4sw", 1), 
       "lse": ("rcc.cfgr3.uart4sw", 2), 
       "hsi": ("rcc.cfgr3.uart4sw", 3), 
     }, default: "p_clk1"),
 		"uart5_clock_mux": (inputs: {
-      "p_clk1": ("rcc.cfgr3.uart5sw", 0, Some("pclk")),
+      "p_clk1": ("rcc.cfgr3.uart5sw", 0, Some("p_clk")),
       "sys_clk": ("rcc.cfgr3.uart5sw", 1), 
       "lse": ("rcc.cfgr3.uart5sw", 2), 
       "hsi": ("rcc.cfgr3.uart5sw", 3), 

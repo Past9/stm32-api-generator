@@ -47,7 +47,7 @@ impl<'a> ClockGenerator<'a> {
   }
 
   pub fn generate(&self, out_dir: &OutputDirectory) -> Result<()> {
-    let clocks_file = ClocksTemplate::new(self.spec, &self.schematic)?.render()?;
+    let clocks_file = ClocksTemplate::new(&self.schematic)?.render()?;
 
     out_dir.publish(&f!("src/clocks.rs"), &clocks_file)?;
 
@@ -164,9 +164,14 @@ mod templates {
   pub struct ClocksTemplate {
     oscillators: Vec<Osc>,
     multiplexers: Vec<Mux>,
+    variable_dividers: Vec<VarDiv>,
+    variable_multipliers: Vec<VarMul>,
+    fixed_dividers: Vec<FixedDiv>,
+    fixed_multipliers: Vec<FixedMul>,
+    taps: Vec<Tap>,
   }
   impl ClocksTemplate {
-    pub fn new(spec: &DeviceSpec, schematic: &ClockSchematic) -> Result<ClocksTemplate> {
+    pub fn new(schematic: &ClockSchematic) -> Result<ClocksTemplate> {
       Ok(ClocksTemplate {
         oscillators: schematic
           .get_oscillators()
@@ -176,8 +181,37 @@ mod templates {
         multiplexers: schematic
           .get_multiplexers()
           .iter()
-          .map(|(k, v)| Mux::new(spec, k, v))
+          .map(|(k, v)| Mux::new(k, v))
           .collect::<Result<Vec<Mux>>>()?,
+        variable_dividers: schematic
+          .get_dividers()
+          .iter()
+          .filter(|(_, v)| !v.is_fixed_value())
+          .map(|(k, v)| VarDiv::new(k, v))
+          .collect::<Result<Vec<VarDiv>>>()?,
+        variable_multipliers: schematic
+          .get_multipliers()
+          .iter()
+          .filter(|(_, v)| !v.is_fixed_value())
+          .map(|(k, v)| VarMul::new(k, v))
+          .collect::<Result<Vec<VarMul>>>()?,
+        fixed_dividers: schematic
+          .get_dividers()
+          .iter()
+          .filter(|(_, v)| v.is_fixed_value())
+          .map(|(k, v)| FixedDiv::new(k, v))
+          .collect::<Result<Vec<FixedDiv>>>()?,
+        fixed_multipliers: schematic
+          .get_multipliers()
+          .iter()
+          .filter(|(_, v)| v.is_fixed_value())
+          .map(|(k, v)| FixedMul::new(k, v))
+          .collect::<Result<Vec<FixedMul>>>()?,
+        taps: schematic
+          .get_taps()
+          .iter()
+          .map(|(k, v)| Tap::new(k, v))
+          .collect::<Result<Vec<Tap>>>()?,
       })
     }
   }
@@ -202,41 +236,186 @@ mod templates {
     default: MuxIn,
   }
   impl Mux {
-    pub fn new(
-      spec: &DeviceSpec,
-      name: &String,
-      multiplexer: &schematic::Multiplexer,
-    ) -> Result<Mux> {
+    pub fn new(name: &String, multiplexer: &schematic::Multiplexer) -> Result<Mux> {
       let default_input = multiplexer.default_input()?;
 
-      Ok(Mux {
+      let mut mux = Mux {
         struct_name: name.to_camel_case(),
         field_name: name.to_snake_case(),
         inputs: multiplexer
           .inputs()
           .iter()
-          .map(|(k, v)| MuxIn::new(spec, k, v))
+          .map(|(k, v)| MuxIn::new(k, v))
           .collect::<Result<Vec<MuxIn>>>()?,
-        default: MuxIn::new(spec, &default_input.0, &default_input.1)?,
-      })
+        default: MuxIn::new(&default_input.0, &default_input.1)?,
+      };
+
+      mux.inputs.sort_by_key(|m| m.bit_value);
+
+      Ok(mux)
     }
   }
 
   pub struct MuxIn {
     struct_name: String,
     field_name: String,
-    write_code: String,
+    real_struct_name: String,
+    real_field_name: String,
+    bit_value: u32,
+    is_off: bool,
   }
   impl MuxIn {
-    pub fn new(
-      spec: &DeviceSpec,
-      name: &String,
-      input: &schematic::MultiplexerInput,
-    ) -> Result<MuxIn> {
+    pub fn new(name: &String, input: &schematic::MultiplexerInput) -> Result<MuxIn> {
       Ok(MuxIn {
         struct_name: input.public_name(name).to_camel_case(),
         field_name: input.public_name(name).to_snake_case(),
-        write_code: WriteInstruction::Set(input.path(), input.bit_value()).to_code(spec)?,
+        real_struct_name: name.to_camel_case(),
+        real_field_name: name.to_snake_case(),
+        bit_value: input.bit_value(),
+        is_off: input.public_name(name) == "off",
+      })
+    }
+  }
+
+  pub struct FixedMul {
+    struct_name: String,
+    field_name: String,
+    factor: f32,
+    input_field_name: String,
+  }
+  impl FixedMul {
+    pub fn new(name: &String, multiplier: &schematic::Multiplier) -> Result<FixedMul> {
+      Ok(FixedMul {
+        struct_name: name.to_camel_case(),
+        field_name: name.to_snake_case(),
+        factor: multiplier.default(),
+        input_field_name: multiplier.input(),
+      })
+    }
+  }
+
+  pub struct VarMul {
+    struct_name: String,
+    field_name: String,
+    options: Vec<MulOpt>,
+    default: MulOpt,
+    input_field_name: String,
+  }
+  impl VarMul {
+    pub fn new(name: &String, multiplier: &schematic::Multiplier) -> Result<VarMul> {
+      let default_input = multiplier.default_input()?;
+
+      let mut mul = VarMul {
+        struct_name: name.to_camel_case(),
+        field_name: name.to_snake_case(),
+        options: multiplier
+          .values()
+          .iter()
+          .map(|(k, v)| MulOpt::new(k, v))
+          .collect::<Result<Vec<MulOpt>>>()?,
+        default: MulOpt::new(&default_input.0, &default_input.1)?,
+        input_field_name: multiplier.input(),
+      };
+
+      mul.options.sort_by_key(|m| m.bit_value);
+
+      Ok(mul)
+    }
+  }
+
+  pub struct MulOpt {
+    struct_name: String,
+    field_name: String,
+    bit_value: u32,
+    factor: f32,
+  }
+  impl MulOpt {
+    pub fn new(name: &String, option: &schematic::MultiplierOption) -> Result<MulOpt> {
+      Ok(MulOpt {
+        struct_name: name.to_camel_case(),
+        field_name: name.to_snake_case(),
+        bit_value: option.bit_value(),
+        factor: option.factor(),
+      })
+    }
+  }
+
+  pub struct FixedDiv {
+    struct_name: String,
+    field_name: String,
+    divisor: f32,
+    input_field_name: String,
+  }
+  impl FixedDiv {
+    pub fn new(name: &String, divider: &schematic::Divider) -> Result<FixedDiv> {
+      Ok(FixedDiv {
+        struct_name: name.to_camel_case(),
+        field_name: name.to_snake_case(),
+        divisor: divider.default(),
+        input_field_name: divider.input(),
+      })
+    }
+  }
+
+  pub struct VarDiv {
+    struct_name: String,
+    field_name: String,
+    options: Vec<DivOpt>,
+    default: DivOpt,
+    input_field_name: String,
+  }
+  impl VarDiv {
+    pub fn new(name: &String, divider: &schematic::Divider) -> Result<VarDiv> {
+      let default_input = divider.default_input()?;
+
+      let mut div = VarDiv {
+        struct_name: name.to_camel_case(),
+        field_name: name.to_snake_case(),
+        options: divider
+          .values()
+          .iter()
+          .map(|(k, v)| DivOpt::new(k, v))
+          .collect::<Result<Vec<DivOpt>>>()?,
+        default: DivOpt::new(&default_input.0, &default_input.1)?,
+        input_field_name: divider.input(),
+      };
+
+      div.options.sort_by_key(|d| d.bit_value);
+
+      Ok(div)
+    }
+  }
+
+  pub struct DivOpt {
+    struct_name: String,
+    field_name: String,
+    bit_value: u32,
+    divisor: f32,
+  }
+  impl DivOpt {
+    pub fn new(name: &String, option: &schematic::DividerOption) -> Result<DivOpt> {
+      Ok(DivOpt {
+        struct_name: name.to_camel_case(),
+        field_name: name.to_snake_case(),
+        bit_value: option.bit_value(),
+        divisor: option.divisor(),
+      })
+    }
+  }
+
+  pub struct Tap {
+    struct_name: String,
+    field_name: String,
+    is_terminal: bool,
+    input_field_name: String,
+  }
+  impl Tap {
+    pub fn new(name: &String, tap: &schematic::Tap) -> Result<Tap> {
+      Ok(Tap {
+        struct_name: name.to_camel_case(),
+        field_name: name.to_snake_case(),
+        is_terminal: tap.terminal(),
+        input_field_name: tap.input(),
       })
     }
   }

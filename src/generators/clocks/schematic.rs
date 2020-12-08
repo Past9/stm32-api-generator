@@ -76,6 +76,30 @@ impl ClockSchematic {
       .collect()
   }
 
+  pub fn get_dividers(&self) -> Vec<(String, Divider)> {
+    self
+      .dividers
+      .iter()
+      .map(|(k, v)| (k.clone(), v.clone()))
+      .collect()
+  }
+
+  pub fn get_multipliers(&self) -> Vec<(String, Multiplier)> {
+    self
+      .multipliers
+      .iter()
+      .map(|(k, v)| (k.clone(), v.clone()))
+      .collect()
+  }
+
+  pub fn get_taps(&self) -> Vec<(String, Tap)> {
+    self
+      .taps
+      .iter()
+      .map(|(k, v)| (k.clone(), v.clone()))
+      .collect()
+  }
+
   pub fn get_all_components(&self) -> Vec<(String, ClockComponent)> {
     let oscillators = self
       .oscillators
@@ -571,6 +595,25 @@ impl Divider {
   pub fn values(&self) -> HashMap<String, DividerOption> {
     self.values.clone()
   }
+
+  pub fn default_name(&self) -> &f32 {
+    &self.default
+  }
+
+  pub fn is_fixed_value(&self) -> bool {
+    self.values.len() == 0 || self.values.len() == 1
+  }
+
+  pub fn default_input(&self) -> Result<(String, DividerOption)> {
+    match self
+      .values
+      .iter()
+      .find(|(_, v)| v.divisor() == self.default)
+    {
+      Some((k, v)) => Ok((k.clone(), v.clone())),
+      None => Err(anyhow!("Multiplier default input not in map")),
+    }
+  }
 }
 
 #[derive(Deserialize, Debug, Clone)]
@@ -608,6 +651,21 @@ impl Multiplier {
   pub fn values(&self) -> HashMap<String, MultiplierOption> {
     self.values.clone()
   }
+
+  pub fn default_name(&self) -> &f32 {
+    &self.default
+  }
+
+  pub fn is_fixed_value(&self) -> bool {
+    self.values.len() == 0 || self.values.len() == 1
+  }
+
+  pub fn default_input(&self) -> Result<(String, MultiplierOption)> {
+    match self.values.iter().find(|(_, v)| v.factor() == self.default) {
+      Some((k, v)) => Ok((k.clone(), v.clone())),
+      None => Err(anyhow!("Multiplier default input not in map")),
+    }
+  }
 }
 
 #[derive(Deserialize, Debug, Clone)]
@@ -615,6 +673,19 @@ pub struct Tap {
   input: String,
   max: u64,
   terminal: bool,
+}
+impl Tap {
+  pub fn input(&self) -> String {
+    self.input.clone()
+  }
+
+  pub fn max(&self) -> u64 {
+    self.max
+  }
+
+  pub fn terminal(&self) -> bool {
+    self.terminal
+  }
 }
 
 #[cfg(test)]

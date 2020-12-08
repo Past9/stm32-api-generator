@@ -1,24 +1,56 @@
 
+// Multiplexer input options
 {% for mux in multiplexers %}
-#[derive(Clone)]
+#[derive(Copy, Clone)]
 pub enum {{mux.struct_name}}Input {
   {% for mux_in in mux.inputs -%}
-  {{mux_in.struct_name}},
+  {{mux_in.struct_name}} = {{mux_in.bit_value}},
   {% endfor %}
 }
 {% endfor %}
 
 
+// Divider value options
+{% for div in variable_dividers %}
+#[derive(Copy, Clone)]
+pub enum {{div.struct_name}}Value {
+  {% for div_opt in div.options -%} 
+  {{div_opt.struct_name}} = {{div_opt.bit_value}},
+  {% endfor %}
+}
+{% endfor %}
+
+
+// Multiplier value options
+{% for mul in variable_multipliers %}
+#[derive(Copy, Clone)]
+pub enum {{mul.struct_name}}Value {
+  {% for mul_opt in mul.options -%} 
+  {{mul_opt.struct_name}} = {{mul_opt.bit_value}},
+  {% endfor %}
+}
+{% endfor %}
+
 
 pub struct ClockConfig {
   // Oscillator frequencies 
   {% for osc in oscillators -%}
-  {{osc.name}}_freq: u64,
+  pub {{osc.name}}_freq: u64,
   {% endfor %}
   
   // Multiplexer inputs
   {% for mux in multiplexers -%}
-  {{mux.field_name}}_input: {{mux.struct_name}}Input,
+  pub {{mux.field_name}}_input: {{mux.struct_name}}Input,
+  {% endfor %}
+  
+  // Configurable divider inputs
+  {% for div in variable_dividers -%}
+  pub {{div.field_name}}_value: {{div.struct_name}}Value,
+  {% endfor %}
+  
+  // Configurable multiplier inputs
+  {% for mul in variable_multipliers -%}
+  pub {{mul.field_name}}_value: {{mul.struct_name}}Value,
   {% endfor %}
 }
 impl ClockConfig {
@@ -37,10 +69,20 @@ impl ClockConfig {
       {% for mux in multiplexers -%}
       {{mux.field_name}}_input: {{mux.struct_name}}Input::{{mux.default.struct_name}},
       {% endfor %}
+
+      // Configurable divider values
+      {% for div in variable_dividers -%}
+      {{div.field_name}}_value: {{div.struct_name}}Value::{{div.default.struct_name}},
+      {% endfor %}
+
+      // Configurable multiplier values
+      {% for mul in variable_multipliers -%}
+      {{mul.field_name}}_value: {{mul.struct_name}}Value::{{mul.default.struct_name}},
+      {% endfor %}
     }
   }
 
-  pub fn new() -> ClockConfig {
+  pub fn with_default_freqs() -> ClockConfig {
     Self::with_freqs(
       {% for osc in oscillators -%}
       {{osc.default_freq}},
@@ -49,19 +91,71 @@ impl ClockConfig {
   }
 
   {% for osc in oscillators %}
-  pub fn get_{{osc.name}}_freq(&self) -> u64 {
-    self.{{osc.name}}_freq
+  #[inline]
+  fn get_{{osc.name}}_freq(&self) -> f32 {
+    self.{{osc.name}}_freq as f32
   }
   {% endfor %}
-  
-  {% for mux in multiplexers %}
-  pub fn get_{{mux.field_name}}_input(&self) -> &{{mux.struct_name}}Input {
-    &self.{{mux.field_name}}_input
-  }
-  
-  pub fn set_{{mux.field_name}}_input(&mut self, input: &{{mux.struct_name}}Input) {
 
+  {% for mux in multiplexers %}
+  #[inline]
+  fn get_{{mux.field_name}}_freq(&self) -> f32 {
+    match self.{{mux.field_name}}_input {
+      {% for mux_in in mux.inputs -%}
+      {% if mux_in.is_off -%}
+      {{mux.struct_name}}Input::{{mux_in.struct_name}} => 0f32,
+      {% else -%}
+      {{mux.struct_name}}Input::{{mux_in.struct_name}} => self.get_{{mux_in.real_field_name}}_freq(),
+      {%- endif -%}
+      {% endfor %}
+    }
   }
   {% endfor %}
-  
+
+  {% for div in variable_dividers %}
+  #[inline]
+  fn get_{{div.field_name}}_freq(&self) -> f32 {
+    self.get_{{div.input_field_name}}_freq() / match self.{{div.field_name}}_value {
+      {% for div_opt in div.options -%}
+      {{div.struct_name}}Value::{{div_opt.struct_name}} => {{div_opt.divisor}}f32,
+      {% endfor %}
+    }
+  }
+  {% endfor %}
+
+  {% for div in fixed_dividers %}
+  #[inline]
+  fn get_{{div.field_name}}_freq(&self) -> f32 {
+    self.get_{{div.input_field_name}}_freq() / {{div.divisor}}f32
+  }
+  {% endfor %}
+
+  {% for mul in variable_multipliers %}
+  #[inline]
+  fn get_{{mul.field_name}}_freq(&self) -> f32 {
+    self.get_{{mul.input_field_name}}_freq() * match self.{{mul.field_name}}_value {
+      {% for mul_opt in mul.options -%}
+      {{mul.struct_name}}Value::{{mul_opt.struct_name}} => {{mul_opt.factor}}f32,
+      {% endfor %}
+    }
+  }
+  {% endfor %}
+
+  {% for mul in fixed_multipliers %}
+  #[inline]
+  fn get_{{mul.field_name}}_freq(&self) -> f32 {
+    self.get_{{mul.input_field_name}}_freq() * {{mul.factor}}f32
+  }
+  {% endfor %}
+
+  {% for tap in taps %}
+  #[inline]
+  {% if tap.is_terminal -%}
+  pub
+  {% endif %}
+  fn get_{{tap.field_name}}_freq(&self) -> f32 {
+    self.get_{{tap.input_field_name}}_freq()
+  }
+  {% endfor %}
+
 }
