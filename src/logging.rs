@@ -5,18 +5,21 @@
 
 macro_rules! info {
   ($($arg:tt)*) => ({
+    #[cfg(not(test))]
     println!("\x1b[0;36m   [INFO]\x1b[0m {}", format!($($arg)*));
   })
 }
 
 macro_rules! error {
   ($($arg:tt)*) => ({
+    #[cfg(not(test))]
     println!("\x1b[0;31m  [ERROR]\x1b[0m {}", format!($($arg)*));
   })
 }
 
 macro_rules! success {
   ($($arg:tt)*) => ({
+    #[cfg(not(test))]
     println!("\x1b[0;32m[SUCCESS]\x1b[0m {}", format!($($arg)*));
   })
 }

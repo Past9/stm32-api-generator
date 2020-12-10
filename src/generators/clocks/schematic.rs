@@ -1,4 +1,4 @@
-use std::fs;
+use std::{collections::hash_map::Values, fs};
 use std::{collections::HashMap, path::Path};
 
 use anyhow::{anyhow, Result};
@@ -36,15 +36,52 @@ impl ClockSchematic {
       }
     );
     let mut sch: ClockSchematic = ron::from_str(&fs::read_to_string(path)?)?;
-    sch.validate()?;
+    sch.postprocess()?;
     Ok(sch)
   }
 
   pub fn from_ron<S: Into<String>>(ron: S) -> Result<ClockSchematic> {
     info!("Parsing clock schematic from RON string");
     let mut sch: ClockSchematic = ron::from_str(&ron.into())?;
-    sch.validate()?;
+    sch.postprocess()?;
     Ok(sch)
+  }
+
+  fn postprocess(&mut self) -> Result<()> {
+    self.set_names();
+    self.validate()?;
+    Ok(())
+  }
+
+  fn set_names(&mut self) {
+    for (k, mut v) in self.oscillators.iter_mut() {
+      v.name = k.clone();
+    }
+
+    for (k, mut v) in self.multiplexers.iter_mut() {
+      v.name = k.clone();
+      for (ik, iv) in v.inputs.iter_mut() {
+        iv.name = ik.clone();
+      }
+    }
+
+    for (k, mut v) in self.dividers.iter_mut() {
+      v.name = k.clone();
+      for (ik, iv) in v.values.iter_mut() {
+        iv.name = ik.clone();
+      }
+    }
+
+    for (k, mut v) in self.multipliers.iter_mut() {
+      v.name = k.clone();
+      for (ik, iv) in v.values.iter_mut() {
+        iv.name = ik.clone();
+      }
+    }
+
+    for (k, mut v) in self.taps.iter_mut() {
+      v.name = k.clone();
+    }
   }
 
   fn validate(&self) -> Result<()> {
@@ -60,71 +97,48 @@ impl ClockSchematic {
     Ok(())
   }
 
-  pub fn get_oscillators(&self) -> Vec<(String, Oscillator)> {
-    self
-      .oscillators
-      .iter()
-      .map(|(k, v)| (k.clone(), v.clone()))
-      .collect()
+  pub fn oscillators(&self) -> Values<String, Oscillator> {
+    self.oscillators.values()
   }
 
-  pub fn get_multiplexers(&self) -> Vec<(String, Multiplexer)> {
-    self
-      .multiplexers
-      .iter()
-      .map(|(k, v)| (k.clone(), v.clone()))
-      .collect()
+  pub fn multiplexers(&self) -> Values<String, Multiplexer> {
+    self.multiplexers.values()
   }
 
-  pub fn get_dividers(&self) -> Vec<(String, Divider)> {
-    self
-      .dividers
-      .iter()
-      .map(|(k, v)| (k.clone(), v.clone()))
-      .collect()
+  pub fn dividers(&self) -> Values<String, Divider> {
+    self.dividers.values()
   }
 
-  pub fn get_multipliers(&self) -> Vec<(String, Multiplier)> {
-    self
-      .multipliers
-      .iter()
-      .map(|(k, v)| (k.clone(), v.clone()))
-      .collect()
+  pub fn multipliers(&self) -> Values<String, Multiplier> {
+    self.multipliers.values()
   }
 
-  pub fn get_taps(&self) -> Vec<(String, Tap)> {
-    self
-      .taps
-      .iter()
-      .map(|(k, v)| (k.clone(), v.clone()))
-      .collect()
+  pub fn taps(&self) -> Values<String, Tap> {
+    self.taps.values()
   }
 
-  pub fn get_all_components(&self) -> Vec<(String, ClockComponent)> {
+  pub fn get_all_components(&self) -> Vec<ClockComponent> {
     let oscillators = self
       .oscillators
-      .iter()
-      .map(|(k, v)| (k.clone(), ClockComponent::Oscillator(v.clone())));
+      .values()
+      .map(|v| ClockComponent::Oscillator(v.clone()));
 
     let multiplexers = self
       .multiplexers
-      .iter()
-      .map(|(k, v)| (k.clone(), ClockComponent::Multiplexer(v.clone())));
+      .values()
+      .map(|v| ClockComponent::Multiplexer(v.clone()));
 
     let dividers = self
       .dividers
-      .iter()
-      .map(|(k, v)| (k.clone(), ClockComponent::Divider(v.clone())));
+      .values()
+      .map(|v| ClockComponent::Divider(v.clone()));
 
     let multipliers = self
       .multipliers
-      .iter()
-      .map(|(k, v)| (k.clone(), ClockComponent::Multiplier(v.clone())));
+      .values()
+      .map(|v| ClockComponent::Multiplier(v.clone()));
 
-    let taps = self
-      .taps
-      .iter()
-      .map(|(k, v)| (k.clone(), ClockComponent::Tap(v.clone())));
+    let taps = self.taps.values().map(|v| ClockComponent::Tap(v.clone()));
 
     oscillators
       .chain(multiplexers)
@@ -137,23 +151,23 @@ impl ClockSchematic {
   pub fn get_component<S: Into<String>>(&self, name: S) -> Option<ClockComponent> {
     let comp_name = name.into();
 
-    if let Some((_, c)) = self.oscillators.iter().find(|(n, _)| **n == comp_name) {
+    if let Some(c) = self.oscillators.values().find(|o| o.name == comp_name) {
       return Some(ClockComponent::Oscillator(c.clone()));
     }
 
-    if let Some((_, c)) = self.multiplexers.iter().find(|(n, _)| **n == comp_name) {
+    if let Some(c) = self.multiplexers.values().find(|m| m.name == comp_name) {
       return Some(ClockComponent::Multiplexer(c.clone()));
     }
 
-    if let Some((_, c)) = self.dividers.iter().find(|(n, _)| **n == comp_name) {
+    if let Some(c) = self.dividers.values().find(|d| d.name == comp_name) {
       return Some(ClockComponent::Divider(c.clone()));
     }
 
-    if let Some((_, c)) = self.multipliers.iter().find(|(n, _)| **n == comp_name) {
+    if let Some(c) = self.multipliers.values().find(|m| m.name == comp_name) {
       return Some(ClockComponent::Multiplier(c.clone()));
     }
 
-    if let Some((_, c)) = self.taps.iter().find(|(n, _)| **n == comp_name) {
+    if let Some(c) = self.taps.values().find(|t| t.name == comp_name) {
       return Some(ClockComponent::Tap(c.clone()));
     }
 
@@ -161,39 +175,39 @@ impl ClockSchematic {
   }
 
   fn get_next<S: Into<String>>(&self, name: S) -> Vec<String> {
-    let comp_name = name.into();
+    let comp_name: String = name.into();
     let mut next = Vec::new();
 
     next.extend(
       self
         .multiplexers
-        .iter()
-        .filter(|(_, c)| c.inputs.keys().any(|k| k == &comp_name))
-        .map(|(n, _)| n.clone()),
+        .values()
+        .filter(|c| c.inputs.values().any(|i| i.name == comp_name))
+        .map(|c| c.name.clone()),
     );
 
     next.extend(
       self
         .dividers
-        .iter()
-        .filter(|(_, c)| c.input == comp_name)
-        .map(|(n, _)| n.clone()),
+        .values()
+        .filter(|c| c.input == comp_name)
+        .map(|c| c.name.clone()),
     );
 
     next.extend(
       self
         .multipliers
-        .iter()
-        .filter(|(_, c)| c.input == comp_name)
-        .map(|(n, _)| n.clone()),
+        .values()
+        .filter(|c| c.input == comp_name)
+        .map(|c| c.name.clone()),
     );
 
     next.extend(
       self
         .taps
-        .iter()
-        .filter(|(_, c)| c.input == comp_name)
-        .map(|(n, _)| n.clone()),
+        .values()
+        .filter(|c| c.input == comp_name)
+        .map(|c| c.name.clone()),
     );
 
     next
@@ -202,9 +216,9 @@ impl ClockSchematic {
   fn list_outputs(&self, selection: ClockOutputNameSelection) -> Vec<String> {
     let terminal_taps_only = self
       .taps
-      .iter()
-      .filter(|(_, t)| t.terminal)
-      .map(|(n, _)| n.clone());
+      .values()
+      .filter(|t| t.terminal)
+      .map(|t| t.name.clone());
 
     let everything_except_terminal_taps = self
       .oscillators
@@ -216,9 +230,9 @@ impl ClockSchematic {
       .chain(
         self
           .taps
-          .iter()
-          .filter(|(_, t)| !t.terminal)
-          .map(|(n, _)| n.clone()),
+          .values()
+          .filter(|t| !t.terminal)
+          .map(|t| t.name.clone()),
       );
 
     match selection {
@@ -338,9 +352,9 @@ impl ClockSchematic {
   fn check_multiplexer_defaults_exist(&self) -> Result<()> {
     let multiplexers_with_bad_defaults = self
       .multiplexers
-      .iter()
-      .filter(|(_, d)| !d.inputs.keys().any(|k| k == &d.default))
-      .map(|(n, _)| n.clone())
+      .values()
+      .filter(|m| !m.inputs.values().any(|i| i.name == m.default))
+      .map(|m| m.name.clone())
       .collect::<Vec<String>>();
 
     if multiplexers_with_bad_defaults.len() > 0 {
@@ -356,12 +370,12 @@ impl ClockSchematic {
   fn check_divider_defaults_exist(&self) -> Result<()> {
     let dividers_with_bad_defaults = self
       .dividers
-      .iter()
+      .values()
       // Filter out any that have no values, the default will be used as the sole value
-      .filter(|(_, d)| d.values.len() > 0)
+      .filter(|d| d.values.len() > 0)
       // Find any where the default isn't in the values list
-      .filter(|(_, d)| !d.values.values().any(|v| v.divisor() == d.default as f32))
-      .map(|(n, _)| n.clone())
+      .filter(|d| !d.values.values().any(|v| v.divisor == d.default as f32))
+      .map(|d| d.name.clone())
       .collect::<Vec<String>>();
 
     if dividers_with_bad_defaults.len() > 0 {
@@ -377,12 +391,12 @@ impl ClockSchematic {
   fn check_multiplier_defaults_exist(&self) -> Result<()> {
     let multipliers_with_bad_defaults = self
       .multipliers
-      .iter()
+      .values()
       // Filter out any that have no values, the default will be used as the sole value
-      .filter(|(_, m)| m.values.len() > 0)
+      .filter(|m| m.values.len() > 0)
       // Find any where the default isn't in the values list
-      .filter(|(_, m)| !m.values.values().any(|v| v.factor() == m.default as f32))
-      .map(|(n, _)| n.clone())
+      .filter(|m| !m.values.values().any(|v| v.factor == m.default as f32))
+      .map(|m| m.name.clone())
       .collect::<Vec<String>>();
 
     if multipliers_with_bad_defaults.len() > 0 {
@@ -507,185 +521,116 @@ impl ClockSchematic {
 
 #[derive(Deserialize, Debug, Clone)]
 pub struct Oscillator {
-  frequency: u64,
+  #[serde(default)]
+  pub name: String,
+  pub frequency: u64,
 }
-impl Oscillator {
-  pub fn frequency(&self) -> u64 {
-    self.frequency
-  }
-}
-
-#[derive(Deserialize, Debug, Clone)]
-pub struct MultiplexerInput(String, u32, #[serde(default)] Option<String>);
-impl MultiplexerInput {
-  pub fn path(&self) -> String {
-    self.0.clone()
-  }
-
-  pub fn bit_value(&self) -> u32 {
-    self.1.clone()
-  }
-
-  pub fn alias(&self) -> Option<String> {
-    self.2.clone()
-  }
-
-  pub fn public_name(&self, key_name: &String) -> String {
-    match self.alias() {
-      Some(a) => a,
-      None => key_name.clone(),
-    }
-  }
-}
+impl Oscillator {}
 
 #[derive(Deserialize, Debug, Clone)]
 pub struct Multiplexer {
-  inputs: HashMap<String, MultiplexerInput>,
-  default: String,
+  #[serde(default)]
+  pub name: String,
+  pub inputs: HashMap<String, MultiplexerInput>,
+  pub default: String,
+  pub path: String,
 }
 impl Multiplexer {
-  pub fn inputs(&self) -> &HashMap<String, MultiplexerInput> {
-    &self.inputs
-  }
-
-  pub fn default_name(&self) -> &String {
-    &self.default
-  }
-
-  pub fn default_input(&self) -> Result<(String, MultiplexerInput)> {
-    match self.inputs.iter().find(|(k, v)| **k == self.default) {
-      Some((k, v)) => Ok((k.clone(), v.clone())),
+  pub fn default_input(&self) -> Result<MultiplexerInput> {
+    match self.inputs.values().find(|v| v.name == self.default) {
+      Some(v) => Ok(v.clone()),
       None => Err(anyhow!("Multiplexer default input not in map")),
     }
   }
 }
 
 #[derive(Deserialize, Debug, Clone)]
-pub struct DividerOption(f32, String, u32);
-impl DividerOption {
-  pub fn divisor(&self) -> f32 {
-    self.0
-  }
-
-  pub fn path(&self) -> String {
-    self.1.clone()
-  }
-
-  pub fn bit_value(&self) -> u32 {
-    self.2
+pub struct MultiplexerInput {
+  #[serde(default)]
+  pub name: String,
+  pub bit_value: u32,
+  pub alias: Option<String>,
+}
+impl MultiplexerInput {
+  pub fn public_name(&self) -> String {
+    match self.alias {
+      Some(ref a) => a.clone(),
+      None => self.name.clone(),
+    }
   }
 }
 
 #[derive(Deserialize, Debug, Clone)]
 pub struct Divider {
-  input: String,
-  default: f32,
   #[serde(default)]
-  values: HashMap<String, DividerOption>,
+  pub name: String,
+  pub input: String,
+  pub default: f32,
+  #[serde(default)]
+  pub values: HashMap<String, DividerOption>,
+  #[serde(default)]
+  pub path: String,
 }
 impl Divider {
-  pub fn input(&self) -> String {
-    self.input.clone()
-  }
-
-  pub fn default(&self) -> f32 {
-    self.default
-  }
-
-  pub fn values(&self) -> HashMap<String, DividerOption> {
-    self.values.clone()
-  }
-
-  pub fn default_name(&self) -> &f32 {
-    &self.default
-  }
-
   pub fn is_fixed_value(&self) -> bool {
-    self.values.len() == 0 || self.values.len() == 1
+    self.values.len() == 0
   }
 
-  pub fn default_input(&self) -> Result<(String, DividerOption)> {
-    match self
-      .values
-      .iter()
-      .find(|(_, v)| v.divisor() == self.default)
-    {
-      Some((k, v)) => Ok((k.clone(), v.clone())),
-      None => Err(anyhow!("Multiplier default input not in map")),
+  pub fn default_input(&self) -> Result<&DividerOption> {
+    match self.values.values().find(|v| v.divisor == self.default) {
+      Some(v) => Ok(&v),
+      None => Err(anyhow!("Divider default value not in map")),
     }
   }
 }
 
 #[derive(Deserialize, Debug, Clone)]
-pub struct MultiplierOption(f32, String, u32);
-impl MultiplierOption {
-  pub fn factor(&self) -> f32 {
-    self.0
-  }
-
-  pub fn path(&self) -> String {
-    self.1.clone()
-  }
-
-  pub fn bit_value(&self) -> u32 {
-    self.2
-  }
+pub struct DividerOption {
+  #[serde(default)]
+  pub name: String,
+  pub divisor: f32,
+  pub bit_value: u32,
 }
 
 #[derive(Deserialize, Debug, Clone)]
 pub struct Multiplier {
-  input: String,
-  default: f32,
   #[serde(default)]
-  values: HashMap<String, MultiplierOption>,
+  pub name: String,
+  pub input: String,
+  pub default: f32,
+  #[serde(default)]
+  pub values: HashMap<String, MultiplierOption>,
+  #[serde(default)]
+  pub path: String,
 }
 impl Multiplier {
-  pub fn input(&self) -> String {
-    self.input.clone()
-  }
-
-  pub fn default(&self) -> f32 {
-    self.default
-  }
-
-  pub fn values(&self) -> HashMap<String, MultiplierOption> {
-    self.values.clone()
-  }
-
-  pub fn default_name(&self) -> &f32 {
-    &self.default
-  }
-
   pub fn is_fixed_value(&self) -> bool {
-    self.values.len() == 0 || self.values.len() == 1
+    self.values.len() == 0
   }
 
-  pub fn default_input(&self) -> Result<(String, MultiplierOption)> {
-    match self.values.iter().find(|(_, v)| v.factor() == self.default) {
-      Some((k, v)) => Ok((k.clone(), v.clone())),
-      None => Err(anyhow!("Multiplier default input not in map")),
+  pub fn default_input(&self) -> Result<&MultiplierOption> {
+    match self.values.values().find(|v| v.factor == self.default) {
+      Some(v) => Ok(&v),
+      None => Err(anyhow!("Multiplier default value not in map")),
     }
   }
 }
 
 #[derive(Deserialize, Debug, Clone)]
-pub struct Tap {
-  input: String,
-  max: u64,
-  terminal: bool,
+pub struct MultiplierOption {
+  #[serde(default)]
+  pub name: String,
+  pub factor: f32,
+  pub bit_value: u32,
 }
-impl Tap {
-  pub fn input(&self) -> String {
-    self.input.clone()
-  }
 
-  pub fn max(&self) -> u64 {
-    self.max
-  }
-
-  pub fn terminal(&self) -> bool {
-    self.terminal
-  }
+#[derive(Deserialize, Debug, Clone)]
+pub struct Tap {
+  #[serde(default)]
+  pub name: String,
+  pub input: String,
+  pub max: u64,
+  pub terminal: bool,
 }
 
 #[cfg(test)]
@@ -701,8 +646,11 @@ mod tests {
         },
         multiplexers: {
           "pll_source_mux": (
+            path: "path",
             inputs: { 
-              "hse": ("path", 1)
+              "hse": (
+                bit_value: 1
+              )
             },
             default: "hse"
           )
@@ -710,8 +658,12 @@ mod tests {
         dividers: {
           "pll_div": (
             input: "pll_source_mux",
+            path: "path",
             values: {
-              "no_div": (1, "path", 0)
+              "no_div": (
+                divisor: 1, 
+                bit_value: 0
+              )
             },
             default: 1,
           )
@@ -719,8 +671,12 @@ mod tests {
         multipliers: {
           "pll_mul": (
             input: "pll_div", 
+            path: "path",
             values: {
-              "no_mul": (2, "path", 1)
+              "no_mul": (
+                factor: 2, 
+                bit_value: 1
+              )
             },
             default: 2,
           )
@@ -757,14 +713,11 @@ mod tests {
     assert_eq!(1, spec.multiplexers.len());
     assert_eq!(1, spec.multiplexers["pll_source_mux"].inputs.len());
     assert_eq!("hse", spec.multiplexers["pll_source_mux"].default);
+    assert_eq!("path", spec.multiplexers["pll_source_mux"].path);
     assert_eq!(1, spec.multiplexers["pll_source_mux"].inputs.len());
     assert_eq!(
-      "path",
-      spec.multiplexers["pll_source_mux"].inputs["hse"].path()
-    );
-    assert_eq!(
       1,
-      spec.multiplexers["pll_source_mux"].inputs["hse"].bit_value()
+      spec.multiplexers["pll_source_mux"].inputs["hse"].bit_value
     );
 
     // Check dividers
@@ -772,18 +725,18 @@ mod tests {
     assert_eq!("pll_source_mux", spec.dividers["pll_div"].input);
     assert_eq!(1f32, spec.dividers["pll_div"].default);
     assert_eq!(1, spec.dividers["pll_div"].values.len());
-    assert_eq!(1f32, spec.dividers["pll_div"].values["no_div"].divisor());
-    assert_eq!("path", spec.dividers["pll_div"].values["no_div"].path());
-    assert_eq!(0, spec.dividers["pll_div"].values["no_div"].bit_value());
+    assert_eq!("path", spec.dividers["pll_div"].path);
+    assert_eq!(1f32, spec.dividers["pll_div"].values["no_div"].divisor);
+    assert_eq!(0, spec.dividers["pll_div"].values["no_div"].bit_value);
 
     // Check multipliers
     assert_eq!(1, spec.multipliers.len());
     assert_eq!("pll_div", spec.multipliers["pll_mul"].input);
     assert_eq!(2f32, spec.multipliers["pll_mul"].default);
     assert_eq!(1, spec.multipliers["pll_mul"].values.len());
-    assert_eq!(2f32, spec.multipliers["pll_mul"].values["no_mul"].factor());
-    assert_eq!("path", spec.multipliers["pll_mul"].values["no_mul"].path());
-    assert_eq!(1, spec.multipliers["pll_mul"].values["no_mul"].bit_value());
+    assert_eq!("path", spec.multipliers["pll_mul"].path);
+    assert_eq!(2f32, spec.multipliers["pll_mul"].values["no_mul"].factor);
+    assert_eq!(1, spec.multipliers["pll_mul"].values["no_mul"].bit_value);
 
     // Check taps
     assert_eq!(3, spec.taps.len());
@@ -1115,8 +1068,11 @@ mod tests {
         },
         multiplexers: {
           "Mux": (
+            path: "path",
             inputs: { 
-              "Hse": ("path", 0) 
+              "Hse": (
+                bit_value: 0
+              ) 
             },
             default: "Bogus"
           )
@@ -1156,8 +1112,12 @@ mod tests {
           "Div": (
             input: "Hse",
             default: 2,
+            path: "path",
             values: {
-              "no_div": (1, "path", 0)
+              "no_div": (
+                divisor: 1, 
+                bit_value: 0
+              )
             }
           )
         },
@@ -1196,8 +1156,12 @@ mod tests {
           "Mul": (
             input: "Hse",
             default: 2,
+            path: "path",
             values: {
-              "no_mul": (1, "path", 0)
+              "no_mul": (
+                factor: 1, 
+                bit_value: 0
+              )
             }
           )
         },
@@ -1231,8 +1195,11 @@ mod tests {
         },
         multiplexers: {
           "PllSourceMux": (
+            path: "path",
             inputs: { 
-              "Hse": ("path", 0), 
+              "Hse": (
+                bit_value: 0
+              ), 
             },
             default: "Hse"
           )
@@ -1241,8 +1208,12 @@ mod tests {
           "PllDiv": (
             input: "PllSourceMux",
             default: 1,
+            path: "path",
             values: {
-              "no_div": (1, "path", 0)
+              "no_div": (
+                divisor: 1, 
+                bit_value: 0
+              )
             }
           )
         },
@@ -1250,10 +1221,20 @@ mod tests {
           "PllMul": (
             input: "PllSourceMux", 
             default: 3,
+            path: "path",
             values: {
-              "no_div": (2, "path", 0),
-              "mul1": (3, "path", 1),
-              "mul2": (4, "path", 2)
+              "no_div": (
+                factor: 2, 
+                bit_value: 0
+              ),
+              "mul1": (
+                factor: 3, 
+                bit_value: 1
+              ),
+              "mul2": (
+                factor: 4, 
+                bit_value: 2
+              )
             }
           )
         },
@@ -1295,9 +1276,14 @@ mod tests {
         },
         multiplexers: {
           "PllSourceMux": (
+            path: "path",
             inputs: { 
-              "Hse": ("path", 0), 
-              "PllMul": ("path", 1)
+              "Hse": (
+                bit_value: 0
+              ), 
+              "PllMul": (
+                bit_value: 1
+              )
             },
             default: "Hse"
           )
@@ -1306,8 +1292,12 @@ mod tests {
           "PllDiv": (
             input: "PllSourceMux",
             default: 1,
+            path: "path",
             values: {
-              "no_div": (1, "path", 0)
+              "no_div": (
+                divisor: 1, 
+                bit_value: 0
+              )
             }
           )
         },
@@ -1315,10 +1305,20 @@ mod tests {
           "PllMul": (
             input: "PllDiv", 
             default: 3,
+            path: "path",
             values: {
-              "no_div": (2, "path", 0),
-              "mul1": (3, "path", 1),
-              "mul2": (4, "path", 2)
+              "no_div": (
+                factor: 2, 
+                bit_value: 0
+              ),
+              "mul1": (
+                factor: 3, 
+                bit_value: 1
+              ),
+              "mul2": (
+                factor: 4, 
+                bit_value: 2
+              )
             }
           )
         },

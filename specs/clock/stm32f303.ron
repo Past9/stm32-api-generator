@@ -6,153 +6,237 @@ ClockSchematic(
 		"lsi": (frequency: 40000),
 	},
 	multiplexers: {
-		"rtc_clock_mux": (inputs: {
-      "off": ("rcc.bdcr.rtcsel", 0),
-      "lse": ("rcc.bdcr.rtcsel", 1), 
-      "lsi": ("rcc.bdcr.rtcsel", 2),
-      "hse_rtc": ("rcc.bdcr.rtcsel", 3, Some("hse"))
-    }, default: "off"),
-		"pll_source_mux": (inputs: {
-      "hsi_pll": ("rcc.cfgr.pllsrc", 0, Some("hsi")), 
-      "hse_pll": ("rcc.cfgr.pllsrc", 1, Some("hse"))
-    }, default: "hsi_pll"),
-		"i2s_source_mux": (inputs: {
-      "hse": ("rcc.cfgr.i2ssrc", 1), 
-      "sys_clk": ("rcc.cfgr.i2ssrc", 0)
-    }, default: "sys_clk"),
-		"mco_source_mux": (inputs: {
-      "off": ("rcc.cfgr.mco", 0),
-      "lsi": ("rcc.cfgr.mco", 2),
-      "lse": ("rcc.cfgr.mco", 3), 
-      "sys_clk": ("rcc.cfgr.mco", 4),
-      "hsi": ("rcc.cfgr.mco", 5), 
-      "hse": ("rcc.cfgr.mco", 6), 
-      "pll_clk_mco": ("rcc.cfgr.mco", 7, Some("pll")), 
-    }, default: "off"),
-		"system_clock_mux": (inputs: {
-      "hsi": ("rcc.cfgr.sw", 0), 
-      "hse": ("rcc.cfgr.sw", 1), 
-      "pll_mul": ("rcc.cfgr.sw", 2, Some("pll")),  
-    }, default: "hsi"),
-		"tim1_source_mux": (inputs: { 
-      "p_clk2": ("rcc.cfgr3.tim1sw", 0), 
-      "pll_mul_timers": ("rcc.cfgr3.tim1sw", 1, Some("pll")), 
-    }, default: "p_clk2"),
-		"tim8_source_mux": (inputs: { 
-      "p_clk2": ("rcc.cfgr3.tim8sw", 0), 
-      "pll_mul_timers": ("rcc.cfgr3.tim8sw", 1, Some("pll")), 
-    }, default: "p_clk2"),
-		"i2c1_clock_mux": (inputs: {
-      "hsi": ("rcc.cfgr3.i2c1sw", 0), 
-      "sys_clk": ("rcc.cfgr3.i2c1sw", 1),
-    }, default: "hsi"),
-		"i2c2_clock_mux": (inputs: {
-      "hsi": ("rcc.cfgr3.i2c2sw", 0), 
-      "sys_clk": ("rcc.cfgr3.i2c2sw", 1),
-    }, default: "hsi"),
-		"usart1_clock_mux": (inputs: {
-      "p_clk2": ("rcc.cfgr3.usart1sw", 0),
-      "sys_clk": ("rcc.cfgr3.usart1sw", 1), 
-      "lse": ("rcc.cfgr3.usart1sw", 2), 
-      "hsi": ("rcc.cfgr3.usart1sw", 3), 
-    }, default: "p_clk2"),
-		"usart2_clock_mux": (inputs: {
-      "p_clk2": ("rcc.cfgr3.usart2sw", 0),
-      "sys_clk": ("rcc.cfgr3.usart2sw", 1), 
-      "lse": ("rcc.cfgr3.usart2sw", 2), 
-      "hsi": ("rcc.cfgr3.usart2sw", 3), 
-    }, default: "p_clk2"),
-		"usart3_clock_mux": (inputs: {
-      "p_clk2": ("rcc.cfgr3.usart3sw", 0),
-      "sys_clk": ("rcc.cfgr3.usart3sw", 1), 
-      "lse": ("rcc.cfgr3.usart3sw", 2), 
-      "hsi": ("rcc.cfgr3.usart3sw", 3), 
-    }, default: "p_clk2"),
-		"uart4_clock_mux": (inputs: {
-      "p_clk1": ("rcc.cfgr3.uart4sw", 0, Some("p_clk")),
-      "sys_clk": ("rcc.cfgr3.uart4sw", 1), 
-      "lse": ("rcc.cfgr3.uart4sw", 2), 
-      "hsi": ("rcc.cfgr3.uart4sw", 3), 
-    }, default: "p_clk1"),
-		"uart5_clock_mux": (inputs: {
-      "p_clk1": ("rcc.cfgr3.uart5sw", 0, Some("p_clk")),
-      "sys_clk": ("rcc.cfgr3.uart5sw", 1), 
-      "lse": ("rcc.cfgr3.uart5sw", 2), 
-      "hsi": ("rcc.cfgr3.uart5sw", 3), 
-    }, default: "p_clk1"),
+		"rtc_clock_mux": (
+      path: "rcc.bdcr.rtcsel",
+      inputs: {
+        "off": ( bit_value: 0 ),
+        "lse": ( bit_value: 1 ), 
+        "lsi": ( bit_value: 2 ),
+        "hse_rtc": ( bit_value: 3, alias: Some("hse") )
+      }, 
+      default: "off",
+    ),
+		"pll_source_mux": (
+      path: "rcc.cfgr.pllsrc",
+      inputs: {
+        "hsi_pll": ( bit_value: 0, alias: Some("hsi") ), 
+        "hse_pll": ( bit_value: 1, alias: Some("hse") )
+      }, 
+      default: "hsi_pll"
+    ),
+		"i2s_source_mux": (
+      path: "rcc.cfgr.i2ssrc",
+      inputs: {
+        "hse": ( bit_value: 1 ), 
+        "sys_clk": ( bit_value: 0 )
+      }, 
+      default: "sys_clk"
+    ),
+		"mco_source_mux": (
+      path: "rcc.cfgr.mco",
+      inputs: {
+        "off": ( bit_value: 0 ),
+        "lsi": ( bit_value: 2 ),
+        "lse": ( bit_value: 3 ), 
+        "sys_clk": ( bit_value: 4 ),
+        "hsi": ( bit_value: 5 ), 
+        "hse": ( bit_value: 6 ), 
+        "pll_clk_mco": ( bit_value: 7, alias: Some("pll") ), 
+      }, 
+      default: "off"
+    ),
+		"system_clock_mux": (
+      path: "rcc.cfgr.sw",
+      inputs: {
+        "hsi": ( bit_value: 0 ), 
+        "hse": ( bit_value: 1 ), 
+        "pll_mul": ( bit_value: 2, alias: Some("pll") ),  
+      }, 
+      default: "hsi"
+    ),
+		"tim1_source_mux": (
+      path: "rcc.cfgr3.tim1sw",
+      inputs: { 
+        "p_clk2": ( bit_value: 0), 
+        "pll_mul_timers": ( bit_value: 1, alias: Some("pll") ), 
+      }, 
+      default: "p_clk2"
+    ),
+		"tim8_source_mux": (
+      path: "rcc.cfgr3.tim8sw", 
+      inputs: { 
+        "p_clk2": ( bit_value: 0 ), 
+        "pll_mul_timers": ( bit_value: 1, alias: Some("pll") ), 
+      }, 
+      default: "p_clk2"
+    ),
+		"i2c1_clock_mux": (
+      path: "rcc.cfgr3.i2c1sw",
+      inputs: {
+        "hsi": ( bit_value: 0 ), 
+        "sys_clk": ( bit_value: 1 ),
+      }, 
+      default: "hsi"
+    ),
+		"i2c2_clock_mux": (
+      path: "rcc.cfgr3.i2c2sw",
+      inputs: {
+        "hsi": ( bit_value: 0 ), 
+        "sys_clk": ( bit_value: 1 ),
+      }, 
+      default: "hsi"
+    ),
+		"usart1_clock_mux": (
+      path: "rcc.cfgr3.usart1sw",
+      inputs: {
+        "p_clk2": ( bit_value: 0 ),
+        "sys_clk": ( bit_value: 1 ), 
+        "lse": ( bit_value: 2 ), 
+        "hsi": ( bit_value: 3 ), 
+      }, 
+      default: "p_clk2"
+    ),
+		"usart2_clock_mux": (
+      path: "rcc.cfgr3.usart2sw",
+      inputs: {
+        "p_clk2": ( bit_value: 0 ),
+        "sys_clk": ( bit_value: 1 ), 
+        "lse": ( bit_value: 2 ), 
+        "hsi": ( bit_value: 3 ), 
+      }, 
+      default: "p_clk2"
+    ),
+		"usart3_clock_mux": (
+      path: "rcc.cfgr3.usart3sw",
+      inputs: {
+        "p_clk2": ( bit_value: 0 ),
+        "sys_clk": ( bit_value: 1 ), 
+        "lse": ( bit_value: 2 ), 
+        "hsi": ( bit_value: 3 ), 
+      }, 
+      default: "p_clk2"
+    ),
+		"uart4_clock_mux": (
+      path: "rcc.cfgr3.uart4sw",
+      inputs: {
+        "p_clk1": ( bit_value: 0, alias: Some("p_clk") ),
+        "sys_clk": ( bit_value: 1 ), 
+        "lse": ( bit_value: 2 ), 
+        "hsi": ( bit_value: 3 ), 
+      }, 
+      default: "p_clk1"
+    ),
+		"uart5_clock_mux": (
+      path: "rcc.cfgr3.uart5sw",
+      inputs: {
+        "p_clk1": ( bit_value: 0, alias: Some("p_clk") ),
+        "sys_clk": ( bit_value: 1 ), 
+        "lse": ( bit_value: 2 ), 
+        "hsi": ( bit_value: 3 ), 
+      }, 
+      default: "p_clk1"
+    ),
 	},
 	dividers: {
-		"hse_rtc": (input: "hse", default: 32),
-		"hsi_pll": (input: "hsi", default: 2),
-		"hse_pll": (input: "hse", default: 1),
-		"pll_clk_mco": (input: "hse", default: 2),
-		"ahb_prescaler": (input: "sys_clk", values: {
-      "no_div": (1, "rcc.cfgr.hpre", 0),
-      "div_2": (2, "rcc.cfgr.hpre", 8),
-      "div_4": (4, "rcc.cfgr.hpre", 9),
-      "div_8": (8, "rcc.cfgr.hpre", 10),
-      "div_16": (16, "rcc.cfgr.hpre", 11),
-      "div_64": (64, "rcc.cfgr.hpre", 12),
-      "div_128": (128, "rcc.cfgr.hpre", 13),
-      "div_256": (256, "rcc.cfgr.hpre", 14),
-      "div_512": (512, "rcc.cfgr.hpre", 15),
-    }, default: 1),
-		"h_clk_to_cortex_system_timer": (input: "h_clk", values: {
-      "no_div": (1, "stk.ctrl.clksource", 0),
-      "div_8": (8, "stk.ctrl.clksource", 1)
-    }, default: 1),
-		"apb1_prescaler": (input: "h_clk", values: {
-      "no_div": (1, "rcc.cfgr.ppre1", 0),
-      "div_2": (2, "rcc.cfgr.ppre1", 4),
-      "div_4": (4, "rcc.cfgr.ppre1", 5),
-      "div_8": (8, "rcc.cfgr.ppre1", 6),
-      "div_16": (16, "rcc.cfgr.ppre1", 7),
-    }, default: 1),
-		"apb2_prescaler": (input: "h_clk", values: {
-      "no_div": (1, "rcc.cfgr.ppre1", 0),
-      "div_2": (2, "rcc.cfgr.ppre1", 4),
-      "div_4": (4, "rcc.cfgr.ppre1", 5),
-      "div_8": (8, "rcc.cfgr.ppre1", 6),
-      "div_16": (16, "rcc.cfgr.ppre1", 7),
-    }, default: 1),
-    "usb_prescaler": (input: "pll_mul", values: {
-      "no_div": (1, "rcc.cfgr.usbpre", 0),
-      "div_1p5": (1.5, "rcc.cfgr.usbpre", 1),
-    }, default: 1),
+		"hse_rtc": (input: "hse", default: 32 ),
+		"hsi_pll": (input: "hsi", default: 2 ),
+		"hse_pll": (input: "hse", default: 1 ),
+		"pll_clk_mco": (input: "hse", default: 2 ),
+		"ahb_prescaler": (
+      input: "sys_clk", 
+      path: "rcc.cfgr.hpre",
+      values: {
+        "no_div": ( divisor: 1, bit_value: 0 ),
+        "div_2": ( divisor: 2, bit_value: 8 ),
+        "div_4": ( divisor: 4, bit_value: 9 ),
+        "div_8": ( divisor: 8, bit_value: 10 ),
+        "div_16": ( divisor: 16, bit_value: 11 ),
+        "div_64": ( divisor: 64, bit_value: 12 ),
+        "div_128": ( divisor: 128, bit_value: 13 ),
+        "div_256": ( divisor: 256, bit_value: 14 ),
+        "div_512": ( divisor: 512, bit_value: 15 ),
+      }, 
+      default: 1
+    ),
+		"h_clk_to_cortex_system_timer": (
+      input: "h_clk", 
+      path: "stk.ctrl.clksource",
+      values: {
+        "no_div": ( divisor: 1, bit_value: 0 ),
+        "div_8": ( divisor: 8, bit_value: 1 )
+      }, 
+      default: 1
+    ),
+		"apb1_prescaler": (
+      input: "h_clk", 
+      path: "rcc.cfgr.ppre1",
+      values: {
+        "no_div": ( divisor: 1, bit_value: 0 ),
+        "div_2": ( divisor: 2, bit_value: 4 ),
+        "div_4": ( divisor: 4, bit_value: 5 ),
+        "div_8": ( divisor: 8, bit_value: 6 ),
+        "div_16": ( divisor: 16, bit_value: 7 ),
+      }, 
+      default: 1
+    ),
+		"apb2_prescaler": (
+      input: "h_clk", 
+      path: "rcc.cfgr.ppre1",
+      values: {
+        "no_div": ( divisor: 1, bit_value: 0 ),
+        "div_2": ( divisor: 2, bit_value: 4 ),
+        "div_4": ( divisor: 4, bit_value: 5 ),
+        "div_8": ( divisor: 8, bit_value: 6 ),
+        "div_16": ( divisor: 16, bit_value: 7 ),
+      }, 
+      default: 1
+    ),
+    "usb_prescaler": (
+      input: "pll_mul", 
+      path: "rcc.cfgr.usbpre",
+      values: {
+        "no_div": ( divisor: 1, bit_value: 0 ),
+        "div_1p5": ( divisor: 1.5, bit_value: 1 ),
+      }, 
+      default: 1
+    ),
     "adc1_and_2_prescaler": (input: "pll_mul", default: 1),
     "adc3_and_4_prescaler": (input: "pll_mul", default: 1)
 	},
 	multipliers: {
-		"pll_mul": (input: "pll", values: {
-      "mul_2": (2, "rcc.cfgr.pllmul", 0),
-      "mul_3": (3, "rcc.cfgr.pllmul", 1),
-      "mul_4": (4, "rcc.cfgr.pllmul", 2),
-      "mul_5": (5, "rcc.cfgr.pllmul", 3),
-      "mul_6": (6, "rcc.cfgr.pllmul", 4),
-      "mul_7": (7, "rcc.cfgr.pllmul", 5),
-      "mul_8": (8, "rcc.cfgr.pllmul", 6),
-      "mul_9": (9, "rcc.cfgr.pllmul", 7),
-      "mul_10": (10, "rcc.cfgr.pllmul", 8),
-      "mul_11": (11, "rcc.cfgr.pllmul", 9),
-      "mul_12": (12, "rcc.cfgr.pllmul", 10),
-      "mul_13": (13, "rcc.cfgr.pllmul", 11),
-      "mul_14": (14, "rcc.cfgr.pllmul", 12),
-      "mul_15": (15, "rcc.cfgr.pllmul", 13),
-      "mul_16": (16, "rcc.cfgr.pllmul", 14)
-    }, default: 2),
+		"pll_mul": (
+      input: "pll", 
+      path: "rcc.cfgr.pllmul",
+      values: {
+        "mul_2": ( factor: 2, bit_value: 0 ),
+        "mul_3": ( factor: 3, bit_value: 1 ),
+        "mul_4": ( factor: 4, bit_value: 2 ),
+        "mul_5": ( factor: 5, bit_value: 3 ),
+        "mul_6": ( factor: 6, bit_value: 4 ),
+        "mul_7": ( factor: 7, bit_value: 5 ),
+        "mul_8": ( factor: 8, bit_value: 6 ),
+        "mul_9": ( factor: 9, bit_value: 7 ),
+        "mul_10": ( factor: 10, bit_value: 8 ),
+        "mul_11": ( factor: 11, bit_value: 9 ),
+        "mul_12": ( factor: 12, bit_value: 10 ),
+        "mul_13": ( factor: 13, bit_value: 11 ),
+        "mul_14": ( factor: 14, bit_value: 12 ),
+        "mul_15": ( factor: 15, bit_value: 13 ),
+        "mul_16": ( factor: 16, bit_value: 14 )
+      }, 
+      default: 2
+    ),
 		"pll_mul_timers": (input: "pll_mul", default: 2),
 		"apb1_prescaler_apb1_timer_clocks": (input: "apb1_prescaler", default: 1),
 		"apb2_prescaler_apb2_timer_clocks": (input: "apb2_prescaler", default: 1)
 	},
   taps: {
     "pll": (input: "pll_source_mux", max: 0, terminal: false),
-    "to_rtc": (input: "rtc_clock_mux", max: 0, terminal: true),
-    "to_iwdg": (input: "lsi", max: 0, terminal: true),
-    "to_fl_itf_clk": (input: "hsi", max: 0, terminal: true),
-    "to_i2s": (input: "i2s_source_mux", max: 0, terminal: true),
-    "mco": (input: "mco_source_mux", max: 0, terminal: true),
     "sys_clk": (input: "system_clock_mux", max: 0, terminal: false),
     "h_clk": (input: "ahb_prescaler", max: 72000000, terminal: false),
+    "p_clk1": (input: "apb1_prescaler", max: 36000000, terminal: false),
+    "p_clk2": (input: "apb2_prescaler", max: 36000000, terminal: false),
+    "to_rtc": (input: "rtc_clock_mux", max: 0, terminal: true),
     "to_usart1": (input: "usart1_clock_mux", max: 0, terminal: true),
     "to_usart2": (input: "usart2_clock_mux", max: 0, terminal: true),
     "to_usart3": (input: "usart3_clock_mux", max: 0, terminal: true),
@@ -165,8 +249,10 @@ ClockSchematic(
     "to_ahb_core_and_memory_and_dma": (input: "h_clk", max: 0, terminal: true),
     "to_cortex_system_timer": (input: "h_clk_to_cortex_system_timer", max: 0, terminal: true),
     "f_clk_cortex_clock": (input: "h_clk", max: 0, terminal: true),
-    "p_clk1": (input: "apb1_prescaler", max: 36000000, terminal: false),
-    "p_clk2": (input: "apb2_prescaler", max: 36000000, terminal: false),
+    "to_iwdg": (input: "lsi", max: 0, terminal: true),
+    "to_fl_itf_clk": (input: "hsi", max: 0, terminal: true),
+    "to_i2s": (input: "i2s_source_mux", max: 0, terminal: true),
+    "mco": (input: "mco_source_mux", max: 0, terminal: true),
     "to_usb": (input: "usb_prescaler", max: 0, terminal: true),
     "to_adc1_and_2": (input: "adc1_and_2_prescaler", max: 0, terminal: true),
     "to_adc3_and_4": (input: "adc3_and_4_prescaler", max: 0, terminal: true),

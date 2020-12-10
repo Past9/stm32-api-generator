@@ -47,7 +47,7 @@ impl<'a> ClockGenerator<'a> {
   }
 
   pub fn generate(&self, out_dir: &OutputDirectory) -> Result<()> {
-    let clocks_file = ClocksTemplate::new(&self.schematic)?.render()?;
+    let clocks_file = ClocksTemplate::new(&self.schematic, &self.spec)?.render()?;
 
     out_dir.publish(&f!("src/clocks.rs"), &clocks_file)?;
 
@@ -65,28 +65,18 @@ impl<'a> ClockGenerator<'a> {
       .schematic
       .get_all_components()
       .iter()
-      .filter_map(|(_, c)| match c {
-        ClockComponent::Multiplexer(m) => Some(
-          m.inputs()
-            .iter()
-            .map(|(_, i)| i.path())
-            .collect::<Vec<String>>(),
-        ),
-        ClockComponent::Divider(d) => Some(
-          d.values()
-            .iter()
-            .map(|(_, i)| i.path())
-            .collect::<Vec<String>>(),
-        ),
-        ClockComponent::Multiplier(m) => Some(
-          m.values()
-            .iter()
-            .map(|(_, i)| i.path())
-            .collect::<Vec<String>>(),
-        ),
+      .filter_map(|c| match c {
+        ClockComponent::Multiplexer(m) => Some(m.path.clone()),
+        ClockComponent::Divider(d) => match d.is_fixed_value() {
+          true => None,
+          false => Some(d.path.clone()),
+        },
+        ClockComponent::Multiplier(m) => match m.is_fixed_value() {
+          true => None,
+          false => Some(m.path.clone()),
+        },
         _ => None,
       })
-      .flat_map(|i| i)
       .collect::<Vec<String>>();
 
     for path in input_paths {
@@ -107,20 +97,26 @@ impl<'a> ClockGenerator<'a> {
       .get_all_components()
       .iter()
       .flat_map(|c| match c {
-        (name, ClockComponent::Multiplexer(m)) => m
-          .inputs()
-          .iter()
-          .map(|(_, v)| (v.path(), v.bit_value(), name.clone()))
-          .collect::<Vec<(String, u32, String)>>(),
-        (name, ClockComponent::Divider(d)) => d
+        ClockComponent::Multiplexer(m) => m
+          .inputs
           .values()
-          .iter()
-          .map(|(_, v)| (v.path(), v.bit_value(), name.clone()))
+          .map(|i| (m.path.clone(), i.bit_value, i.name.clone()))
           .collect::<Vec<(String, u32, String)>>(),
-        (name, ClockComponent::Multiplier(m)) => m
+        ClockComponent::Divider(d) => d
+          .values
           .values()
-          .iter()
-          .map(|(_, v)| (v.path(), v.bit_value(), name.clone()))
+          .filter_map(|v| match d.is_fixed_value() {
+            true => None,
+            false => Some((d.path.clone(), v.bit_value, v.name.clone())),
+          })
+          .collect::<Vec<(String, u32, String)>>(),
+        ClockComponent::Multiplier(m) => m
+          .values
+          .values()
+          .filter_map(|v| match m.is_fixed_value() {
+            true => None,
+            false => Some((m.path.clone(), v.bit_value, v.name.clone())),
+          })
           .collect::<Vec<(String, u32, String)>>(),
         _ => vec![],
       })
@@ -153,15 +149,19 @@ impl<'a> ClockGenerator<'a> {
 
 mod templates {
   use super::ClockSchematic;
-  use crate::generators::{clocks::schematic, fields::WriteInstruction};
+  use crate::generators::clocks::schematic;
+  use crate::generators::ReadWrite;
+  use crate::{clear_bit, reset, set_bit, write_val};
   use anyhow::Result;
   use askama::Template;
+  use fstrings::{f, write_f};
   use heck::{CamelCase, SnakeCase};
   use svd_expander::DeviceSpec;
 
   #[derive(Template)]
   #[template(path = "clocks/mod.rs.askama", escape = "none")]
-  pub struct ClocksTemplate {
+  pub struct ClocksTemplate<'a> {
+    device: &'a DeviceSpec,
     oscillators: Vec<Osc>,
     multiplexers: Vec<Mux>,
     variable_dividers: Vec<VarDiv>,
@@ -170,47 +170,38 @@ mod templates {
     fixed_multipliers: Vec<FixedMul>,
     taps: Vec<Tap>,
   }
-  impl ClocksTemplate {
-    pub fn new(schematic: &ClockSchematic) -> Result<ClocksTemplate> {
+  impl<'a> ClocksTemplate<'a> {
+    pub fn new(schematic: &ClockSchematic, spec: &'a DeviceSpec) -> Result<ClocksTemplate<'a>> {
       Ok(ClocksTemplate {
-        oscillators: schematic
-          .get_oscillators()
-          .iter()
-          .map(|(k, v)| Osc::new(k, v))
-          .collect(),
+        device: spec,
+        oscillators: schematic.oscillators().map(|o| Osc::new(o)).collect(),
         multiplexers: schematic
-          .get_multiplexers()
-          .iter()
-          .map(|(k, v)| Mux::new(k, v))
+          .multiplexers()
+          .map(|m| Mux::new(m))
           .collect::<Result<Vec<Mux>>>()?,
         variable_dividers: schematic
-          .get_dividers()
-          .iter()
-          .filter(|(_, v)| !v.is_fixed_value())
-          .map(|(k, v)| VarDiv::new(k, v))
+          .dividers()
+          .filter(|v| !v.is_fixed_value())
+          .map(|v| VarDiv::new(v, spec))
           .collect::<Result<Vec<VarDiv>>>()?,
         variable_multipliers: schematic
-          .get_multipliers()
-          .iter()
-          .filter(|(_, v)| !v.is_fixed_value())
-          .map(|(k, v)| VarMul::new(k, v))
+          .multipliers()
+          .filter(|v| !v.is_fixed_value())
+          .map(|v| VarMul::new(v, spec))
           .collect::<Result<Vec<VarMul>>>()?,
         fixed_dividers: schematic
-          .get_dividers()
-          .iter()
-          .filter(|(_, v)| v.is_fixed_value())
-          .map(|(k, v)| FixedDiv::new(k, v))
+          .dividers()
+          .filter(|v| v.is_fixed_value())
+          .map(|v| FixedDiv::new(v))
           .collect::<Result<Vec<FixedDiv>>>()?,
         fixed_multipliers: schematic
-          .get_multipliers()
-          .iter()
-          .filter(|(_, v)| v.is_fixed_value())
-          .map(|(k, v)| FixedMul::new(k, v))
+          .multipliers()
+          .filter(|v| v.is_fixed_value())
+          .map(|v| FixedMul::new(v))
           .collect::<Result<Vec<FixedMul>>>()?,
         taps: schematic
-          .get_taps()
-          .iter()
-          .map(|(k, v)| Tap::new(k, v))
+          .taps()
+          .map(|v| Tap::new(v))
           .collect::<Result<Vec<Tap>>>()?,
       })
     }
@@ -221,10 +212,10 @@ mod templates {
     default_freq: u64,
   }
   impl Osc {
-    pub fn new(name: &String, oscillator: &schematic::Oscillator) -> Osc {
+    pub fn new(oscillator: &schematic::Oscillator) -> Osc {
       Osc {
-        name: name.to_snake_case(),
-        default_freq: oscillator.frequency(),
+        name: oscillator.name.to_snake_case(),
+        default_freq: oscillator.frequency,
       }
     }
   }
@@ -234,20 +225,22 @@ mod templates {
     field_name: String,
     inputs: Vec<MuxIn>,
     default: MuxIn,
+    path: String,
   }
   impl Mux {
-    pub fn new(name: &String, multiplexer: &schematic::Multiplexer) -> Result<Mux> {
+    pub fn new(multiplexer: &schematic::Multiplexer) -> Result<Mux> {
       let default_input = multiplexer.default_input()?;
 
       let mut mux = Mux {
-        struct_name: name.to_camel_case(),
-        field_name: name.to_snake_case(),
+        struct_name: multiplexer.name.to_camel_case(),
+        field_name: multiplexer.name.to_snake_case(),
         inputs: multiplexer
-          .inputs()
-          .iter()
-          .map(|(k, v)| MuxIn::new(k, v))
-          .collect::<Result<Vec<MuxIn>>>()?,
-        default: MuxIn::new(&default_input.0, &default_input.1)?,
+          .inputs
+          .values()
+          .map(|v| MuxIn::new(&v))
+          .collect::<Vec<MuxIn>>(),
+        default: MuxIn::new(&default_input),
+        path: multiplexer.path.clone(),
       };
 
       mux.inputs.sort_by_key(|m| m.bit_value);
@@ -258,101 +251,32 @@ mod templates {
 
   pub struct MuxIn {
     struct_name: String,
-    field_name: String,
-    real_struct_name: String,
     real_field_name: String,
     bit_value: u32,
     is_off: bool,
   }
   impl MuxIn {
-    pub fn new(name: &String, input: &schematic::MultiplexerInput) -> Result<MuxIn> {
-      Ok(MuxIn {
-        struct_name: input.public_name(name).to_camel_case(),
-        field_name: input.public_name(name).to_snake_case(),
-        real_struct_name: name.to_camel_case(),
-        real_field_name: name.to_snake_case(),
-        bit_value: input.bit_value(),
-        is_off: input.public_name(name) == "off",
-      })
+    pub fn new(input: &schematic::MultiplexerInput) -> MuxIn {
+      MuxIn {
+        struct_name: input.public_name().to_camel_case(),
+        real_field_name: input.name.to_snake_case(),
+        bit_value: input.bit_value,
+        is_off: input.public_name() == "off",
+      }
     }
   }
 
   pub struct FixedMul {
-    struct_name: String,
     field_name: String,
     factor: f32,
     input_field_name: String,
   }
   impl FixedMul {
-    pub fn new(name: &String, multiplier: &schematic::Multiplier) -> Result<FixedMul> {
+    pub fn new(multiplier: &schematic::Multiplier) -> Result<FixedMul> {
       Ok(FixedMul {
-        struct_name: name.to_camel_case(),
-        field_name: name.to_snake_case(),
-        factor: multiplier.default(),
-        input_field_name: multiplier.input(),
-      })
-    }
-  }
-
-  pub struct VarMul {
-    struct_name: String,
-    field_name: String,
-    options: Vec<MulOpt>,
-    default: MulOpt,
-    input_field_name: String,
-  }
-  impl VarMul {
-    pub fn new(name: &String, multiplier: &schematic::Multiplier) -> Result<VarMul> {
-      let default_input = multiplier.default_input()?;
-
-      let mut mul = VarMul {
-        struct_name: name.to_camel_case(),
-        field_name: name.to_snake_case(),
-        options: multiplier
-          .values()
-          .iter()
-          .map(|(k, v)| MulOpt::new(k, v))
-          .collect::<Result<Vec<MulOpt>>>()?,
-        default: MulOpt::new(&default_input.0, &default_input.1)?,
-        input_field_name: multiplier.input(),
-      };
-
-      mul.options.sort_by_key(|m| m.bit_value);
-
-      Ok(mul)
-    }
-  }
-
-  pub struct MulOpt {
-    struct_name: String,
-    field_name: String,
-    bit_value: u32,
-    factor: f32,
-  }
-  impl MulOpt {
-    pub fn new(name: &String, option: &schematic::MultiplierOption) -> Result<MulOpt> {
-      Ok(MulOpt {
-        struct_name: name.to_camel_case(),
-        field_name: name.to_snake_case(),
-        bit_value: option.bit_value(),
-        factor: option.factor(),
-      })
-    }
-  }
-
-  pub struct FixedDiv {
-    struct_name: String,
-    field_name: String,
-    divisor: f32,
-    input_field_name: String,
-  }
-  impl FixedDiv {
-    pub fn new(name: &String, divider: &schematic::Divider) -> Result<FixedDiv> {
-      Ok(FixedDiv {
-        struct_name: name.to_camel_case(),
-        field_name: name.to_snake_case(),
-        divisor: divider.default(),
-        input_field_name: divider.input(),
+        field_name: multiplier.name.to_snake_case(),
+        factor: multiplier.default,
+        input_field_name: multiplier.input.clone(),
       })
     }
   }
@@ -363,21 +287,23 @@ mod templates {
     options: Vec<DivOpt>,
     default: DivOpt,
     input_field_name: String,
+    path: String,
   }
   impl VarDiv {
-    pub fn new(name: &String, divider: &schematic::Divider) -> Result<VarDiv> {
+    pub fn new(divider: &schematic::Divider, spec: &DeviceSpec) -> Result<VarDiv> {
       let default_input = divider.default_input()?;
 
       let mut div = VarDiv {
-        struct_name: name.to_camel_case(),
-        field_name: name.to_snake_case(),
+        struct_name: divider.name.to_camel_case(),
+        field_name: divider.name.to_snake_case(),
         options: divider
+          .values
           .values()
-          .iter()
-          .map(|(k, v)| DivOpt::new(k, v))
+          .map(|v| DivOpt::new(&v))
           .collect::<Result<Vec<DivOpt>>>()?,
-        default: DivOpt::new(&default_input.0, &default_input.1)?,
-        input_field_name: divider.input(),
+        default: DivOpt::new(&default_input)?,
+        input_field_name: divider.input.clone(),
+        path: divider.path.clone(),
       };
 
       div.options.sort_by_key(|d| d.bit_value);
@@ -388,34 +314,109 @@ mod templates {
 
   pub struct DivOpt {
     struct_name: String,
-    field_name: String,
     bit_value: u32,
     divisor: f32,
   }
   impl DivOpt {
-    pub fn new(name: &String, option: &schematic::DividerOption) -> Result<DivOpt> {
+    pub fn new(option: &schematic::DividerOption) -> Result<DivOpt> {
       Ok(DivOpt {
-        struct_name: name.to_camel_case(),
-        field_name: name.to_snake_case(),
-        bit_value: option.bit_value(),
-        divisor: option.divisor(),
+        struct_name: option.name.to_camel_case(),
+        bit_value: option.bit_value,
+        divisor: option.divisor,
+      })
+    }
+  }
+
+  pub struct VarMul {
+    struct_name: String,
+    field_name: String,
+    options: Vec<MulOpt>,
+    default: MulOpt,
+    input_field_name: String,
+    path: String,
+  }
+  impl VarMul {
+    pub fn new(multiplier: &schematic::Multiplier, spec: &DeviceSpec) -> Result<VarMul> {
+      let default_input = multiplier.default_input()?;
+
+      let mut mul = VarMul {
+        struct_name: multiplier.name.to_camel_case(),
+        field_name: multiplier.name.to_snake_case(),
+        options: multiplier
+          .values
+          .values()
+          .map(|v| MulOpt::new(v))
+          .collect::<Result<Vec<MulOpt>>>()?,
+        default: MulOpt::new(&default_input)?,
+        input_field_name: multiplier.input.clone(),
+        path: multiplier.path.clone(),
+      };
+
+      mul.options.sort_by_key(|m| m.bit_value);
+
+      Ok(mul)
+    }
+  }
+
+  pub struct MulOpt {
+    struct_name: String,
+    bit_value: u32,
+    factor: f32,
+  }
+  impl MulOpt {
+    pub fn new(option: &schematic::MultiplierOption) -> Result<MulOpt> {
+      Ok(MulOpt {
+        struct_name: option.name.to_camel_case(),
+        bit_value: option.bit_value,
+        factor: option.factor,
+      })
+    }
+  }
+
+  pub struct FixedDiv {
+    field_name: String,
+    divisor: f32,
+    input_field_name: String,
+  }
+  impl FixedDiv {
+    pub fn new(divider: &schematic::Divider) -> Result<FixedDiv> {
+      Ok(FixedDiv {
+        field_name: divider.name.to_snake_case(),
+        divisor: divider.default,
+        input_field_name: divider.input.clone(),
       })
     }
   }
 
   pub struct Tap {
-    struct_name: String,
     field_name: String,
     is_terminal: bool,
     input_field_name: String,
   }
   impl Tap {
-    pub fn new(name: &String, tap: &schematic::Tap) -> Result<Tap> {
+    pub fn new(tap: &schematic::Tap) -> Result<Tap> {
       Ok(Tap {
-        struct_name: name.to_camel_case(),
-        field_name: name.to_snake_case(),
-        is_terminal: tap.terminal(),
-        input_field_name: tap.input(),
+        field_name: tap.name.to_snake_case(),
+        is_terminal: tap.terminal,
+        input_field_name: tap.input.clone(),
+      })
+    }
+  }
+
+  pub struct FieldInfo {
+    pub mask: u32,
+    pub inv_mask: u32,
+    pub address: u32,
+    pub offset: u32,
+  }
+  impl FieldInfo {
+    pub fn new<S: Into<String>>(path: S, spec: &DeviceSpec) -> Result<FieldInfo> {
+      let field = spec.get_field(&path.into())?;
+      Ok(FieldInfo {
+        mask: field.mask(),
+        inv_mask: !field.mask(),
+        address: field.address(),
+        offset: field.offset,
       })
     }
   }
@@ -440,8 +441,12 @@ mod tests {
         dividers: {
           "pll_div": (
             input: "hse",
+            path: "timer0.cr.en",
             values: {
-              "no_div": (1, "timer0.cr.en", 0)
+              "no_div": (
+                divisor: 1, 
+                bit_value: 0
+              )
             },
             default: 1,
           )
@@ -449,8 +454,12 @@ mod tests {
         multipliers: {
           "pll_mul": (
             input: "pll_div", 
+            path: "bogus.field",
             values: {
-              "no_mul": (2, "bogus.field", 1)
+              "no_mul": (
+                factor: 2, 
+                bit_value: 1
+              )
             },
             default: 2,
           )
@@ -465,11 +474,7 @@ mod tests {
       )
     "#;
 
-    let _device_xml = r#"
-    "#;
-
     let device = DeviceSpec::from_file("specs/svd/arm_device.svd").unwrap();
-
     let res = ClockGenerator::from_ron(clock_ron, &device);
 
     assert!(res.is_err());
@@ -477,6 +482,44 @@ mod tests {
       "No field named 'bogus.field' in SVD spec",
       res.unwrap_err().to_string()
     );
+  }
+
+  #[test]
+  fn allows_blank_paths_on_fixed_muls_and_divs() {
+    let clock_ron = r#"
+      ClockSchematic(
+        oscillators: {
+          "hse": (
+            frequency: 8000000
+          )
+        },
+        multiplexers: {},
+        dividers: {
+          "fixed_div": (
+            input: "hse",
+            default: 1,
+          )
+        },
+        multipliers: {
+          "fixed_mul": (
+            input: "fixed_div", 
+            default: 2,
+          )
+        },
+        taps: {
+          "tap1": (
+            input: "fixed_mul", 
+            max: 1000000, 
+            terminal: true
+          ),
+        }
+      )
+    "#;
+
+    let device = DeviceSpec::from_file("specs/svd/arm_device.svd").unwrap();
+    let res = ClockGenerator::from_ron(clock_ron, &device);
+
+    assert!(res.is_ok());
   }
 
   #[test]
@@ -492,8 +535,12 @@ mod tests {
         dividers: {
           "pll_div": (
             input: "hse",
+            path: "timer0.cr.mode",
             values: {
-              "no_div": (1, "timer0.cr.mode", 15)
+              "pll_div": (
+                divisor: 1, 
+                bit_value: 15
+              )
             },
             default: 1,
           )
@@ -509,11 +556,7 @@ mod tests {
       )
     "#;
 
-    let _device_xml = r#"
-    "#;
-
     let device = DeviceSpec::from_file("specs/svd/arm_device.svd").unwrap();
-
     let res = ClockGenerator::from_ron(clock_ron, &device);
 
     assert!(res.is_err());

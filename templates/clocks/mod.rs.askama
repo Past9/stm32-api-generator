@@ -1,3 +1,6 @@
+use crate::{ set_bit, set_bit_itf, clear_bit, clear_bit_itf, write_val, write_val_itf };
+
+{% let d = device %}
 
 // Multiplexer input options
 {% for mux in multiplexers %}
@@ -35,22 +38,22 @@ pub enum {{mul.struct_name}}Value {
 pub struct ClockConfig {
   // Oscillator frequencies 
   {% for osc in oscillators -%}
-  pub {{osc.name}}_freq: u64,
+  {{osc.name}}_freq: u64,
   {% endfor %}
   
   // Multiplexer inputs
   {% for mux in multiplexers -%}
-  pub {{mux.field_name}}_input: {{mux.struct_name}}Input,
+  {{mux.field_name}}_input: {{mux.struct_name}}Input,
   {% endfor %}
   
   // Configurable divider inputs
   {% for div in variable_dividers -%}
-  pub {{div.field_name}}_value: {{div.struct_name}}Value,
+  {{div.field_name}}_value: {{div.struct_name}}Value,
   {% endfor %}
   
   // Configurable multiplier inputs
   {% for mul in variable_multipliers -%}
-  pub {{mul.field_name}}_value: {{mul.struct_name}}Value,
+  {{mul.field_name}}_value: {{mul.struct_name}}Value,
   {% endfor %}
 }
 impl ClockConfig {
@@ -148,14 +151,59 @@ impl ClockConfig {
   }
   {% endfor %}
 
-  {% for tap in taps %}
+  {% for tap in taps -%}
   #[inline]
-  {% if tap.is_terminal -%}
-  pub
-  {% endif %}
+  {%- if tap.is_terminal -%}pub{%- endif %}
   fn get_{{tap.field_name}}_freq(&self) -> f32 {
     self.get_{{tap.input_field_name}}_freq()
   }
   {% endfor %}
+}
 
+
+pub struct Clocks {
+  config: ClockConfig
+}
+impl Clocks {
+  pub(crate) fn new(config: ClockConfig) -> Clocks {
+    let mut clocks = Clocks {
+      config
+    };
+
+    clocks.reset();
+    clocks.write_config();
+    clocks.commit();
+
+    clocks
+  }
+
+  fn reset(&mut self) {
+  }
+
+  fn write_config(&mut self) {
+    self.write_multiplexer_config();
+    self.write_divider_config();
+    self.write_multiplier_config();
+  }
+
+  fn write_multiplexer_config(&mut self) {
+    {% for mux in multiplexers %}
+    {{write_val!(d, mux.path, f!("self.config.{mux.field_name}_input as u32"), false)}};
+    {% endfor %}
+  } 
+
+  fn write_divider_config(&mut self) {
+    {% for div in variable_dividers %}
+    {{write_val!(d, div.path, f!("self.config.{div.field_name}_value as u32"), false)}};
+    {% endfor %}
+  }
+
+  fn write_multiplier_config(&mut self) {
+    {% for mul in variable_multipliers %}
+    {{write_val!(d, mul.path, f!("self.config.{mul.field_name}_value as u32"), false)}};
+    {% endfor %}
+  }
+
+  fn commit(&mut self) {
+  }
 }

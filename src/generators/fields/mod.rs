@@ -1,4 +1,4 @@
-use anyhow::{Result};
+use anyhow::Result;
 use serde::Deserialize;
 use svd_expander::DeviceSpec;
 
@@ -85,8 +85,8 @@ mod tests {
       settings[2]
     );
   }
-  #[test]
 
+  #[test]
   fn generates_code() {
     let spec =
       DeviceSpec::from_xml(&fs::read_to_string("./specs/svd/arm_device.svd").unwrap()).unwrap();
