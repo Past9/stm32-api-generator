@@ -110,31 +110,27 @@ fn itf(interrupt_free: bool) -> &'static str {
 }
 
 pub trait ReadWrite {
-  //fn wv<S: Into<String>, Copy>(&self, path: S) -> String;
   fn write_val(&self, path: &str, expr: &str, interrupt_free: bool) -> String;
   fn reset(&self, path: &str, interrupt_free: bool) -> String;
   fn set_bit(&self, path: &str, interrupt_free: bool) -> String;
   fn clear_bit(&self, path: &str, interrupt_free: bool) -> String;
+  fn read_val(&self, path: &str) -> String;
+  fn wait_for_val(&self, path: &str, expr: &str, interrupt_free: bool) -> String;
+  fn wait_for_clear(&self, path: &str, interrupt_free: bool) -> String;
+  fn wait_for_set(&self, path: &str, interrupt_free: bool) -> String;
 }
 impl ReadWrite for DeviceSpec {
-  /*
-  fn wv<S: Into<String>>(&self, path: S) -> String {Vj
-    path.into()
-  }
-  */
-
   fn write_val(&self, path: &str, expr: &str, interrupt_free: bool) -> String {
     let field = self.get_field(path).unwrap();
 
     let address = field.address();
     let mask = field.mask();
-    let inverse_mask = !field.mask();
     let offset = field.offset;
     let itf = itf(interrupt_free);
 
     f!(
       r##"// Set {path} = {expr}
-      write_val{itf}({address:#010x}, {mask:#034b}, {inverse_mask:#034b}, {offset}, {expr});"##
+      write_val{itf}({address:#010x}, {mask:#034b}, {offset}, {expr});"##
     )
   }
 
@@ -143,7 +139,6 @@ impl ReadWrite for DeviceSpec {
 
     let address = field.address();
     let mask = field.mask();
-    let inverse_mask = !field.mask();
     let offset = field.offset;
 
     let register = self.get_register(&field.parent_path()).unwrap();
@@ -163,7 +158,7 @@ impl ReadWrite for DeviceSpec {
 
     f!(
       r##"// Reset {path}
-      write_val{itf}({address:#010x}, {mask:#034b}, {inverse_mask:#034b}, {offset}, {reset_value});"##
+      write_val{itf}({address:#010x}, {mask:#034b}, {offset}, {reset_value});"##
     )
   }
 
@@ -189,13 +184,68 @@ impl ReadWrite for DeviceSpec {
       panic!("Cannot clear single bit for a multi-bit field");
     }
 
-    let address = field.address();
-    let inverse_mask = !field.mask();
     let itf = itf(interrupt_free);
+    let address = field.address();
+    let mask = field.mask();
 
     f!(
       r##"// Clear {path}
-      clear_bit{itf}({address:#010x}, {inverse_mask:#034b});"##
+      clear_bit{itf}({address:#010x}, {mask:#034b});"##
+    )
+  }
+
+  fn read_val(&self, path: &str) -> String {
+    let field = self.get_field(path).unwrap();
+
+    let address = field.address();
+    let mask = field.mask();
+    let offset = field.offset;
+
+    f!(
+      r##"// Read {path}
+      read_val({address:#010x}, {mask:#034b}, {offset});"##
+    )
+  }
+
+  fn wait_for_val(&self, path: &str, expr: &str, interrupt_free: bool) -> String {
+    let field = self.get_field(path).unwrap();
+
+    let itf = itf(interrupt_free);
+    let address = field.address();
+    let mask = field.mask();
+    let offset = field.offset;
+
+    f!(
+      r##"// Block until {path} == {expr}
+      wait_for_val{itf}({address:#010x}, {mask:#034b}, {offset}, {expr});"##
+    )
+  }
+
+  fn wait_for_clear(&self, path: &str, interrupt_free: bool) -> String {
+    let field = self.get_field(path).unwrap();
+
+    let itf = itf(interrupt_free);
+    let address = field.address();
+    let mask = field.mask();
+    let offset = field.offset;
+
+    f!(
+      r##"// Block until {path} is cleared 
+      wait_for_val{itf}({address:#010x}, {mask:#034b}, {offset}, 0);"##
+    )
+  }
+
+  fn wait_for_set(&self, path: &str, interrupt_free: bool) -> String {
+    let field = self.get_field(path).unwrap();
+
+    let itf = itf(interrupt_free);
+    let address = field.address();
+    let mask = field.mask();
+    let offset = field.offset;
+
+    f!(
+      r##"// Block until {path} is set 
+      wait_for_val{itf}({address:#010x}, {mask:#034b}, {offset}, 0);"##
     )
   }
 }
@@ -203,10 +253,10 @@ impl ReadWrite for DeviceSpec {
 #[macro_export]
 macro_rules! write_val {
   ($device:ident, $path:expr, $val:expr) => {
-    $device.write_val(&$path, &$val, true);
+    $device.write_val(&$path, &$val.to_string(), true);
   };
   ($device:ident, $path:expr, $val:expr, $interrupt_free:expr) => {
-    $device.write_val(&$path, &$val, $interrupt_free);
+    $device.write_val(&$path, &$val.to_string(), $interrupt_free);
   };
 }
 
@@ -237,5 +287,42 @@ macro_rules! clear_bit {
   };
   ($device:ident, $path:expr, $interrupt_free:expr) => {
     $device.clear_bit(&$path, $interrupt_free);
+  };
+}
+
+#[macro_export]
+macro_rules! read_val {
+  ($device:ident, $path:expr, $val:expr) => {
+    $device.read_val(&$path, &$val.to_string());
+  };
+}
+
+#[macro_export]
+macro_rules! wait_for_val {
+  ($device:ident, $path:expr, $val:expr) => {
+    $device.wait_for_val(&$path, &$val.to_string(), true);
+  };
+  ($device:ident, $path:expr, $val:expr, $interrupt_free:expr) => {
+    $device.wait_for_val(&$path, &$val.to_string(), $interrupt_free);
+  };
+}
+
+#[macro_export]
+macro_rules! wait_for_clear {
+  ($device:ident, $path:expr) => {
+    $device.wait_for_clear(&$path, true);
+  };
+  ($device:ident, $path:expr, $interrupt_free:expr) => {
+    $device.wait_for_clear(&$path, $interrupt_free);
+  };
+}
+
+#[macro_export]
+macro_rules! wait_for_set {
+  ($device:ident, $path:expr) => {
+    $device.wait_for_set(&$path, true);
+  };
+  ($device:ident, $path:expr, $interrupt_free:expr) => {
+    $device.wait_for_set(&$path, $interrupt_free);
   };
 }

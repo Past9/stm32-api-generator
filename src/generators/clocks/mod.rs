@@ -151,10 +151,10 @@ mod templates {
   use super::ClockSchematic;
   use crate::generators::clocks::schematic;
   use crate::generators::ReadWrite;
-  use crate::{clear_bit, reset, set_bit, write_val};
+  use crate::{clear_bit, set_bit, wait_for_clear, wait_for_set, write_val};
   use anyhow::Result;
   use askama::Template;
-  use fstrings::{f, write_f};
+  use fstrings::f;
   use heck::{CamelCase, SnakeCase};
   use svd_expander::DeviceSpec;
 
@@ -162,6 +162,7 @@ mod templates {
   #[template(path = "clocks/mod.rs.askama", escape = "none")]
   pub struct ClocksTemplate<'a> {
     device: &'a DeviceSpec,
+    sys_clk_mux: Mux,
     oscillators: Vec<Osc>,
     multiplexers: Vec<Mux>,
     variable_dividers: Vec<VarDiv>,
@@ -169,11 +170,15 @@ mod templates {
     fixed_dividers: Vec<FixedDiv>,
     fixed_multipliers: Vec<FixedMul>,
     taps: Vec<Tap>,
+    has_pll: bool,
+    pll_power: String,
+    pll_ready: String,
   }
   impl<'a> ClocksTemplate<'a> {
     pub fn new(schematic: &ClockSchematic, spec: &'a DeviceSpec) -> Result<ClocksTemplate<'a>> {
-      Ok(ClocksTemplate {
+      let mut clocks = ClocksTemplate {
         device: spec,
+        sys_clk_mux: Mux::new(schematic.get_sys_clk_mux()?)?,
         oscillators: schematic.oscillators().map(|o| Osc::new(o)).collect(),
         multiplexers: schematic
           .multiplexers()
@@ -203,24 +208,72 @@ mod templates {
           .taps()
           .map(|v| Tap::new(v))
           .collect::<Result<Vec<Tap>>>()?,
-      })
+        has_pll: schematic.pll().is_some(),
+        pll_power: match schematic.pll() {
+          Some(p) => &p.power,
+          None => "",
+        }
+        .to_owned(),
+        pll_ready: match schematic.pll() {
+          Some(p) => &p.ready,
+          None => "",
+        }
+        .to_owned(),
+      };
+
+      clocks.oscillators.sort_by_key(|o| o.name.clone());
+      clocks.multiplexers.sort_by_key(|o| o.field_name.clone());
+      clocks
+        .variable_dividers
+        .sort_by_key(|o| o.field_name.clone());
+      clocks
+        .variable_multipliers
+        .sort_by_key(|o| o.field_name.clone());
+      clocks.fixed_dividers.sort_by_key(|o| o.field_name.clone());
+      clocks
+        .fixed_multipliers
+        .sort_by_key(|o| o.field_name.clone());
+      clocks.taps.sort_by_key(|o| o.field_name.clone());
+
+      Ok(clocks)
+    }
+
+    pub fn get_mux<S: Into<String>>(&self, name: S) -> &Mux {
+      let n = name.into();
+      self
+        .multiplexers
+        .iter()
+        .find(|m| m.schematic_name == n)
+        .expect(&f!("Could not find multiplexer {n}."))
     }
   }
 
   pub struct Osc {
     name: String,
     default_freq: u64,
+    is_external: bool,
+    ext_power: String,
+    ext_ready: String,
   }
   impl Osc {
     pub fn new(oscillator: &schematic::Oscillator) -> Osc {
+      let ext_vals = match oscillator.external {
+        Some(ref ext) => (true, ext.power.clone(), ext.ready.clone()),
+        None => (false, "".to_owned(), "".to_owned()),
+      };
+
       Osc {
         name: oscillator.name.to_snake_case(),
         default_freq: oscillator.frequency,
+        is_external: ext_vals.0,
+        ext_power: ext_vals.1,
+        ext_ready: ext_vals.2,
       }
     }
   }
 
   pub struct Mux {
+    schematic_name: String,
     struct_name: String,
     field_name: String,
     inputs: Vec<MuxIn>,
@@ -232,6 +285,7 @@ mod templates {
       let default_input = multiplexer.default_input()?;
 
       let mut mux = Mux {
+        schematic_name: multiplexer.name.clone(),
         struct_name: multiplexer.name.to_camel_case(),
         field_name: multiplexer.name.to_snake_case(),
         inputs: multiplexer

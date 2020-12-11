@@ -1,4 +1,4 @@
-use crate::{ set_bit, set_bit_itf, clear_bit, clear_bit_itf, write_val, write_val_itf };
+use crate::{ set_bit_itf, clear_bit_itf, write_val, write_val_itf, wait_for_val_itf };
 
 {% let d = device %}
 
@@ -59,13 +59,19 @@ pub struct ClockConfig {
 impl ClockConfig {
   pub fn with_freqs(
     {% for osc in oscillators -%}
+    {% if osc.is_external %}
     {{osc.name}}_freq: u64,
+    {% endif %}
     {% endfor %}
   ) -> ClockConfig {
     ClockConfig {
       // Oscillator frequencies 
       {% for osc in oscillators -%}
+      {% if osc.is_external %}
       {{osc.name}}_freq,
+      {% else %}
+      {{osc.name}}_freq: {{osc.default_freq}},
+      {% endif %}
       {% endfor %}
 
       // Multiplexer inputs
@@ -88,7 +94,9 @@ impl ClockConfig {
   pub fn with_default_freqs() -> ClockConfig {
     Self::with_freqs(
       {% for osc in oscillators -%}
+      {% if osc.is_external %}
       {{osc.default_freq}},
+      {% endif %}
       {% endfor %}
     )
   }
@@ -161,7 +169,7 @@ impl ClockConfig {
 }
 
 
-pub struct Clocks {
+pub(crate) struct Clocks {
   config: ClockConfig
 }
 impl Clocks {
@@ -170,14 +178,43 @@ impl Clocks {
       config
     };
 
-    clocks.reset();
+    clocks.stop();
     clocks.write_config();
-    clocks.commit();
+    clocks.start();
 
     clocks
   }
 
-  fn reset(&mut self) {
+  pub fn get_config(&self) -> &ClockConfig {
+    &self.config
+  } 
+
+  fn stop(&mut self) {
+    {% for osc in oscillators %} 
+    {% if osc.is_external %}
+    // Make sure the {{osc.name}} oscillator is not the system clock by resetting
+    // the system clock mux to is default input.
+    {{write_val!(d, self.sys_clk_mux.path, self.sys_clk_mux.default.bit_value)}} 
+
+    // Turn off the {{osc.name}} oscillator
+    {{clear_bit!(d, osc.ext_power)}} 
+
+    // Make sure the {{osc.name}} oscillator is off
+    {{wait_for_clear!(d, osc.ext_ready)}} 
+    {% endif %}
+    {% endfor %}
+
+    {% if has_pll %}
+    // Make sure the PLL is not the system clock by resetting
+    // the system clock mux to is default input.
+    {{write_val!(d, self.sys_clk_mux.path, self.sys_clk_mux.default.bit_value)}} 
+
+    // Turn off the PLL
+    {{clear_bit!(d, self.pll_power)}} 
+
+    // Make sure the PLL is off
+    {{wait_for_clear!(d, self.pll_ready)}} 
+    {% endif %}
   }
 
   fn write_config(&mut self) {
@@ -188,22 +225,41 @@ impl Clocks {
 
   fn write_multiplexer_config(&mut self) {
     {% for mux in multiplexers %}
-    {{write_val!(d, mux.path, f!("self.config.{mux.field_name}_input as u32"), false)}};
+    {{write_val!(d, mux.path, f!("self.config.{mux.field_name}_input as u32"), false)}}
     {% endfor %}
   } 
 
   fn write_divider_config(&mut self) {
     {% for div in variable_dividers %}
-    {{write_val!(d, div.path, f!("self.config.{div.field_name}_value as u32"), false)}};
+    {{write_val!(d, div.path, f!("self.config.{div.field_name}_value as u32"), false)}}
     {% endfor %}
   }
 
   fn write_multiplier_config(&mut self) {
     {% for mul in variable_multipliers %}
-    {{write_val!(d, mul.path, f!("self.config.{mul.field_name}_value as u32"), false)}};
+    {{write_val!(d, mul.path, f!("self.config.{mul.field_name}_value as u32"), false)}}
     {% endfor %}
   }
 
-  fn commit(&mut self) {
+  fn start(&mut self) {
+    {% for osc in oscillators %} 
+    {% if osc.is_external %}
+    if self.config.{{osc.name}}_freq != 0 {
+      // Turn on the {{osc.name}} oscillator
+      {{set_bit!(d, osc.ext_power)}} 
+
+      // Make sure the {{osc.name}} oscillator is on
+      {{wait_for_set!(d, osc.ext_ready)}} 
+    }
+    {% endif %}
+    {% endfor %}
+
+    {% if has_pll %}
+    // Turn on the PLL
+    {{set_bit!(d, self.pll_power)}} 
+
+    // Make sure the PLL is on
+    {{wait_for_set!(d, self.pll_ready)}} 
+    {% endif %}
   }
 }

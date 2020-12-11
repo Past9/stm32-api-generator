@@ -1,9 +1,20 @@
 ClockSchematic(
+  sys_clk_mux: "system_clock_mux",
+  pll: Some((
+    power: "rcc.cr.pllon",
+    ready: "rcc.cr.pllrdy"
+  )),
 	oscillators: {
-		"hse": (frequency: 8000000),
-		"lse": (frequency: 32768),
 		"hsi": (frequency: 8000000),
 		"lsi": (frequency: 40000),
+		"hse": (frequency: 0, external: Some((
+      power: "rcc.cr.hseon",
+      ready: "rcc.cr.hserdy",
+    ))),
+		"lse": (frequency: 0, external: Some((
+      power: "rcc.bdcr.lseon",
+      ready: "rcc.bdcr.lserdy",
+    ))),
 	},
 	multiplexers: {
 		"rtc_clock_mux": (

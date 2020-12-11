@@ -8,24 +8,30 @@ pub type Result<T> = core::result::Result<T, Error>;
 pub mod clocks;
 pub mod gpio;
 
+use clocks::{ Clocks, ClockConfig };
+
 {% for submodule in submodules -%}
 use gpio::{{submodule.module_name}}::{{submodule.struct_name}};
 {% endfor %}
 
 pub struct System {
-  clock_config: clocks::ClockConfig,
+  clocks: Clocks,
   {% for submodule in submodules -%}
   has_{{submodule.field_name}}: bool,
   {% endfor %}
 }
 impl System {
-  pub fn new(clock_config: clocks::ClockConfig) -> Self {
+  pub fn new(clock_config: ClockConfig) -> Self {
     Self {
-      clock_config,
+      clocks: Clocks::new(clock_config),
       {% for submodule in submodules -%}
       has_{{submodule.field_name}}: true,
       {% endfor %}
     }
+  }
+
+  pub fn get_freqs(&self) -> &ClockConfig {
+    self.clocks.get_config()
   }
 
   pub fn owns_everything(&self) -> bool {
@@ -80,6 +86,7 @@ impl Error {
 }
 
 #[inline]
+#[allow(dead_code)]
 pub(crate) fn set_bit(address: u32, mask: u32) {
   unsafe {
     ptr::write_volatile(
@@ -90,36 +97,104 @@ pub(crate) fn set_bit(address: u32, mask: u32) {
 }
 
 #[inline]
+#[allow(dead_code)]
 pub(crate) fn set_bit_itf(address: u32, mask: u32) {
   interrupt::free(|_| set_bit(address, mask));
 }
 
 #[inline]
-pub(crate) fn clear_bit(address: u32, inverse_mask: u32) {
+#[allow(dead_code)]
+pub(crate) fn clear_bit(address: u32, mask: u32) {
   unsafe {
     ptr::write_volatile(
       address as *mut u32,
-      ptr::read_volatile(address as *const u32) & inverse_mask
+      ptr::read_volatile(address as *const u32) & !mask
     )
   }
 }
 
 #[inline]
-pub(crate) fn clear_bit_itf(address: u32, inverse_mask: u32) {
-  interrupt::free(|_| clear_bit(address, inverse_mask));
+#[allow(dead_code)]
+pub(crate) fn clear_bit_itf(address: u32, mask: u32) {
+  interrupt::free(|_| clear_bit(address, mask));
 }
 
 #[inline]
-pub(crate) fn write_val(address: u32, mask: u32, inverse_mask: u32, offset: u32, val: u32) {
+#[allow(dead_code)]
+pub(crate) fn write_val(address: u32, mask: u32, offset: u32, val: u32) {
   unsafe {
     ptr::write_volatile(
       address as *mut u32,
-      inverse_mask & ptr::read_volatile(address as *const u32) | mask & (val << offset)
+      !mask & ptr::read_volatile(address as *const u32) | mask & (val << offset)
     );
   }
 }
 
 #[inline]
-pub(crate) fn write_val_itf(address: u32, mask: u32, inverse_mask: u32, offset: u32, val: u32) {
-  interrupt::free(|_| write_val(address, mask, inverse_mask, offset, val))
+#[allow(dead_code)]
+pub(crate) fn write_val_itf(address: u32, mask: u32, offset: u32, val: u32) {
+  interrupt::free(|_| write_val(address, mask, offset, val))
+}
+
+#[inline]
+#[allow(dead_code)]
+pub(crate) fn read_val(address: u32, mask: u32, offset: u32) -> u32 {
+  unsafe {
+    (ptr::read_volatile(address as *const u32) & mask) >> offset
+  }
+}
+
+#[inline]
+#[allow(dead_code)]
+pub(crate) fn wait_for_val(address: u32, mask: u32, offset: u32, val: u32) {
+  let awaited_val = val << offset; 
+  loop {
+    unsafe {
+      if (ptr::read_volatile(address as *const u32) & mask) == awaited_val {
+        break;
+      }
+    }
+  }
+}
+
+#[inline]
+#[allow(dead_code)]
+pub(crate) fn wait_for_val_itf(address: u32, mask: u32, offset: u32, val: u32) {
+  interrupt::free(|_| wait_for_val(address, mask, offset, val));
+}
+
+#[inline]
+#[allow(dead_code)]
+pub(crate) fn wait_for_clear(address: u32, mask: u32, offset: u32) {
+  loop {
+    unsafe {
+      if (ptr::read_volatile(address as *const u32) & mask) == 0{
+        break;
+      }
+    }
+  }
+}
+
+#[inline]
+#[allow(dead_code)]
+pub(crate) fn wait_for_val_clear_itf(address: u32, mask: u32, offset: u32) {
+  interrupt::free(|_| wait_for_clear(address, mask, offset));
+}
+
+#[inline]
+#[allow(dead_code)]
+pub(crate) fn wait_for_set(address: u32, mask: u32, offset: u32) {
+  loop {
+    unsafe {
+      if (ptr::read_volatile(address as *const u32) & mask) != 0{
+        break;
+      }
+    }
+  }
+}
+
+#[inline]
+#[allow(dead_code)]
+pub(crate) fn wait_for_val_set_itf(address: u32, mask: u32, offset: u32) {
+  interrupt::free(|_| wait_for_set(address, mask, offset));
 }

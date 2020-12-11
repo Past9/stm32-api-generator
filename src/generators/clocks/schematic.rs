@@ -20,6 +20,8 @@ pub enum ClockComponent {
 
 #[derive(Deserialize, Debug, Clone)]
 pub struct ClockSchematic {
+  sys_clk_mux: String,
+  pll: Option<Pll>,
   oscillators: HashMap<String, Oscillator>,
   multiplexers: HashMap<String, Multiplexer>,
   dividers: HashMap<String, Divider>,
@@ -95,6 +97,23 @@ impl ClockSchematic {
     self.check_no_loops()?;
 
     Ok(())
+  }
+
+  pub fn pll(&self) -> Option<&Pll> {
+    match self.pll {
+      Some(ref p) => Some(p),
+      None => None,
+    }
+  }
+
+  pub fn get_sys_clk_mux(&self) -> Result<&Multiplexer> {
+    match self.multiplexers().find(|o| o.name == self.sys_clk_mux) {
+      Some(m) => Ok(m),
+      None => Err(anyhow!(
+        "System clock multiplexer '{}' does not exist",
+        self.sys_clk_mux
+      )),
+    }
   }
 
   pub fn oscillators(&self) -> Values<String, Oscillator> {
@@ -520,10 +539,18 @@ impl ClockSchematic {
 }
 
 #[derive(Deserialize, Debug, Clone)]
+pub struct Pll {
+  pub power: String,
+  pub ready: String,
+}
+
+#[derive(Deserialize, Debug, Clone)]
 pub struct Oscillator {
   #[serde(default)]
   pub name: String,
   pub frequency: u64,
+  #[serde(default)]
+  pub external: Option<ExternalOscillator>,
 }
 impl Oscillator {}
 
@@ -542,6 +569,12 @@ impl Multiplexer {
       None => Err(anyhow!("Multiplexer default input not in map")),
     }
   }
+}
+
+#[derive(Deserialize, Debug, Clone)]
+pub struct ExternalOscillator {
+  pub power: String,
+  pub ready: String,
 }
 
 #[derive(Deserialize, Debug, Clone)]

@@ -1,4 +1,4 @@
-use crate::{ set_bit, set_bit_itf, clear_bit, clear_bit_itf, write_val, write_val_itf };
+use crate::{ set_bit_itf, clear_bit_itf, write_val, write_val_itf };
 use crate::gpio::{ PullDirection, DummyAltFunc, OutputType, OutputSpeed, DigitalValue };
 use core::marker::PhantomData;
 use core::ptr;
@@ -58,7 +58,7 @@ impl {{peripheral.struct_name}} {
     }
   }
 
-  pub fn return_{{pin.field_name}}(&mut self, {{pin.field_name}}: {{pin.struct_name}}) -> Result<()> {
+  pub fn return_{{pin.field_name}}(&mut self, #[allow(unused_variables)] {{pin.field_name}}: {{pin.struct_name}}) -> Result<()> {
     match self.has_{{pin.field_name}} {
       false => {
         self.has_{{pin.field_name}} = true;
@@ -106,16 +106,16 @@ impl {{pin.struct_name}} {
 
   {% if pin.alt_funcs.len() > 0 %}
   #[allow(non_camel_case_types)]
-  pub fn as_alt_func<ALT_FUNC>(
+  pub fn as_alt_func<AltFunc>(
     self, 
     pull_dir: PullDirection, 
-  ) -> {{pin.struct_name}}AltFunc<ALT_FUNC> 
-  where ALT_FUNC: {{pin.struct_name}}AltFuncs
+  ) -> {{pin.struct_name}}AltFunc<AltFunc> 
+  where AltFunc: {{pin.struct_name}}AltFuncs
   {
     interrupt::free(|_| {
       {{write_val!(d, pin.moder_field, "0b10", false)}}
       {{write_val!(d, pin.pupdr_field, "pull_dir.val()", false)}}
-      {{write_val!(d, pin.afr_field, "ALT_FUNC::AFR_VAL", false)}}
+      {{write_val!(d, pin.afr_field, "AltFunc::AFR_VAL", false)}}
     });
     {{pin.struct_name}}AltFunc {
       alt_func: PhantomData
@@ -161,13 +161,13 @@ impl {{pin.struct_name}}AltFuncs for {{pin.struct_name}}{{alt_func.struct_name}}
 {% endfor %}
 
 #[allow(non_camel_case_types)]
-pub struct {{pin.struct_name}}AltFunc<ALT_FUNC> 
-  where ALT_FUNC: {{pin.struct_name}}AltFuncs
+pub struct {{pin.struct_name}}AltFunc<AltFunc> 
+  where AltFunc: {{pin.struct_name}}AltFuncs
 { 
-  alt_func: PhantomData<ALT_FUNC>
+  alt_func: PhantomData<AltFunc>
 }
-impl <ALT_FUNC> {{pin.struct_name}}AltFunc<ALT_FUNC> 
-  where ALT_FUNC: {{pin.struct_name}}AltFuncs
+impl <AltFunc> {{pin.struct_name}}AltFunc<AltFunc> 
+  where AltFunc: {{pin.struct_name}}AltFuncs
 {
   pub fn teardown(self) -> {{pin.struct_name}} {
     interrupt::free(|_| {
