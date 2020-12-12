@@ -148,10 +148,10 @@ impl<'a> ClockGenerator<'a> {
 }
 
 mod templates {
-  use super::ClockSchematic;
+  use super::{schematic::FlashLatency, ClockSchematic};
   use crate::generators::clocks::schematic;
   use crate::generators::ReadWrite;
-  use crate::{clear_bit, set_bit, wait_for_clear, wait_for_set, write_val};
+  use crate::{clear_bit, is_set, set_bit, wait_for_clear, wait_for_set, write_val};
   use anyhow::Result;
   use askama::Template;
   use fstrings::f;
@@ -163,6 +163,7 @@ mod templates {
   pub struct ClocksTemplate<'a> {
     device: &'a DeviceSpec,
     sys_clk_mux: Mux,
+    flash_latency: FlashLat,
     oscillators: Vec<Osc>,
     multiplexers: Vec<Mux>,
     variable_dividers: Vec<VarDiv>,
@@ -179,6 +180,7 @@ mod templates {
       let mut clocks = ClocksTemplate {
         device: spec,
         sys_clk_mux: Mux::new(schematic.get_sys_clk_mux()?)?,
+        flash_latency: FlashLat::new(schematic.flash_latency()),
         oscillators: schematic.oscillators().map(|o| Osc::new(o)).collect(),
         multiplexers: schematic
           .multiplexers()
@@ -221,6 +223,7 @@ mod templates {
         .to_owned(),
       };
 
+      clocks.flash_latency.ranges.sort_by_key(|r| r.bit_value);
       clocks.oscillators.sort_by_key(|o| o.name.clone());
       clocks.multiplexers.sort_by_key(|o| o.field_name.clone());
       clocks
@@ -245,6 +248,50 @@ mod templates {
         .iter()
         .find(|m| m.schematic_name == n)
         .expect(&f!("Could not find multiplexer {n}."))
+    }
+  }
+
+  pub struct FlashLat {
+    path: String,
+    ranges: Vec<LatencyRange>,
+  }
+  impl FlashLat {
+    pub fn new(flash_latency: &schematic::FlashLatency) -> FlashLat {
+      FlashLat {
+        path: flash_latency.path.clone(),
+        ranges: flash_latency
+          .ranges
+          .values()
+          .map(|r| LatencyRange::new(r))
+          .collect(),
+      }
+    }
+  }
+
+  pub struct LatencyRange {
+    struct_name: String,
+    has_min: bool,
+    min_code: String,
+    has_max: bool,
+    max_code: String,
+    bit_value: u32,
+  }
+  impl LatencyRange {
+    pub fn new(range: &schematic::FlashLatencyRange) -> LatencyRange {
+      LatencyRange {
+        struct_name: "".to_owned(),
+        has_min: range.min.is_some(),
+        min_code: match range.min {
+          Some(min) => f!("freq >= {min}f32"),
+          None => "".to_owned(),
+        },
+        has_max: range.max.is_some(),
+        max_code: match range.max {
+          Some(max) => f!("freq <= {max}f32"),
+          None => "".to_owned(),
+        },
+        bit_value: range.bit_value,
+      }
     }
   }
 
@@ -279,6 +326,7 @@ mod templates {
     inputs: Vec<MuxIn>,
     default: MuxIn,
     path: String,
+    is_sys_clk_mux: bool,
   }
   impl Mux {
     pub fn new(multiplexer: &schematic::Multiplexer) -> Result<Mux> {
@@ -295,6 +343,7 @@ mod templates {
           .collect::<Vec<MuxIn>>(),
         default: MuxIn::new(&default_input),
         path: multiplexer.path.clone(),
+        is_sys_clk_mux: multiplexer.is_sys_clk_mux,
       };
 
       mux.inputs.sort_by_key(|m| m.bit_value);

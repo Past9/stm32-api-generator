@@ -1,5 +1,25 @@
 ClockSchematic(
   sys_clk_mux: "system_clock_mux",
+  flash_latency: (
+    path: "flash.acr.latency",
+    ranges: {
+      "wait_state_0": (
+        min: None,
+        max: Some(24000000),
+        bit_value: 0
+      ),
+      "wait_state_1": (
+        min: Some(24000001),
+        max: Some(48000000),
+        bit_value: 1
+      ),
+      "wait_state_2": (
+        min: Some(48000001),
+        max: None,
+        bit_value: 2
+      ),
+    }
+  ),
   pll: Some((
     power: "rcc.cr.pllon",
     ready: "rcc.cr.pllrdy"

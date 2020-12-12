@@ -21,16 +21,16 @@ pub struct System {
   {% endfor %}
 }
 impl System {
-  pub fn new(clock_config: ClockConfig) -> Self {
-    Self {
-      clocks: Clocks::new(clock_config),
+  pub fn new(clock_config: ClockConfig) -> Result<Self> {
+    Ok(Self {
+      clocks: Clocks::new(clock_config)?,
       {% for submodule in submodules -%}
       has_{{submodule.field_name}}: true,
       {% endfor %}
-    }
+    })
   }
 
-  pub fn get_freqs(&self) -> &ClockConfig {
+  pub fn get_clock_config(&self) -> &ClockConfig {
     self.clocks.get_config()
   }
 
@@ -146,55 +146,86 @@ pub(crate) fn read_val(address: u32, mask: u32, offset: u32) -> u32 {
 
 #[inline]
 #[allow(dead_code)]
-pub(crate) fn wait_for_val(address: u32, mask: u32, offset: u32, val: u32) {
+pub(crate) fn is_set(address: u32, mask: u32) -> bool {
+  unsafe {
+    (ptr::read_volatile(address as *const u32) & mask) != 0
+  }
+}
+
+#[inline]
+#[allow(dead_code)]
+pub(crate) fn is_clear(address: u32, mask: u32) -> bool {
+  unsafe {
+    (ptr::read_volatile(address as *const u32) & mask) == 0
+  }
+}
+
+#[inline]
+#[allow(dead_code)]
+pub(crate) fn wait_for_val(address: u32, mask: u32, offset: u32, val: u32, max_loops: u32) -> Result<()> {
+  let mut loop_count = 0;
   let awaited_val = val << offset; 
   loop {
+    if max_loops != 0 && loop_count >= max_loops {
+      return Err(Error::new("Timed out waiting for bit value"));
+    }
     unsafe {
       if (ptr::read_volatile(address as *const u32) & mask) == awaited_val {
-        break;
+        return Ok(());
       }
     }
+    loop_count += 1;
   }
 }
 
 #[inline]
 #[allow(dead_code)]
-pub(crate) fn wait_for_val_itf(address: u32, mask: u32, offset: u32, val: u32) {
-  interrupt::free(|_| wait_for_val(address, mask, offset, val));
+pub(crate) fn wait_for_val_itf(address: u32, mask: u32, offset: u32, val: u32, max_loops: u32) -> Result<()> {
+  interrupt::free(|_| wait_for_val(address, mask, offset, val, max_loops))
 }
 
 #[inline]
 #[allow(dead_code)]
-pub(crate) fn wait_for_clear(address: u32, mask: u32, offset: u32) {
+pub(crate) fn wait_for_clear(address: u32, mask: u32, max_loops: u32) -> Result<()> {
+  let mut loop_count = 0;
   loop {
+    if max_loops != 0 && loop_count >= max_loops {
+      return Err(Error::new("Timed out waiting for bit to be cleared"));
+    }
     unsafe {
       if (ptr::read_volatile(address as *const u32) & mask) == 0{
-        break;
+        return Ok(());
       }
     }
+    loop_count += 1;
   }
 }
 
 #[inline]
 #[allow(dead_code)]
-pub(crate) fn wait_for_val_clear_itf(address: u32, mask: u32, offset: u32) {
-  interrupt::free(|_| wait_for_clear(address, mask, offset));
+pub(crate) fn wait_for_clear_itf(address: u32, mask: u32, max_loops: u32) -> Result<()> {
+  interrupt::free(|_| wait_for_clear(address, mask, max_loops))
 }
 
 #[inline]
 #[allow(dead_code)]
-pub(crate) fn wait_for_set(address: u32, mask: u32, offset: u32) {
+pub(crate) fn wait_for_set(address: u32, mask: u32, max_loops: u32) -> Result<()> {
+  let mut loop_count = 0;
   loop {
+    if max_loops != 0 && loop_count >= max_loops {
+      return Err(Error::new("Timed out waiting for bit to be set"));
+    }
     unsafe {
       if (ptr::read_volatile(address as *const u32) & mask) != 0{
-        break;
+        return Ok(());
       }
     }
+    loop_count += 1;
   }
 }
 
 #[inline]
 #[allow(dead_code)]
-pub(crate) fn wait_for_val_set_itf(address: u32, mask: u32, offset: u32) {
-  interrupt::free(|_| wait_for_set(address, mask, offset));
+pub(crate) fn wait_for_val_set_itf(address: u32, mask: u32, max_loops: u32) -> Result<()> {
+  interrupt::free(|_| wait_for_set(address, mask, max_loops))
 }

@@ -115,9 +115,11 @@ pub trait ReadWrite {
   fn set_bit(&self, path: &str, interrupt_free: bool) -> String;
   fn clear_bit(&self, path: &str, interrupt_free: bool) -> String;
   fn read_val(&self, path: &str) -> String;
-  fn wait_for_val(&self, path: &str, expr: &str, interrupt_free: bool) -> String;
-  fn wait_for_clear(&self, path: &str, interrupt_free: bool) -> String;
-  fn wait_for_set(&self, path: &str, interrupt_free: bool) -> String;
+  fn is_set(&self, path: &str) -> String;
+  fn is_clear(&self, path: &str) -> String;
+  fn wait_for_val(&self, path: &str, expr: &str, max_loops: u32, interrupt_free: bool) -> String;
+  fn wait_for_clear(&self, path: &str, max_loops: u32, interrupt_free: bool) -> String;
+  fn wait_for_set(&self, path: &str, max_loops: u32, interrupt_free: bool) -> String;
 }
 impl ReadWrite for DeviceSpec {
   fn write_val(&self, path: &str, expr: &str, interrupt_free: bool) -> String {
@@ -130,7 +132,7 @@ impl ReadWrite for DeviceSpec {
 
     f!(
       r##"// Set {path} = {expr}
-      write_val{itf}({address:#010x}, {mask:#034b}, {offset}, {expr});"##
+      write_val{itf}({address:#010x}, {mask:#034b}, {offset}, {expr})"##
     )
   }
 
@@ -158,7 +160,7 @@ impl ReadWrite for DeviceSpec {
 
     f!(
       r##"// Reset {path}
-      write_val{itf}({address:#010x}, {mask:#034b}, {offset}, {reset_value});"##
+      write_val{itf}({address:#010x}, {mask:#034b}, {offset}, {reset_value})"##
     )
   }
 
@@ -174,7 +176,7 @@ impl ReadWrite for DeviceSpec {
 
     f!(
       r##"// Set {path}
-      set_bit{itf}({address:#010x}, {mask:#034b});"##
+      set_bit{itf}({address:#010x}, {mask:#034b})"##
     )
   }
 
@@ -190,7 +192,7 @@ impl ReadWrite for DeviceSpec {
 
     f!(
       r##"// Clear {path}
-      clear_bit{itf}({address:#010x}, {mask:#034b});"##
+      clear_bit{itf}({address:#010x}, {mask:#034b})"##
     )
   }
 
@@ -203,11 +205,37 @@ impl ReadWrite for DeviceSpec {
 
     f!(
       r##"// Read {path}
-      read_val({address:#010x}, {mask:#034b}, {offset});"##
+      read_val({address:#010x}, {mask:#034b}, {offset})"##
     )
   }
 
-  fn wait_for_val(&self, path: &str, expr: &str, interrupt_free: bool) -> String {
+  fn is_set(&self, path: &str) -> String {
+    let field = self.get_field(path).unwrap();
+
+    let address = field.address();
+    let mask = field.mask();
+    let offset = field.offset;
+
+    f!(
+      r##"// Check if {path} is 1
+      is_set({address:#010x}, {mask:#034b})"##
+    )
+  }
+
+  fn is_clear(&self, path: &str) -> String {
+    let field = self.get_field(path).unwrap();
+
+    let address = field.address();
+    let mask = field.mask();
+    let offset = field.offset;
+
+    f!(
+      r##"// Check if {path} is 0
+      is_clear({address:#010x}, {mask:#034b})"##
+    )
+  }
+
+  fn wait_for_val(&self, path: &str, expr: &str, max_loops: u32, interrupt_free: bool) -> String {
     let field = self.get_field(path).unwrap();
 
     let itf = itf(interrupt_free);
@@ -217,35 +245,33 @@ impl ReadWrite for DeviceSpec {
 
     f!(
       r##"// Block until {path} == {expr}
-      wait_for_val{itf}({address:#010x}, {mask:#034b}, {offset}, {expr});"##
+      wait_for_val{itf}({address:#010x}, {mask:#034b}, {offset}, {expr}, {max_loops})"##
     )
   }
 
-  fn wait_for_clear(&self, path: &str, interrupt_free: bool) -> String {
+  fn wait_for_clear(&self, path: &str, max_loops: u32, interrupt_free: bool) -> String {
     let field = self.get_field(path).unwrap();
 
     let itf = itf(interrupt_free);
     let address = field.address();
     let mask = field.mask();
-    let offset = field.offset;
 
     f!(
       r##"// Block until {path} is cleared 
-      wait_for_val{itf}({address:#010x}, {mask:#034b}, {offset}, 0);"##
+      wait_for_clear{itf}({address:#010x}, {mask:#034b}, {max_loops})"##
     )
   }
 
-  fn wait_for_set(&self, path: &str, interrupt_free: bool) -> String {
+  fn wait_for_set(&self, path: &str, max_loops: u32, interrupt_free: bool) -> String {
     let field = self.get_field(path).unwrap();
 
     let itf = itf(interrupt_free);
     let address = field.address();
     let mask = field.mask();
-    let offset = field.offset;
 
     f!(
       r##"// Block until {path} is set 
-      wait_for_val{itf}({address:#010x}, {mask:#034b}, {offset}, 0);"##
+      wait_for_set{itf}({address:#010x}, {mask:#034b}, {max_loops})"##
     )
   }
 }
@@ -298,31 +324,63 @@ macro_rules! read_val {
 }
 
 #[macro_export]
+macro_rules! is_set {
+  ($device:ident, $path:expr) => {
+    $device.is_set(&$path);
+  };
+}
+
+#[macro_export]
+macro_rules! is_clear {
+  ($device:ident, $path:expr) => {
+    $device.is_clear(&$path);
+  };
+}
+
+#[macro_export]
 macro_rules! wait_for_val {
   ($device:ident, $path:expr, $val:expr) => {
-    $device.wait_for_val(&$path, &$val.to_string(), true);
+    $device.wait_for_val(&$path, &$val.to_string(), 50, true);
   };
   ($device:ident, $path:expr, $val:expr, $interrupt_free:expr) => {
-    $device.wait_for_val(&$path, &$val.to_string(), $interrupt_free);
+    $device.wait_for_val(&$path, &$val.to_string(), 50, $interrupt_free);
+  };
+  ($device:ident, $path:expr, $val:expr, $max_loops:expr) => {
+    $device.wait_for_val(&$path, &$val.to_string(), $max_loops, true);
+  };
+  ($device:ident, $path:expr, $val:expr, $max_loops:expr, $interrupt_free:expr) => {
+    $device.wait_for_val(&$path, &$val.to_string(), $max_loops, $interrupt_free);
   };
 }
 
 #[macro_export]
 macro_rules! wait_for_clear {
   ($device:ident, $path:expr) => {
-    $device.wait_for_clear(&$path, true);
+    $device.wait_for_clear(&$path, 50, true);
   };
   ($device:ident, $path:expr, $interrupt_free:expr) => {
-    $device.wait_for_clear(&$path, $interrupt_free);
+    $device.wait_for_clear(&$path, 50, $interrupt_free);
+  };
+  ($device:ident, $path:expr, $max_loops:expr) => {
+    $device.wait_for_clear(&$path, $max_loops, true);
+  };
+  ($device:ident, $path:expr, &max_loops:expr, $interrupt_free:expr) => {
+    $device.wait_for_clear(&$path, $max_loops, $interrupt_free);
   };
 }
 
 #[macro_export]
 macro_rules! wait_for_set {
   ($device:ident, $path:expr) => {
-    $device.wait_for_set(&$path, true);
+    $device.wait_for_set(&$path, 50, true);
   };
   ($device:ident, $path:expr, $interrupt_free:expr) => {
-    $device.wait_for_set(&$path, $interrupt_free);
+    $device.wait_for_set(&$path, 50, $interrupt_free);
+  };
+  ($device:ident, $path:expr, $max_loops:expr) => {
+    $device.wait_for_set(&$path, $max_loops, true);
+  };
+  ($device:ident, $path:expr, $max_loops:expr, $interrupt_free:expr) => {
+    $device.wait_for_set(&$path, $max_loops, $interrupt_free);
   };
 }

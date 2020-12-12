@@ -21,6 +21,7 @@ pub enum ClockComponent {
 #[derive(Deserialize, Debug, Clone)]
 pub struct ClockSchematic {
   sys_clk_mux: String,
+  flash_latency: FlashLatency,
   pll: Option<Pll>,
   oscillators: HashMap<String, Oscillator>,
   multiplexers: HashMap<String, Multiplexer>,
@@ -51,11 +52,16 @@ impl ClockSchematic {
 
   fn postprocess(&mut self) -> Result<()> {
     self.set_names();
+    self.flag_sys_clk_mux();
     self.validate()?;
     Ok(())
   }
 
   fn set_names(&mut self) {
+    for (k, mut v) in self.flash_latency.ranges.iter_mut() {
+      v.name = k.clone();
+    }
+
     for (k, mut v) in self.oscillators.iter_mut() {
       v.name = k.clone();
     }
@@ -83,6 +89,14 @@ impl ClockSchematic {
 
     for (k, mut v) in self.taps.iter_mut() {
       v.name = k.clone();
+    }
+  }
+
+  fn flag_sys_clk_mux(&mut self) {
+    for mux in self.multiplexers.values_mut() {
+      if mux.name == self.sys_clk_mux {
+        mux.is_sys_clk_mux = true;
+      }
     }
   }
 
@@ -114,6 +128,10 @@ impl ClockSchematic {
         self.sys_clk_mux
       )),
     }
+  }
+
+  pub fn flash_latency(&self) -> &FlashLatency {
+    &self.flash_latency
   }
 
   pub fn oscillators(&self) -> Values<String, Oscillator> {
@@ -539,6 +557,21 @@ impl ClockSchematic {
 }
 
 #[derive(Deserialize, Debug, Clone)]
+pub struct FlashLatency {
+  pub path: String,
+  pub ranges: HashMap<String, FlashLatencyRange>,
+}
+
+#[derive(Deserialize, Debug, Clone)]
+pub struct FlashLatencyRange {
+  #[serde(default)]
+  pub name: String,
+  pub min: Option<u32>,
+  pub max: Option<u32>,
+  pub bit_value: u32,
+}
+
+#[derive(Deserialize, Debug, Clone)]
 pub struct Pll {
   pub power: String,
   pub ready: String,
@@ -561,6 +594,8 @@ pub struct Multiplexer {
   pub inputs: HashMap<String, MultiplexerInput>,
   pub default: String,
   pub path: String,
+  #[serde(default)]
+  pub is_sys_clk_mux: bool,
 }
 impl Multiplexer {
   pub fn default_input(&self) -> Result<MultiplexerInput> {
