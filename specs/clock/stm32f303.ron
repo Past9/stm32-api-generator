@@ -30,10 +30,12 @@ ClockSchematic(
 		"hse": (frequency: 0, external: Some((
       power: "rcc.cr.hseon",
       ready: "rcc.cr.hserdy",
+      bypass: "rcc.cr.hsebyp"
     ))),
 		"lse": (frequency: 0, external: Some((
       power: "rcc.bdcr.lseon",
       ready: "rcc.bdcr.lserdy",
+      bypass: "rcc.bdcr.lsebyp"
     ))),
 	},
 	multiplexers: {
@@ -171,8 +173,16 @@ ClockSchematic(
 	dividers: {
 		"hse_rtc": (input: "hse", default: 32 ),
 		"hsi_pll": (input: "hsi", default: 2 ),
-		"hse_pll": (input: "hse", default: 1 ),
-		"pll_clk_mco": (input: "hse", default: 2 ),
+		"pll_clk_mco": (input: "pll_mul", default: 2 ),
+		"hse_pll": (
+      input: "hse",  
+      path: "rcc.cfgr.pllxtpre",
+      values: {
+        "no_div": ( divisor: 1, bit_value: 0 ),
+        "div_2": ( divisor: 2, bit_value: 1 ),
+      },
+      default: 1 
+    ),
 		"ahb_prescaler": (
       input: "sys_clk", 
       path: "rcc.cfgr.hpre",

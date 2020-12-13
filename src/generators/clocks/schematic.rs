@@ -610,6 +610,7 @@ impl Multiplexer {
 pub struct ExternalOscillator {
   pub power: String,
   pub ready: String,
+  pub bypass: String,
 }
 
 #[derive(Deserialize, Debug, Clone)]

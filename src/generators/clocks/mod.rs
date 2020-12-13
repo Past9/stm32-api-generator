@@ -151,7 +151,7 @@ mod templates {
   use super::{schematic::FlashLatency, ClockSchematic};
   use crate::generators::clocks::schematic;
   use crate::generators::ReadWrite;
-  use crate::{clear_bit, is_set, set_bit, wait_for_clear, wait_for_set, write_val};
+  use crate::{clear_bit, is_set, read_val, set_bit, wait_for_clear, wait_for_set, write_val};
   use anyhow::Result;
   use askama::Template;
   use fstrings::f;
@@ -301,12 +301,18 @@ mod templates {
     is_external: bool,
     ext_power: String,
     ext_ready: String,
+    ext_bypass: String,
   }
   impl Osc {
     pub fn new(oscillator: &schematic::Oscillator) -> Osc {
       let ext_vals = match oscillator.external {
-        Some(ref ext) => (true, ext.power.clone(), ext.ready.clone()),
-        None => (false, "".to_owned(), "".to_owned()),
+        Some(ref ext) => (
+          true,
+          ext.power.clone(),
+          ext.ready.clone(),
+          ext.bypass.clone(),
+        ),
+        None => (false, "".to_owned(), "".to_owned(), "".to_owned()),
       };
 
       Osc {
@@ -315,6 +321,7 @@ mod templates {
         is_external: ext_vals.0,
         ext_power: ext_vals.1,
         ext_ready: ext_vals.2,
+        ext_bypass: ext_vals.3,
       }
     }
   }

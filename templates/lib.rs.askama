@@ -30,8 +30,8 @@ impl System {
     })
   }
 
-  pub fn get_clock_config(&self) -> &ClockConfig {
-    self.clocks.get_config()
+  pub fn clocks(&self) -> &Clocks {
+    &self.clocks
   }
 
   pub fn owns_everything(&self) -> bool {
