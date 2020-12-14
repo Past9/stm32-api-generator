@@ -20,7 +20,7 @@ mod generators;
 fn main() {
   match run() {
     Ok(()) => {}
-    Err(err) => error!("{}", err.to_string()),
+    Err(err) => error!("{:?}", err),
   }
 }
 
@@ -42,15 +42,6 @@ fn run() -> Result<()> {
         .takes_value(true)
         .required(true),
     )
-    /*
-    .arg(
-      Arg::with_name("features")
-        .long("features")
-        .help("List of features to generate. Defaults to all.")
-        .takes_value(true)
-        .min_values(0),
-    )
-    */
     .arg(
       Arg::with_name("no-fix")
         .long("no-fix")
@@ -95,17 +86,6 @@ fn run() -> Result<()> {
   })?;
 
   let file_glob = matches.value_of("files").unwrap_or("./*");
-
-  /*
-  let only_features = match matches.values_of("features") {
-    Some(ref v) => Some(
-      v.clone()
-        .map(|s| s.to_owned().to_lowercase())
-        .collect::<Vec<_>>(),
-    ),
-    None => None,
-  };
-  */
 
   let run_fix = !matches.is_present("no-fix");
   let run_format = !matches.is_present("no-fmt");

@@ -37,6 +37,7 @@ impl<'a> ClockGenerator<'a> {
     Ok(generator)
   }
 
+  #[cfg(test)]
   pub fn from_ron<S: Into<String>>(ron: S, spec: &'a DeviceSpec) -> Result<ClockGenerator<'a>> {
     let generator = ClockGenerator {
       spec,
@@ -148,7 +149,7 @@ impl<'a> ClockGenerator<'a> {
 }
 
 mod templates {
-  use super::{schematic::FlashLatency, ClockSchematic};
+  use super::ClockSchematic;
   use crate::generators::clocks::schematic;
   use crate::generators::ReadWrite;
   use crate::{clear_bit, is_set, read_val, set_bit, wait_for_clear, wait_for_set, write_val};
@@ -189,12 +190,12 @@ mod templates {
         variable_dividers: schematic
           .dividers()
           .filter(|v| !v.is_fixed_value())
-          .map(|v| VarDiv::new(v, spec))
+          .map(|v| VarDiv::new(v))
           .collect::<Result<Vec<VarDiv>>>()?,
         variable_multipliers: schematic
           .multipliers()
           .filter(|v| !v.is_fixed_value())
-          .map(|v| VarMul::new(v, spec))
+          .map(|v| VarMul::new(v))
           .collect::<Result<Vec<VarMul>>>()?,
         fixed_dividers: schematic
           .dividers()
@@ -240,15 +241,6 @@ mod templates {
 
       Ok(clocks)
     }
-
-    pub fn get_mux<S: Into<String>>(&self, name: S) -> &Mux {
-      let n = name.into();
-      self
-        .multiplexers
-        .iter()
-        .find(|m| m.schematic_name == n)
-        .expect(&f!("Could not find multiplexer {n}."))
-    }
   }
 
   pub struct FlashLat {
@@ -269,7 +261,6 @@ mod templates {
   }
 
   pub struct LatencyRange {
-    struct_name: String,
     has_min: bool,
     min_code: String,
     has_max: bool,
@@ -279,7 +270,6 @@ mod templates {
   impl LatencyRange {
     pub fn new(range: &schematic::FlashLatencyRange) -> LatencyRange {
       LatencyRange {
-        struct_name: "".to_owned(),
         has_min: range.min.is_some(),
         min_code: match range.min {
           Some(min) => f!("freq >= {min}f32"),
@@ -327,7 +317,6 @@ mod templates {
   }
 
   pub struct Mux {
-    schematic_name: String,
     struct_name: String,
     field_name: String,
     inputs: Vec<MuxIn>,
@@ -340,7 +329,6 @@ mod templates {
       let default_input = multiplexer.default_input()?;
 
       let mut mux = Mux {
-        schematic_name: multiplexer.name.clone(),
         struct_name: multiplexer.name.to_camel_case(),
         field_name: multiplexer.name.to_snake_case(),
         inputs: multiplexer
@@ -400,7 +388,7 @@ mod templates {
     path: String,
   }
   impl VarDiv {
-    pub fn new(divider: &schematic::Divider, spec: &DeviceSpec) -> Result<VarDiv> {
+    pub fn new(divider: &schematic::Divider) -> Result<VarDiv> {
       let default_input = divider.default_input()?;
 
       let mut div = VarDiv {
@@ -446,7 +434,7 @@ mod templates {
     path: String,
   }
   impl VarMul {
-    pub fn new(multiplier: &schematic::Multiplier, spec: &DeviceSpec) -> Result<VarMul> {
+    pub fn new(multiplier: &schematic::Multiplier) -> Result<VarMul> {
       let default_input = multiplier.default_input()?;
 
       let mut mul = VarMul {
@@ -500,33 +488,13 @@ mod templates {
 
   pub struct Tap {
     field_name: String,
-    is_terminal: bool,
     input_field_name: String,
   }
   impl Tap {
     pub fn new(tap: &schematic::Tap) -> Result<Tap> {
       Ok(Tap {
         field_name: tap.name.to_snake_case(),
-        is_terminal: tap.terminal,
         input_field_name: tap.input.clone(),
-      })
-    }
-  }
-
-  pub struct FieldInfo {
-    pub mask: u32,
-    pub inv_mask: u32,
-    pub address: u32,
-    pub offset: u32,
-  }
-  impl FieldInfo {
-    pub fn new<S: Into<String>>(path: S, spec: &DeviceSpec) -> Result<FieldInfo> {
-      let field = spec.get_field(&path.into())?;
-      Ok(FieldInfo {
-        mask: field.mask(),
-        inv_mask: !field.mask(),
-        address: field.address(),
-        offset: field.offset,
       })
     }
   }

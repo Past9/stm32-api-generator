@@ -5,7 +5,6 @@ use heck::{CamelCase, KebabCase};
 use svd_expander::DeviceSpec;
 
 pub mod clocks;
-pub mod fields;
 pub mod gpio;
 
 pub fn generate(device_spec: &DeviceSpec, out_dir: &OutputDirectory) -> Result<()> {
@@ -211,7 +210,6 @@ impl ReadWrite for DeviceSpec {
 
     let address = field.address();
     let mask = field.mask();
-    let offset = field.offset;
 
     f!("is_set({address:#010x}, {mask:#034b}) /* Check if {path} is 1 */")
   }
@@ -221,7 +219,6 @@ impl ReadWrite for DeviceSpec {
 
     let address = field.address();
     let mask = field.mask();
-    let offset = field.offset;
 
     f!("is_clear({address:#010x}, {mask:#034b}) /* Check if {path} is 0 */")
   }

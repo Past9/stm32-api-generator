@@ -43,6 +43,7 @@ impl ClockSchematic {
     Ok(sch)
   }
 
+  #[cfg(test)]
   pub fn from_ron<S: Into<String>>(ron: S) -> Result<ClockSchematic> {
     info!("Parsing clock schematic from RON string");
     let mut sch: ClockSchematic = ron::from_str(&ron.into())?;
@@ -185,6 +186,7 @@ impl ClockSchematic {
       .collect()
   }
 
+  #[cfg(test)]
   pub fn get_component<S: Into<String>>(&self, name: S) -> Option<ClockComponent> {
     let comp_name = name.into();
 
