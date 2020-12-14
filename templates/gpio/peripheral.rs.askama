@@ -76,11 +76,7 @@ pub struct {{pin.struct_name}} {
 }
 impl {{pin.struct_name}} {
   pub fn as_input(self, pull_dir: PullDirection) -> {{pin.struct_name}}Input {
-    interrupt::free(|_| {
-      {{write_val!(d, pin.moder_field, "0b00", false)}};
-      {{write_val!(d, pin.pupdr_field, "pull_dir.val()", false)}};
-    });
-    {{pin.struct_name}}Input { _private: () }
+    {{pin.struct_name}}Input::setup(pull_dir) 
   }
 
   pub fn as_output(
@@ -89,42 +85,44 @@ impl {{pin.struct_name}} {
     output_type: OutputType, 
     output_speed: OutputSpeed
   ) -> {{pin.struct_name}}Output {
-    interrupt::free(|_| {
-      {{write_val!(d, pin.moder_field, "0b01", false)}};
-      {{write_val!(d, pin.pupdr_field, "pull_dir.val()", false)}};
-      {{write_val!(d, pin.otyper_field, "output_type.val()", false)}};
-      {{write_val!(d, pin.ospeedr_field, "output_speed.val()", false)}};
-    });
-    {{pin.struct_name}}Output { _private: () }
+    {{pin.struct_name}}Output::setup(pull_dir, output_type, output_speed)
   }
 
   pub fn as_analog(self) -> {{pin.struct_name}}Analog {
-    {{write_val!(d, pin.moder_field, "0b11")}};
-    {{pin.struct_name}}Analog { _private: () }
+    {{pin.struct_name}}Analog::setup() 
   }
 
 
   {% if pin.alt_funcs.len() > 0 %}
   #[allow(non_camel_case_types)]
-  pub fn as_alt_func<AltFunc>(
-    self, 
-    pull_dir: PullDirection, 
-  ) -> {{pin.struct_name}}AltFunc<AltFunc> 
+  pub fn as_alt_func<AltFunc>(self, pull_dir: PullDirection) -> {{pin.struct_name}}AltFunc<AltFunc> 
   where AltFunc: {{pin.struct_name}}AltFuncs
   {
-    interrupt::free(|_| {
-      {{write_val!(d, pin.moder_field, "0b10", false)}};
-      {{write_val!(d, pin.pupdr_field, "pull_dir.val()", false)}};
-      {{write_val!(d, pin.afr_field, "AltFunc::AFR_VAL", false)}};
-    });
-    {{pin.struct_name}}AltFunc {
-      alt_func: PhantomData
-    }
+    {{pin.struct_name}}AltFunc::setup(pull_dir)
   }
   {% endif %}
 }
 
-pub struct {{pin.struct_name}}Input { _private: () }
+pub struct {{pin.struct_name}}Input { 
+  _private: () 
+}
+impl {{pin.struct_name}}Input {
+  fn setup(pull_dir: PullDirection) -> Self {
+    interrupt::free(|_| {
+      {{write_val!(d, pin.moder_field, "0b00", false)}};
+      {{write_val!(d, pin.pupdr_field, "pull_dir.val()", false)}};
+    });
+    Self { _private: () }
+  }
+
+  pub fn teardown(self) -> {{pin.struct_name}} {
+    interrupt::free(|_| {
+      {{reset!(d, pin.moder_field, false)}};
+      {{reset!(d, pin.pupdr_field, false)}};
+    });
+    {{pin.struct_name}} { _private: () } 
+  }
+}
 
 pub struct {{pin.struct_name}}Output { 
   _private: () 
@@ -132,6 +130,16 @@ pub struct {{pin.struct_name}}Output {
 impl {{pin.struct_name}}Output {
   pub fn write(&mut self, value: DigitalValue) {
     {{write_val!(d, pin.odr_field, "value.val()")}};
+  }
+
+  fn setup(pull_dir: PullDirection, output_type: OutputType, output_speed: OutputSpeed) -> Self {
+    interrupt::free(|_| {
+      {{write_val!(d, pin.moder_field, "0b01", false)}};
+      {{write_val!(d, pin.pupdr_field, "pull_dir.val()", false)}};
+      {{write_val!(d, pin.otyper_field, "output_type.val()", false)}};
+      {{write_val!(d, pin.ospeedr_field, "output_speed.val()", false)}};
+    });
+    Self { _private: () }
   }
 
   pub fn teardown(self) -> {{pin.struct_name}} {
@@ -146,7 +154,22 @@ impl {{pin.struct_name}}Output {
   }
 }
 
-pub struct {{pin.struct_name}}Analog { _private: () }
+pub struct {{pin.struct_name}}Analog { 
+  _private: () 
+}
+impl {{pin.struct_name}}Analog {
+  fn setup() -> Self {
+    {{write_val!(d, pin.moder_field, "0b11")}};
+    Self { _private: () }
+  }
+
+  pub fn teardown(self) -> {{pin.struct_name}} {
+    interrupt::free(|_| {
+      {{reset!(d, pin.moder_field)}};
+    });
+    {{pin.struct_name}} { _private: () } 
+  }
+}
 
 {% if pin.alt_funcs.len() > 0 %}
 pub trait {{pin.struct_name}}AltFuncs { 
@@ -169,8 +192,20 @@ pub struct {{pin.struct_name}}AltFunc<AltFunc>
 impl <AltFunc> {{pin.struct_name}}AltFunc<AltFunc> 
   where AltFunc: {{pin.struct_name}}AltFuncs
 {
+  fn setup(pull_dir: PullDirection) -> Self {
+    interrupt::free(|_| {
+      {{write_val!(d, pin.pupdr_field, "pull_dir.val()", false)}};
+      {{write_val!(d, pin.afr_field, "AltFunc::AFR_VAL", false)}};
+      {{write_val!(d, pin.moder_field, "0b10", false)}};
+    });
+    Self {
+      alt_func: PhantomData
+    }
+  }
+
   pub fn teardown(self) -> {{pin.struct_name}} {
     interrupt::free(|_| {
+      {{reset!(d, pin.moder_field, false)}};
       {{reset!(d, pin.pupdr_field, false)}};
       {{reset!(d, pin.afr_field, false)}};
     });
