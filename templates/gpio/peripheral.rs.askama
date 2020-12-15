@@ -1,4 +1,4 @@
-use crate::{ set_bit_itf, clear_bit_itf, write_val, write_val_itf };
+use crate::{ set_bit_itf, clear_bit_itf, write_val, write_val_itf, is_set };
 use crate::gpio::{ PullDirection, DummyAltFunc, OutputType, OutputSpeed, DigitalValue };
 use core::marker::PhantomData;
 use core::ptr;
@@ -107,6 +107,10 @@ pub struct {{pin.struct_name}}Input {
   _private: () 
 }
 impl {{pin.struct_name}}Input {
+  pub fn read(&self) -> DigitalValue {
+    DigitalValue::from_bool({{is_set!(d, pin.idr_field)}})
+  }
+
   fn setup(pull_dir: PullDirection) -> Self {
     interrupt::free(|_| {
       {{write_val!(d, pin.moder_field, "0b00", false)}};

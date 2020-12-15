@@ -1,6 +1,6 @@
 use crate::file::OutputDirectory;
 use crate::generators::ReadWrite;
-use crate::{clear_bit, reset, set_bit, write_val};
+use crate::{clear_bit, is_set, reset, set_bit, write_val};
 use anyhow::{anyhow, Result};
 use askama::Template;
 use heck::{CamelCase, SnakeCase};
@@ -87,6 +87,7 @@ struct PinModel {
   pub otyper_field: String,
   pub ospeedr_field: String,
   pub odr_field: String,
+  pub idr_field: String,
   pub alt_funcs: Vec<AltFuncModel>,
 }
 impl PinModel {
@@ -119,6 +120,7 @@ impl PinModel {
       otyper_field: f!("GPIO{letter}.OTYPER.OT{pin_number}"),
       ospeedr_field: f!("GPIO{letter}.OSPEEDR.OSPEEDR{pin_number}"),
       odr_field: f!("GPIO{letter}.ODR.ODR{pin_number}"),
+      idr_field: f!("GPIO{letter}.IDR.IDR{pin_number}"),
     })
   }
 }

@@ -20,6 +20,13 @@ impl DigitalValue {
       false => DigitalValue::Low
     }
   } 
+
+  pub fn as_bool(&self) -> bool {
+    match self {
+      DigitalValue::High => true,
+      DigitalValue::Low => false
+    }
+  } 
 }
 
 pub enum PullDirection {
