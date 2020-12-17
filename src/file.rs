@@ -35,7 +35,11 @@ impl OutputDirectory {
     )
   }
 
-  pub fn publish(&self, rel_file_path: &str, file_content: &str) -> Result<()> {
+  pub fn publish(&self, dry_run: bool, rel_file_path: &str, file_content: &str) -> Result<()> {
+    if dry_run {
+      return Ok(());
+    }
+
     // Add the relative file path to the output directory base path
     let mut file_path_buf = PathBuf::from(&self.dir_path);
 
@@ -58,8 +62,13 @@ impl OutputDirectory {
   }
 }
 
-pub fn run_command(path: &str, command: &str, args: Vec<&str>) -> Result<()> {
+pub fn run_command(dry_run: bool, path: &str, command: &str, args: Vec<&str>) -> Result<()> {
+  if dry_run {
+    return Ok(());
+  }
+
   info!("Executing command: {}$ {}", path, command);
+
   let output = Command::new(command)
     .current_dir(path)
     .args(args)
@@ -84,6 +93,7 @@ pub fn run_command(path: &str, command: &str, args: Vec<&str>) -> Result<()> {
 }
 
 pub fn post_process(
+  dry_run: bool,
   path: &str,
   run_fix: bool,
   run_format: bool,
@@ -95,6 +105,7 @@ pub fn post_process(
   if run_fix {
     info!("Fixing...");
     run_command(
+      dry_run,
       path,
       "cargo",
       vec![
@@ -109,27 +120,32 @@ pub fn post_process(
 
   if run_format {
     info!("Formatting...");
-    run_command(path, "cargo", vec!["+nightly", "fmt"])?;
+    run_command(dry_run, path, "cargo", vec!["+nightly", "fmt"])?;
   }
 
   if run_check {
     info!("Checking...");
-    run_command(path, "cargo", vec!["check", "--all-features"])?;
+    run_command(dry_run, path, "cargo", vec!["check", "--all-features"])?;
   }
 
   if build_release {
     info!("Building in release mode...");
-    run_command(path, "cargo", vec!["build", "--release", "--all-features"])?;
+    run_command(
+      dry_run,
+      path,
+      "cargo",
+      vec!["build", "--release", "--all-features"],
+    )?;
   }
 
   if build_debug {
     info!("Building in debug mode...");
-    run_command(path, "cargo", vec!["build", "--all-features"])?;
+    run_command(dry_run, path, "cargo", vec!["build", "--all-features"])?;
   }
 
   if build_docs {
     info!("Building documentation...");
-    run_command(path, "cargo", vec!["doc", "--all-features"])?;
+    run_command(dry_run, path, "cargo", vec!["doc", "--all-features"])?;
   }
 
   Ok(())

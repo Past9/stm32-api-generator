@@ -7,11 +7,12 @@ pub type Result<T> = core::result::Result<T, Error>;
 
 pub mod clocks;
 pub mod gpio;
+pub mod timers;
 
 use clocks::{ Clocks, ClockConfig };
 
 {% for submodule in submodules -%}
-use gpio::{{submodule.module_name}}::{{submodule.struct_name}};
+use {{submodule.parent_path}}{{submodule.module_name}}::{{submodule.struct_name}};
 {% endfor %}
 
 pub struct System {
@@ -46,7 +47,7 @@ impl System {
     match self.has_{{submodule.field_name}} {
       true => {
         self.has_{{submodule.field_name}} = false;
-        let mut {{submodule.field_name}} = gpio::{{submodule.module_name}}::create();
+        let mut {{submodule.field_name}} = {{submodule.parent_path}}{{submodule.module_name}}::create();
         {{submodule.field_name}}.enable();
         Ok({{submodule.field_name}})
       },

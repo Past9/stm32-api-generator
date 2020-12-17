@@ -78,6 +78,12 @@ fn run() -> Result<()> {
         .help("Build documentation for the crate(s).")
         .takes_value(false),
     )
+    .arg(
+      Arg::with_name("dry-run")
+        .long("dry-run")
+        .help("Run the generator but don't save any files or run the post-processing commands.")
+        .takes_value(false),
+    )
     .get_matches();
 
   let out_dir = OutputDirectory::new(match matches.value_of("out") {
@@ -93,6 +99,7 @@ fn run() -> Result<()> {
   let build_release = matches.is_present("build-release");
   let build_debug = matches.is_present("build-debug");
   let build_docs = matches.is_present("build-docs");
+  let dry_run = matches.is_present("dry-run");
 
   let mut found_file = false;
   for entry in glob(file_glob)? {
@@ -113,9 +120,24 @@ fn run() -> Result<()> {
       let spec = DeviceSpec::from_xml(xml)?;
       let crate_out_dir = out_dir.new_in_subdir(&format!("{}-api", spec.name.to_kebab_case()))?;
 
-      generators::generate(&spec, &crate_out_dir)?;
+      /*
+      for peripheral in spec.peripherals.iter() {
+        println!("{}", peripheral.name);
+        for register in peripheral.iter_registers() {
+          println!("    {}", register.name);
+          for field in register.fields.iter() {
+            println!("        {}", field.name);
+          }
+        }
+      }
+
+      return Ok(());
+      */
+
+      generators::generate(dry_run, &spec, &crate_out_dir)?;
 
       file::post_process(
+        dry_run,
         &crate_out_dir.get_path()?,
         run_fix,
         run_format,

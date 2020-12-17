@@ -11,10 +11,10 @@ use askama::Template;
 use anyhow::{anyhow, Result};
 use schematic::{ClockComponent, ClockSchematic};
 
-pub fn generate(d: &DeviceSpec, out_dir: &OutputDirectory) -> Result<()> {
+pub fn generate(dry_run: bool, d: &DeviceSpec, out_dir: &OutputDirectory) -> Result<()> {
   let clock_spec_filepath = format!("specs/clock/{}.ron", d.name.to_lowercase());
 
-  ClockGenerator::from_ron_file(clock_spec_filepath, d)?.generate(out_dir)?;
+  ClockGenerator::from_ron_file(clock_spec_filepath, d)?.generate(dry_run, out_dir)?;
 
   Ok(())
 }
@@ -47,10 +47,10 @@ impl<'a> ClockGenerator<'a> {
     Ok(generator)
   }
 
-  pub fn generate(&self, out_dir: &OutputDirectory) -> Result<()> {
+  pub fn generate(&self, dry_run: bool, out_dir: &OutputDirectory) -> Result<()> {
     let clocks_file = ClocksTemplate::new(&self.schematic, &self.spec)?.render()?;
 
-    out_dir.publish(&f!("src/clocks.rs"), &clocks_file)?;
+    out_dir.publish(dry_run, &f!("src/clocks.rs"), &clocks_file)?;
 
     Ok(())
   }

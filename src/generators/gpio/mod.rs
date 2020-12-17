@@ -7,7 +7,7 @@ use heck::{CamelCase, SnakeCase};
 use regex::Regex;
 use svd_expander::{DeviceSpec, PeripheralSpec, RegisterSpec};
 
-pub fn generate(d: &DeviceSpec, out_dir: &OutputDirectory) -> Result<Vec<String>> {
+pub fn generate(dry_run: bool, d: &DeviceSpec, out_dir: &OutputDirectory) -> Result<Vec<String>> {
   let mut submodules: Vec<String> = Vec::new();
 
   for peripheral in d
@@ -17,6 +17,7 @@ pub fn generate(d: &DeviceSpec, out_dir: &OutputDirectory) -> Result<Vec<String>
   {
     let model = PeripheralModel::new(peripheral)?;
     out_dir.publish(
+      dry_run,
       &f!("src/gpio/{model.module_name}.rs"),
       &PeripheralTemplate {
         device: &d,
@@ -29,6 +30,7 @@ pub fn generate(d: &DeviceSpec, out_dir: &OutputDirectory) -> Result<Vec<String>
   }
 
   out_dir.publish(
+    dry_run,
     &f!("src/gpio/mod.rs"),
     &ModTemplate {
       submodules: &submodules,
@@ -125,6 +127,7 @@ impl PinModel {
   }
 }
 
+#[derive(Debug)]
 struct AltFuncModel {
   pub value: u32,
   pub struct_name: String,
@@ -151,15 +154,13 @@ impl AltFuncModel {
                 name = description.clone()
               }
 
-              if generic_name_test.is_match(&name) {
-                break;
+              if !generic_name_test.is_match(&name) {
+                alt_funcs.push(Self {
+                  value: *v,
+                  struct_name: name.to_camel_case(),
+                  field_name: name.to_snake_case(),
+                });
               }
-
-              alt_funcs.push(Self {
-                value: *v,
-                struct_name: name.to_camel_case(),
-                field_name: name.to_snake_case(),
-              });
             }
             None => {}
           }

@@ -1,0 +1,16 @@
+use crate::{Error, Result};
+
+pub(crate) fn create() -> {{peripheral.struct_name}} {
+  {{peripheral.struct_name}} {
+
+  }
+}
+
+pub struct {{peripheral.struct_name}} {
+}
+impl {{peripheral.struct_name}} {
+  pub(crate) fn enable(&mut self) {}
+  pub(crate) fn disable(&mut self) -> Result<()> {
+    Ok(())
+  }
+}

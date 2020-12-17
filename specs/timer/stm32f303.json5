@@ -1,0 +1,12 @@
+{
+  tim8: {
+    clock: "to_tim8",
+    channels: ["ch1", "ch1n", "ch2", "ch2n", "ch3", "ch3n", "ch4"],
+    prescaler: {
+      
+    },
+    counter: {
+      path: 
+    }
+  },
+}

@@ -1,0 +1,5 @@
+
+
+{% for submodule in submodules -%}
+pub mod {{submodule}}; 
+{% endfor %}

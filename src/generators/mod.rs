@@ -6,39 +6,59 @@ use svd_expander::DeviceSpec;
 
 pub mod clocks;
 pub mod gpio;
+pub mod timers;
 
-pub fn generate(device_spec: &DeviceSpec, out_dir: &OutputDirectory) -> Result<()> {
-  let mut submodule_names: Vec<String> = Vec::new();
+pub fn generate(dry_run: bool, device_spec: &DeviceSpec, out_dir: &OutputDirectory) -> Result<()> {
+  let mut submodules = Vec::<SubmoduleModel>::new();
 
-  clocks::generate(device_spec, out_dir)?;
+  clocks::generate(dry_run, device_spec, out_dir)?;
 
-  submodule_names.extend(gpio::generate(device_spec, out_dir)?);
+  submodules.extend(
+    gpio::generate(dry_run, device_spec, out_dir)?
+      .iter()
+      .map(|n| SubmoduleModel::new("gpio::", n)),
+  );
+
+  submodules.extend(
+    timers::generate(dry_run, device_spec, out_dir)?
+      .iter()
+      .map(|n| SubmoduleModel::new("timers::", n)),
+  );
 
   let lib_template = LibTemplate {
     device: &device_spec,
-    submodules: submodule_names
-      .iter()
-      .map(|n| SubmoduleModel::new(n))
-      .collect(),
+    submodules,
   };
 
-  out_dir.publish("includes/memory.x", &IncludeMemoryXTemplate {}.render()?)?;
   out_dir.publish(
+    dry_run,
+    "includes/memory.x",
+    &IncludeMemoryXTemplate {}.render()?,
+  )?;
+  out_dir.publish(
+    dry_run,
     "includes/openocd.cfg",
     &IncludeOpenOcdCfgTemplate {}.render()?,
   )?;
   out_dir.publish(
+    dry_run,
     "includes/openocd.gdb",
     &IncludeOpenOcdGdbTemplate {}.render()?,
   )?;
-  out_dir.publish("includes/build.rs", &IncludeBuildRsTemplate {}.render()?)?;
   out_dir.publish(
+    dry_run,
+    "includes/build.rs",
+    &IncludeBuildRsTemplate {}.render()?,
+  )?;
+  out_dir.publish(
+    dry_run,
     "includes/Cargo.toml",
     &IncludeCargoTomlTemplate {}.render()?,
   )?;
-  out_dir.publish("src/lib.rs", &lib_template.render()?)?;
-  out_dir.publish(".rustfmt.toml", &RustFmtTemplate {}.render()?)?;
+  out_dir.publish(dry_run, "src/lib.rs", &lib_template.render()?)?;
+  out_dir.publish(dry_run, ".rustfmt.toml", &RustFmtTemplate {}.render()?)?;
   out_dir.publish(
+    dry_run,
     "Cargo.toml",
     &CargoTemplate {
       crate_name: format!("{}-api", &device_spec.name.to_kebab_case()),
@@ -87,13 +107,15 @@ struct CargoTemplate {
 }
 
 struct SubmoduleModel {
+  pub parent_path: String,
   pub module_name: String,
   pub field_name: String,
   pub struct_name: String,
 }
 impl SubmoduleModel {
-  pub fn new(module_name: &str) -> Self {
+  pub fn new(parent_path: &str, module_name: &str) -> Self {
     Self {
+      parent_path: parent_path.to_owned(),
       module_name: module_name.to_owned(),
       field_name: module_name.to_owned(),
       struct_name: module_name.to_camel_case(),
