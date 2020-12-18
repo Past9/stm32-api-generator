@@ -1,16 +1,58 @@
+use crate::{ write_val_itf, read_val };
 use crate::{Error, Result};
 
-pub(crate) fn create() -> {{peripheral.struct_name}} {
-  {{peripheral.struct_name}} {
+{% let d = device %}
+{% let p = peripheral %}
+
+pub(crate) fn create() -> {{p.struct_name}} {
+  {{p.struct_name}} {
 
   }
 }
 
-pub struct {{peripheral.struct_name}} {
+pub struct {{p.struct_name}} {
 }
-impl {{peripheral.struct_name}} {
+impl {{p.struct_name}} {
   pub(crate) fn enable(&mut self) {}
   pub(crate) fn disable(&mut self) -> Result<()> {
     Ok(())
+  }
+
+  pub fn set_prescaler(&mut self, val: u32) -> Result<()> {
+    match val {
+      #[allow(unused_comparisons)]
+      v if v < {{p.prescaler_field.min}} => Err(Error::new("Prescaler value must be at least {{p.prescaler_field.min}}")), 
+      #[allow(unused_comparisons)]
+      v if v > {{p.prescaler_field.max}} => Err(Error::new("Prescaler value must be at most {{p.prescaler_field.max}}")),
+      v => {
+        {{write_val!(d, p.prescaler_field.path, "v")}};
+        Ok(())
+      }
+    }
+  }
+
+  pub fn get_prescaler(&self) -> u32 {
+    {{read_val!(d, p.prescaler_field.path)}}
+  }
+
+  pub fn set_auto_reload(&mut self, val: u32) -> Result<()> {
+    match val {
+      #[allow(unused_comparisons)]
+      v if v < {{p.auto_reload_field.min}} => Err(Error::new("Auto-reload value must be at least {{p.auto_reload_field.min}}")), 
+      #[allow(unused_comparisons)]
+      v if v > {{p.auto_reload_field.max}} => Err(Error::new("Auto-reload value must be at most {{p.auto_reload_field.max}}")),
+      v => {
+        {{write_val!(d, p.auto_reload_field.path, "v")}};
+        Ok(())
+      }
+    }
+  }
+
+  pub fn get_auto_reload(&self) -> u32 {
+    {{read_val!(d, p.auto_reload_field.path)}}
+  }
+
+  pub fn get_count(&self) -> u32 {
+    {{read_val!(d, p.counter_field.path)}}
   }
 }

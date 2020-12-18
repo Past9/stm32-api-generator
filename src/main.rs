@@ -120,20 +120,6 @@ fn run() -> Result<()> {
       let spec = DeviceSpec::from_xml(xml)?;
       let crate_out_dir = out_dir.new_in_subdir(&format!("{}-api", spec.name.to_kebab_case()))?;
 
-      /*
-      for peripheral in spec.peripherals.iter() {
-        println!("{}", peripheral.name);
-        for register in peripheral.iter_registers() {
-          println!("    {}", register.name);
-          for field in register.fields.iter() {
-            println!("        {}", field.name);
-          }
-        }
-      }
-
-      return Ok(());
-      */
-
       generators::generate(dry_run, &spec, &crate_out_dir)?;
 
       file::post_process(

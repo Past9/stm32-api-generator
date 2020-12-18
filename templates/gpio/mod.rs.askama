@@ -2,6 +2,10 @@
 pub mod {{submodule}};
 {% endfor %}
 
+{% for channel in timer_channels -%}
+pub trait {{channel}} {}
+{% endfor %}
+
 pub enum DigitalValue {
   High,
   Low
@@ -72,16 +76,3 @@ impl OutputSpeed {
   }
 }
 
-pub trait DummyAltFunc {}
-
-/*
-pub trait PullDirection {}
-pub struct PullUp;
-pub struct PullDown;
-pub struct Floating;
-pub struct Analog;
-impl PullDirection for PullUp;
-impl PullDirection for PullDown;
-impl PullDirection for Floating;
-impl PullDirection for Analog;
-*/

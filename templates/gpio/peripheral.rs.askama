@@ -1,10 +1,14 @@
 use crate::{ set_bit_itf, clear_bit_itf, write_val, write_val_itf, is_set };
-use crate::gpio::{ PullDirection, DummyAltFunc, OutputType, OutputSpeed, DigitalValue };
+use crate::gpio::{ PullDirection, OutputType, OutputSpeed, DigitalValue };
 use core::marker::PhantomData;
-use core::ptr;
 use cortex_m::interrupt;
 
 use crate::{Error, Result};
+use crate::gpio::{
+  {% for channel_name in peripheral.timer_channel_struct_names() -%}
+  {{channel_name}},
+  {% endfor %}
+};
 
 {% let d = device %}
 
@@ -185,6 +189,9 @@ pub struct {{pin.struct_name}}{{alt_func.struct_name}}; // {{alt_func.field_name
 impl {{pin.struct_name}}AltFuncs for {{pin.struct_name}}{{alt_func.struct_name}} {
   const AFR_VAL: u32 = {{alt_func.value}};
 }
+{% if alt_func.timer_channel_info.is_some() %}
+impl {{alt_func.struct_name}} for {{pin.struct_name}}{{alt_func.struct_name}} {}
+{% endif %}
 {% endfor %}
 
 #[allow(non_camel_case_types)]

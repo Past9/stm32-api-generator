@@ -1,14 +1,22 @@
+use std::collections::HashMap;
+
 use crate::file::OutputDirectory;
 use crate::generators::ReadWrite;
 use crate::{clear_bit, is_set, reset, set_bit, write_val};
 use anyhow::{anyhow, Result};
 use askama::Template;
 use heck::{CamelCase, SnakeCase};
-use regex::Regex;
+use regex::{Captures, Regex};
 use svd_expander::{DeviceSpec, PeripheralSpec, RegisterSpec};
 
-pub fn generate(dry_run: bool, d: &DeviceSpec, out_dir: &OutputDirectory) -> Result<Vec<String>> {
+pub struct GpioMetadata {
+  pub submodules: Vec<String>,
+  pub timer_channels: HashMap<String, Vec<String>>,
+}
+
+pub fn generate(dry_run: bool, d: &DeviceSpec, out_dir: &OutputDirectory) -> Result<GpioMetadata> {
   let mut submodules: Vec<String> = Vec::new();
+  let mut timer_channels: HashMap<String, Vec<String>> = HashMap::new();
 
   for peripheral in d
     .peripherals
@@ -27,24 +35,49 @@ pub fn generate(dry_run: bool, d: &DeviceSpec, out_dir: &OutputDirectory) -> Res
     )?;
 
     submodules.push(model.module_name);
+
+    for pin in model.pins.iter() {
+      for alt_func in pin.alt_funcs.iter() {
+        if let Some(ref tc) = alt_func.timer_channel_info {
+          timer_channels
+            .entry(tc.timer_name.clone())
+            .or_insert(Vec::new())
+            .push(tc.channel_name.to_owned());
+        }
+      }
+    }
   }
+
+  let mut mod_timer_channels: Vec<String> = Vec::new();
+  for (timer, channels) in timer_channels.iter() {
+    for channel in channels.iter() {
+      mod_timer_channels.push(f!("{timer}_{channel}").to_camel_case());
+    }
+  }
+  mod_timer_channels.sort();
+  mod_timer_channels.dedup();
 
   out_dir.publish(
     dry_run,
     &f!("src/gpio/mod.rs"),
     &ModTemplate {
       submodules: &submodules,
+      timer_channels: mod_timer_channels,
     }
     .render()?,
   )?;
 
-  Ok(submodules)
+  Ok(GpioMetadata {
+    submodules,
+    timer_channels: HashMap::new(),
+  })
 }
 
 #[derive(Template)]
 #[template(path = "gpio/mod.rs.askama", escape = "none")]
 struct ModTemplate<'a> {
   submodules: &'a Vec<String>,
+  timer_channels: Vec<String>,
 }
 
 #[derive(Template)]
@@ -77,6 +110,16 @@ impl PeripheralModel {
         .map(|n| PinModel::new(&letter, n, &p))
         .collect::<Result<Vec<PinModel>>>()?,
     })
+  }
+
+  pub fn timer_channel_struct_names(&self) -> Vec<String> {
+    let mut channel_names = Vec::new();
+    for pin in self.pins.iter() {
+      channel_names.extend(pin.timer_channel_struct_names());
+    }
+    channel_names.sort();
+    channel_names.dedup();
+    channel_names
   }
 }
 
@@ -125,6 +168,18 @@ impl PinModel {
       idr_field: f!("GPIO{letter}.IDR.IDR{pin_number}"),
     })
   }
+
+  pub fn timer_channel_struct_names(&self) -> Vec<String> {
+    let mut channel_names = Vec::new();
+    for alt_func in self.alt_funcs.iter() {
+      if let Some(ref tci) = alt_func.timer_channel_info {
+        channel_names.push(tci.struct_name());
+      }
+    }
+    channel_names.sort();
+    channel_names.dedup();
+    channel_names
+  }
 }
 
 #[derive(Debug)]
@@ -132,10 +187,12 @@ struct AltFuncModel {
   pub value: u32,
   pub struct_name: String,
   pub field_name: String,
+  pub timer_channel_info: Option<TimerChannelInfo>,
 }
 impl AltFuncModel {
   pub fn create_for_pin(afr: &RegisterSpec, pin_number: i32) -> Result<Vec<Self>> {
-    let generic_name_test = Regex::new(r"AF[0-9]+")?;
+    let generic_name_test = Regex::new(r"^AF[0-9]+$")?;
+    let timer_channel_name_test = Regex::new(r"^(TIM[0-9]+)_(CH[0-9]N?$)")?;
 
     let mut alt_funcs = Vec::new();
 
@@ -154,11 +211,60 @@ impl AltFuncModel {
                 name = description.clone()
               }
 
-              if !generic_name_test.is_match(&name) {
+              let u_name = name.to_uppercase();
+
+              let timer_channel_info = match timer_channel_name_test.is_match(&u_name) {
+                true => {
+                  let captures = timer_channel_name_test
+                    .captures_iter(&name)
+                    .collect::<Vec<Captures>>();
+
+                  if captures.len() == 0 {
+                    return Err(anyhow!(
+                      "Could not parse timer channel alt func '{}' for pin {}",
+                      name,
+                      pin_number
+                    ));
+                  } else if captures.len() > 1 {
+                    return Err(anyhow!(
+                      "Multiple timer channel names found in alt func name '{}' for pin {}",
+                      name,
+                      pin_number
+                    ));
+                  } else {
+                    Some(TimerChannelInfo {
+                      timer_name: match captures[0].get(1) {
+                        Some(c) => c.as_str().to_owned(),
+                        None => {
+                          return Err(anyhow!(
+                            "Could not find timer name in '{}' for pin {}",
+                            u_name,
+                            pin_number
+                          ));
+                        }
+                      },
+                      channel_name: match captures[0].get(2) {
+                        Some(c) => c.as_str().to_owned(),
+                        None => {
+                          return Err(anyhow!(
+                            "Could not find channel name in '{}' for pin {}",
+                            u_name,
+                            pin_number
+                          ));
+                        }
+                      },
+                    })
+                  }
+                }
+                false => None,
+              };
+
+              if !generic_name_test.is_match(&name.to_uppercase()) {
                 alt_funcs.push(Self {
                   value: *v,
                   struct_name: name.to_camel_case(),
                   field_name: name.to_snake_case(),
+                  timer_channel_info,
                 });
               }
             }
@@ -169,5 +275,16 @@ impl AltFuncModel {
     }
 
     Ok(alt_funcs)
+  }
+}
+
+#[derive(Debug, Clone)]
+pub struct TimerChannelInfo {
+  pub timer_name: String,
+  pub channel_name: String,
+}
+impl TimerChannelInfo {
+  pub fn struct_name(&self) -> String {
+    format!("{}_{}", self.timer_name, self.channel_name).to_camel_case()
   }
 }

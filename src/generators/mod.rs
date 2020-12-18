@@ -13,14 +13,16 @@ pub fn generate(dry_run: bool, device_spec: &DeviceSpec, out_dir: &OutputDirecto
 
   clocks::generate(dry_run, device_spec, out_dir)?;
 
+  let gpio_metadata = gpio::generate(dry_run, device_spec, out_dir)?;
   submodules.extend(
-    gpio::generate(dry_run, device_spec, out_dir)?
+    gpio_metadata
+      .submodules
       .iter()
       .map(|n| SubmoduleModel::new("gpio::", n)),
   );
 
   submodules.extend(
-    timers::generate(dry_run, device_spec, out_dir)?
+    timers::generate(dry_run, device_spec, out_dir, &gpio_metadata.timer_channels)?
       .iter()
       .map(|n| SubmoduleModel::new("timers::", n)),
   );
