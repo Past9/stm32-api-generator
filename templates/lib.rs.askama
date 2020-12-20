@@ -7,18 +7,17 @@ pub type Result<T> = core::result::Result<T, Error>;
 
 pub mod clocks;
 pub mod gpio;
-pub mod timers;
 
 use clocks::{ Clocks, ClockConfig };
 
-{% for submodule in submodules -%}
-use {{submodule.parent_path}}{{submodule.module_name}}::{{submodule.struct_name}};
+{% for gpio in sys.gpios -%}
+use gpio::{{gpio.name.snake()}}::{{gpio.name.camel()}};
 {% endfor %}
 
 pub struct System {
   clocks: Clocks,
-  {% for submodule in submodules -%}
-  has_{{submodule.field_name}}: bool,
+  {% for gpio in sys.gpios -%}
+  has_{{gpio.name.snake()}}: bool,
   {% endfor %}
 }
 impl System {
@@ -29,8 +28,8 @@ impl System {
   pub fn with_clocks(clock_config: ClockConfig) -> Result<Self> {
     Ok(Self {
       clocks: Clocks::new(clock_config)?,
-      {% for submodule in submodules -%}
-      has_{{submodule.field_name}}: true,
+      {% for gpio in sys.gpios -%}
+      has_{{gpio.name.snake()}}: true,
       {% endfor %}
     })
   }
@@ -40,33 +39,33 @@ impl System {
   }
 
   pub fn owns_everything(&self) -> bool {
-    {% for submodule in submodules -%}
-    self.has_{{submodule.field_name}} &&
+    {% for gpio in sys.gpios -%}
+    self.has_{{gpio.name.snake()}} &&
     {% endfor %}
     true
   }
 
-  {% for submodule in submodules -%}
-  pub fn activate_{{submodule.field_name}}(&mut self) -> Result<{{submodule.struct_name}}> {
-    match self.has_{{submodule.field_name}} {
+  {% for gpio in sys.gpios -%}
+  pub fn activate_{{gpio.name.snake()}}(&mut self) -> Result<{{gpio.name.camel()}}> {
+    match self.has_{{gpio.name.snake()}} {
       true => {
-        self.has_{{submodule.field_name}} = false;
-        let mut {{submodule.field_name}} = {{submodule.parent_path}}{{submodule.module_name}}::create();
-        {{submodule.field_name}}.enable();
-        Ok({{submodule.field_name}})
+        self.has_{{gpio.name.snake()}} = false;
+        let mut {{gpio.name.snake()}} = {{gpio.name.camel()}}::create();
+        {{gpio.name.snake()}}.enable();
+        Ok({{gpio.name.snake()}})
       },
-      false => Err(Error::new("{{submodule.struct_name}} is already active.")),
+      false => Err(Error::new("{{gpio.name.camel()}} is already active.")),
     }
   }
 
-  pub fn deactivate_{{submodule.field_name}}(&mut self, mut {{submodule.field_name}}: {{submodule.struct_name}}) -> Result<()> {
-    match self.has_{{submodule.field_name}} {
+  pub fn deactivate_{{gpio.name.snake()}}(&mut self, mut {{gpio.name.snake()}}: {{gpio.name.camel()}}) -> Result<()> {
+    match self.has_{{gpio.name.snake()}} {
       false => { 
-        {{submodule.field_name}}.disable()?; 
-        self.has_{{submodule.field_name}} = true;
+        {{gpio.name.snake()}}.disable()?; 
+        self.has_{{gpio.name.snake()}} = true;
         Ok(())
       },
-      true => Err(Error::new("{{submodule.struct_name}} is already deactivated.")),
+      true => Err(Error::new("{{gpio.name.camel()}} is already deactivated.")),
     }
   }
   {% endfor %}

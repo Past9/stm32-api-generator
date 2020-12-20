@@ -1,7 +1,7 @@
 use anyhow::{anyhow, Result};
 use heck::{CamelCase, SnakeCase};
 use regex::{Captures, Regex};
-use svd_expander::{DeviceSpec, EnumeratedValueSpec, PeripheralSpec, RegisterSpec};
+use svd_expander::{DeviceSpec, PeripheralSpec, RegisterSpec};
 
 pub struct SystemInfo<'a> {
   pub device: &'a DeviceSpec,
@@ -38,9 +38,9 @@ impl<'a> SystemInfo<'a> {
 }
 
 pub struct Gpio {
-  name: Name,
-  pins: Vec<Pin>,
-  enable_path: String,
+  pub name: Name,
+  pub pins: Vec<Pin>,
+  pub enable_field: String,
 }
 impl Gpio {
   pub fn new(peripheral: &PeripheralSpec) -> Result<Self> {
@@ -55,9 +55,9 @@ impl Gpio {
     };
 
     Ok(Self {
-      name: Name::from(&peripheral.name),
+      name: Name::from(f!("gpio_{letter}")),
       pins: Pin::new_all(&letter, peripheral)?,
-      enable_path: f!("rcc.ahbenr.iop{letter}en").to_owned(),
+      enable_field: f!("rcc.ahbenr.iop{letter}en").to_owned(),
     })
   }
 }
@@ -65,13 +65,13 @@ impl Gpio {
 pub struct Pin {
   pub name: Name,
   pub alt_funcs: Vec<AltFunc>,
-  pub afr_path: String,
-  pub moder_path: String,
-  pub pupdr_path: String,
-  pub otyper_path: String,
-  pub ospeedr_path: String,
-  pub odr_path: String,
-  pub idr_path: String,
+  pub afr_field: String,
+  pub moder_field: String,
+  pub pupdr_field: String,
+  pub otyper_field: String,
+  pub ospeedr_field: String,
+  pub odr_field: String,
+  pub idr_field: String,
 }
 impl Pin {
   pub fn new_all(letter: &char, peripheral: &PeripheralSpec) -> Result<Vec<Self>> {
@@ -107,21 +107,21 @@ impl Pin {
     Ok(Self {
       name: pin_name,
       alt_funcs,
-      afr_path: f!("gpio{letter}.{af_register_name}.{af_register_name}{number}"),
-      moder_path: f!("gpio{letter}.moder.moder{number}"),
-      pupdr_path: f!("gpio{letter}.pupdr.pupdr{number}"),
-      otyper_path: f!("gpio{letter}.otyper.otyper{number}"),
-      ospeedr_path: f!("gpio{letter}.ospeedr.ospeedr{number}"),
-      odr_path: f!("gpio{letter}.odr.odr{number}"),
-      idr_path: f!("gpio{letter}.idr.idr{number}"),
+      afr_field: f!("gpio{letter}.{af_register_name}.{af_register_name}{number}"),
+      moder_field: f!("gpio{letter}.moder.moder{number}"),
+      pupdr_field: f!("gpio{letter}.pupdr.pupdr{number}"),
+      otyper_field: f!("gpio{letter}.otyper.ot{number}"),
+      ospeedr_field: f!("gpio{letter}.ospeedr.ospeedr{number}"),
+      odr_field: f!("gpio{letter}.odr.odr{number}"),
+      idr_field: f!("gpio{letter}.idr.idr{number}"),
     })
   }
 }
 
 pub struct AltFunc {
-  name: Name,
-  bit_value: u32,
-  kind: AltFuncKind,
+  pub name: Name,
+  pub bit_value: u32,
+  pub kind: AltFuncKind,
 }
 impl AltFunc {
   pub fn new_all(number: i32, afr: &RegisterSpec) -> Result<Vec<Self>> {
@@ -173,14 +173,14 @@ impl AltFunc {
   }
 }
 
-enum AltFuncKind {
+pub enum AltFuncKind {
   TimerChannel(TimerChannel),
   Other,
 }
 
-struct TimerChannel {
-  timer: Name,
-  channel: Name,
+pub struct TimerChannel {
+  pub timer: Name,
+  pub channel: Name,
 }
 impl TimerChannel {
   pub fn try_new(pin_number: i32, af_name: &str) -> Result<Option<Self>> {
@@ -246,15 +246,11 @@ pub struct Timer {
 }
 
 pub struct Name {
-  original: String,
+  pub original: String,
 }
 impl Name {
   pub fn from<S: Into<String>>(s: S) -> Self {
     Self { original: s.into() }
-  }
-
-  pub fn original(&self) -> String {
-    self.original.clone()
   }
 
   pub fn camel(&self) -> String {

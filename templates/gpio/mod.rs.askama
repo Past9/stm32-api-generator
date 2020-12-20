@@ -1,9 +1,5 @@
-{% for submodule in submodules -%}
-pub mod {{submodule}};
-{% endfor %}
-
-{% for channel in timer_channels -%}
-pub trait {{channel.struct_name()}} {}
+{% for gpio in s.gpios -%}
+pub mod {{gpio.name.snake()}};
 {% endfor %}
 
 pub enum DigitalValue {

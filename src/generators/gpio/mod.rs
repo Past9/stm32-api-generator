@@ -1,8 +1,8 @@
 use std::collections::HashMap;
 
-use crate::file::OutputDirectory;
-use crate::generators::ReadWrite;
 use crate::{clear_bit, is_set, reset, set_bit, write_val};
+use crate::{file::OutputDirectory, system_info::SystemInfo};
+use crate::{generators::ReadWrite, system_info::Gpio};
 use anyhow::{anyhow, Result};
 use askama::Template;
 use heck::{CamelCase, SnakeCase};
@@ -16,7 +16,12 @@ pub struct GpioMetadata {
   pub timer_channels: HashMap<String, Vec<TimerChannelInfo>>,
 }
 
-pub fn generate(dry_run: bool, d: &DeviceSpec, out_dir: &OutputDirectory) -> Result<GpioMetadata> {
+pub fn generate(
+  dry_run: bool,
+  d: &DeviceSpec,
+  sys_info: &SystemInfo,
+  out_dir: &OutputDirectory,
+) -> Result<GpioMetadata> {
   let mut submodules: Vec<String> = Vec::new();
   let mut timer_channels: HashMap<String, Vec<TimerChannelInfo>> = HashMap::new();
 
@@ -25,11 +30,23 @@ pub fn generate(dry_run: bool, d: &DeviceSpec, out_dir: &OutputDirectory) -> Res
     .iter()
     .filter(|p| p.name.to_lowercase().starts_with("gpio"))
   {
+    let gpio = sys_info
+      .gpios
+      .iter()
+      .find(|g| {
+        let g_name = g.name.original.to_lowercase();
+        let mut p_name = peripheral.name.to_lowercase();
+        p_name.insert(4, '_');
+        g_name == p_name
+      })
+      .unwrap();
+    let name = gpio.name.snake();
     let model = PeripheralModel::new(peripheral)?;
     out_dir.publish(
       dry_run,
-      &f!("src/gpio/{model.module_name}.rs"),
+      &f!("src/gpio/{name}.rs"),
       &PeripheralTemplate {
+        g: gpio,
         device: &d,
         peripheral: &model,
       }
@@ -68,6 +85,7 @@ pub fn generate(dry_run: bool, d: &DeviceSpec, out_dir: &OutputDirectory) -> Res
     dry_run,
     &f!("src/gpio/mod.rs"),
     &ModTemplate {
+      s: sys_info,
       submodules: &submodules,
       timer_channels: mod_timer_channels,
     }
@@ -83,6 +101,7 @@ pub fn generate(dry_run: bool, d: &DeviceSpec, out_dir: &OutputDirectory) -> Res
 #[derive(Template)]
 #[template(path = "gpio/mod.rs.askama", escape = "none")]
 struct ModTemplate<'a> {
+  s: &'a SystemInfo<'a>,
   submodules: &'a Vec<String>,
   timer_channels: Vec<TimerChannelInfo>,
 }
@@ -90,6 +109,7 @@ struct ModTemplate<'a> {
 #[derive(Template)]
 #[template(path = "gpio/peripheral.rs.askama", escape = "none")]
 struct PeripheralTemplate<'a> {
+  g: &'a Gpio,
   device: &'a DeviceSpec,
   peripheral: &'a PeripheralModel,
 }

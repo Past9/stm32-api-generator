@@ -6,7 +6,7 @@ use svd_expander::DeviceSpec;
 
 pub mod clocks;
 pub mod gpio;
-pub mod timers;
+//pub mod timers;
 
 pub fn generate(dry_run: bool, device_spec: &DeviceSpec, out_dir: &OutputDirectory) -> Result<()> {
   let sys_info = SystemInfo::new(device_spec)?;
@@ -15,7 +15,7 @@ pub fn generate(dry_run: bool, device_spec: &DeviceSpec, out_dir: &OutputDirecto
 
   clocks::generate(dry_run, device_spec, out_dir)?;
 
-  let gpio_metadata = gpio::generate(dry_run, device_spec, out_dir)?;
+  let gpio_metadata = gpio::generate(dry_run, device_spec, &sys_info, out_dir)?;
   submodules.extend(
     gpio_metadata
       .submodules
@@ -23,11 +23,13 @@ pub fn generate(dry_run: bool, device_spec: &DeviceSpec, out_dir: &OutputDirecto
       .map(|n| SubmoduleModel::new("gpio::", n)),
   );
 
+  /*
   submodules.extend(
     timers::generate(dry_run, device_spec, out_dir, &gpio_metadata.timer_channels)?
       .iter()
       .map(|n| SubmoduleModel::new("timers::", n)),
   );
+  */
 
   let lib_template = LibTemplate {
     device: &device_spec,
