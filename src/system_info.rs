@@ -129,10 +129,9 @@ impl AltFunc {
 
     let generic_name_test = Regex::new(r"^af[0-9]+$/i")?;
 
-    let opt_field = afr
-      .fields
-      .iter()
-      .find(|f| f.name == f!("afrl{number}") || f.name == f!("afrh{number}"));
+    let opt_field = afr.fields.iter().find(|f| {
+      f.name.to_lowercase() == f!("afrl{number}") || f.name.to_lowercase() == f!("afrh{number}")
+    });
 
     if let Some(field) = opt_field {
       for enum_val in field

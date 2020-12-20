@@ -3,9 +3,9 @@ use crate::gpio::{ PullDirection, OutputType, OutputSpeed, DigitalValue };
 use core::marker::PhantomData;
 use cortex_m::interrupt;
 
-use crate::{Error, Result};
+{% let d = d %}
 
-{% let d = device %}
+use crate::{Error, Result};
 
 #[allow(non_camel_case_types)]
 pub struct {{g.name.camel()}} { 

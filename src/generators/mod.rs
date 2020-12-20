@@ -1,7 +1,7 @@
 use crate::{file::OutputDirectory, system_info::SystemInfo};
 use anyhow::Result;
 use askama::Template;
-use heck::{CamelCase, KebabCase};
+use heck::KebabCase;
 use svd_expander::DeviceSpec;
 
 pub mod clocks;
@@ -11,29 +11,12 @@ pub mod gpio;
 pub fn generate(dry_run: bool, device_spec: &DeviceSpec, out_dir: &OutputDirectory) -> Result<()> {
   let sys_info = SystemInfo::new(device_spec)?;
 
-  let mut submodules = Vec::<SubmoduleModel>::new();
-
   clocks::generate(dry_run, device_spec, out_dir)?;
-
-  let gpio_metadata = gpio::generate(dry_run, device_spec, &sys_info, out_dir)?;
-  submodules.extend(
-    gpio_metadata
-      .submodules
-      .iter()
-      .map(|n| SubmoduleModel::new("gpio::", n)),
-  );
-
-  /*
-  submodules.extend(
-    timers::generate(dry_run, device_spec, out_dir, &gpio_metadata.timer_channels)?
-      .iter()
-      .map(|n| SubmoduleModel::new("timers::", n)),
-  );
-  */
+  gpio::generate(dry_run, &sys_info, out_dir)?;
 
   let lib_template = LibTemplate {
     device: &device_spec,
-    sys: &sys_info, //submodules,
+    sys: &sys_info,
   };
 
   out_dir.publish(
@@ -110,23 +93,6 @@ struct RustFmtTemplate {}
 #[template(path = "Cargo.toml.askama", escape = "none")]
 struct CargoTemplate {
   pub crate_name: String,
-}
-
-struct SubmoduleModel {
-  pub parent_path: String,
-  pub module_name: String,
-  pub field_name: String,
-  pub struct_name: String,
-}
-impl SubmoduleModel {
-  pub fn new(parent_path: &str, module_name: &str) -> Self {
-    Self {
-      parent_path: parent_path.to_owned(),
-      module_name: module_name.to_owned(),
-      field_name: module_name.to_owned(),
-      struct_name: module_name.to_camel_case(),
-    }
-  }
 }
 
 fn itf(interrupt_free: bool) -> &'static str {
@@ -280,33 +246,6 @@ impl ReadWrite for DeviceSpec {
     let mask = field.mask();
 
     f!("wait_for_set{itf}({address:#010x}, {mask:#034b}, {max_loops}) /* Block until {path} is set */")
-  }
-}
-
-#[derive(Debug, Clone, Eq, PartialEq)]
-pub struct TimerChannelInfo {
-  pub timer_field_name: String,
-  pub timer_struct_name: String,
-  pub channel_field_name: String,
-  pub channel_struct_name: String,
-}
-impl TimerChannelInfo {
-  pub fn field_name(&self) -> String {
-    format!("{}_{}", self.timer_field_name, self.channel_field_name)
-  }
-
-  pub fn struct_name(&self) -> String {
-    format!("{}{}", self.timer_struct_name, self.channel_struct_name)
-  }
-}
-impl PartialOrd for TimerChannelInfo {
-  fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
-    Some(self.field_name().cmp(&other.field_name()))
-  }
-}
-impl Ord for TimerChannelInfo {
-  fn cmp(&self, other: &Self) -> std::cmp::Ordering {
-    self.field_name().cmp(&other.field_name())
   }
 }
 
