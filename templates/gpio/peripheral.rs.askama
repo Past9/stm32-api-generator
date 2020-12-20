@@ -4,10 +4,14 @@ use core::marker::PhantomData;
 use cortex_m::interrupt;
 
 use crate::{Error, Result};
-use crate::gpio::{
-  {% for channel_name in peripheral.timer_channel_struct_names() -%}
-  {{channel_name}},
-  {% endfor %}
+use crate::timers::{
+  Ch1,
+  Ch1n,
+  Ch2,
+  Ch2n,
+  Ch3,
+  Ch3n,
+  Ch4
 };
 
 {% let d = device %}
@@ -182,7 +186,6 @@ impl {{pin.struct_name}}Analog {
 {% if pin.alt_funcs.len() > 0 %}
 pub trait {{pin.struct_name}}AltFuncs { 
   const AFR_VAL: u32;
-  //fn configure(); 
 }
 {% for alt_func in pin.alt_funcs -%}
 pub struct {{pin.struct_name}}{{alt_func.struct_name}}; // {{alt_func.field_name}} {{alt_func.value}}
@@ -190,7 +193,7 @@ impl {{pin.struct_name}}AltFuncs for {{pin.struct_name}}{{alt_func.struct_name}}
   const AFR_VAL: u32 = {{alt_func.value}};
 }
 {% if alt_func.timer_channel_info.is_some() %}
-impl {{alt_func.struct_name}} for {{pin.struct_name}}{{alt_func.struct_name}} {}
+impl {{alt_func.timer_channel_info.as_ref().unwrap().clone().channel_struct_name}}<{{alt_func.timer_channel_info.as_ref().unwrap().clone().timer_struct_name}}> for {{pin.struct_name}}{{alt_func.struct_name}} {}
 {% endif %}
 {% endfor %}
 

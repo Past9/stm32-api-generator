@@ -1,5 +1,15 @@
 
+pub trait Timer { }
+
+pub trait Ch1<T: Timer> {}
+pub trait Ch1n<T: Timer> {}
+pub trait Ch2<T: Timer> {}
+pub trait Ch2n<T: Timer> {}
+pub trait Ch3<T: Timer> {}
+pub trait Ch3n<T: Timer> {}
+pub trait Ch4<T: Timer> {}
 
 {% for submodule in submodules -%}
 pub mod {{submodule}}; 
 {% endfor %}
+

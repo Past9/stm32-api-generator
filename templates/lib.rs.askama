@@ -22,7 +22,11 @@ pub struct System {
   {% endfor %}
 }
 impl System {
-  pub fn new(clock_config: ClockConfig) -> Result<Self> {
+  pub fn new() -> Result<Self> {
+    Self::with_clocks(ClockConfig::with_default_freqs())
+  }
+
+  pub fn with_clocks(clock_config: ClockConfig) -> Result<Self> {
     Ok(Self {
       clocks: Clocks::new(clock_config)?,
       {% for submodule in submodules -%}

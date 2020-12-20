@@ -10,11 +10,13 @@ use svd_expander::{DeviceSpec, FieldSpec, PeripheralSpec, RegisterSpec};
 
 use crate::file::OutputDirectory;
 
+use super::TimerChannelInfo;
+
 pub fn generate(
   dry_run: bool,
   d: &DeviceSpec,
   out_dir: &OutputDirectory,
-  timer_channels: &HashMap<String, Vec<String>>,
+  timer_channels: &HashMap<String, Vec<TimerChannelInfo>>,
 ) -> Result<Vec<String>> {
   let p_name_test = Regex::new(r"TIM[0-9]+")?;
   let mut submodules: Vec<String> = Vec::new();
@@ -24,7 +26,12 @@ pub fn generate(
     .iter()
     .filter(|p| p_name_test.is_match(&p.name))
   {
-    let model = PeripheralModel::new(peripheral, timer_channels.get(&peripheral.name))?;
+    let model = PeripheralModel::new(
+      peripheral,
+      timer_channels
+        .get(&peripheral.name.to_snake_case())
+        .map_or_else(|| Vec::new(), |tcs| tcs.clone()),
+    )?;
     out_dir.publish(
       dry_run,
       &f!("src/timers/{model.module_name}.rs"),
@@ -70,9 +77,10 @@ struct PeripheralModel {
   pub auto_reload_field: AutoReloadField, //pub fields: Vec<FieldModel>,
   pub counter_field: CounterField,
   pub prescaler_field: PrescalerField,
+  pub channels: Vec<TimerChannelInfo>,
 }
 impl PeripheralModel {
-  pub fn new(p: &PeripheralSpec, channels: Option<&Vec<String>>) -> Result<Self> {
+  pub fn new(p: &PeripheralSpec, channels: Vec<TimerChannelInfo>) -> Result<Self> {
     Ok(Self {
       struct_name: p.name.to_camel_case(),
       module_name: p.name.to_snake_case(),
@@ -80,6 +88,7 @@ impl PeripheralModel {
       auto_reload_field: Self::get_auto_reload_field(p)?,
       counter_field: Self::get_counter_field(p)?,
       prescaler_field: Self::get_prescaler_field(p)?,
+      channels,
     })
   }
 

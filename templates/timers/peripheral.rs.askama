@@ -1,8 +1,14 @@
-use crate::{ write_val_itf, read_val };
-use crate::{Error, Result};
-
 {% let d = device %}
 {% let p = peripheral %}
+
+use crate::{ write_val_itf, read_val };
+use crate::{Error, Result};
+use crate::gpio::{
+  {% for channel in p.channels %}
+  {{channel.struct_name()}},
+  {% endfor %}
+};
+
 
 pub(crate) fn create() -> {{p.struct_name}} {
   {{p.struct_name}} {
@@ -17,6 +23,7 @@ impl {{p.struct_name}} {
   pub(crate) fn disable(&mut self) -> Result<()> {
     Ok(())
   }
+
 
   pub fn set_prescaler(&mut self, val: u32) -> Result<()> {
     match val {

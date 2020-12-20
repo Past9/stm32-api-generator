@@ -1,4 +1,4 @@
-use crate::file::OutputDirectory;
+use crate::{file::OutputDirectory, system_info::SystemInfo};
 use anyhow::Result;
 use askama::Template;
 use heck::{CamelCase, KebabCase};
@@ -9,6 +9,8 @@ pub mod gpio;
 pub mod timers;
 
 pub fn generate(dry_run: bool, device_spec: &DeviceSpec, out_dir: &OutputDirectory) -> Result<()> {
+  let sys_info = SystemInfo::new(device_spec)?;
+
   let mut submodules = Vec::<SubmoduleModel>::new();
 
   clocks::generate(dry_run, device_spec, out_dir)?;
@@ -29,7 +31,7 @@ pub fn generate(dry_run: bool, device_spec: &DeviceSpec, out_dir: &OutputDirecto
 
   let lib_template = LibTemplate {
     device: &device_spec,
-    submodules,
+    sys: &sys_info, //submodules,
   };
 
   out_dir.publish(
@@ -95,7 +97,7 @@ struct IncludeCargoTomlTemplate {}
 #[template(path = "lib.rs.askama", escape = "none")]
 struct LibTemplate<'a> {
   pub device: &'a DeviceSpec,
-  pub submodules: Vec<SubmoduleModel>,
+  pub sys: &'a SystemInfo<'a>, //pub submodules: Vec<SubmoduleModel>,
 }
 
 #[derive(Template)]
@@ -276,6 +278,33 @@ impl ReadWrite for DeviceSpec {
     let mask = field.mask();
 
     f!("wait_for_set{itf}({address:#010x}, {mask:#034b}, {max_loops}) /* Block until {path} is set */")
+  }
+}
+
+#[derive(Debug, Clone, Eq, PartialEq)]
+pub struct TimerChannelInfo {
+  pub timer_field_name: String,
+  pub timer_struct_name: String,
+  pub channel_field_name: String,
+  pub channel_struct_name: String,
+}
+impl TimerChannelInfo {
+  pub fn field_name(&self) -> String {
+    format!("{}_{}", self.timer_field_name, self.channel_field_name)
+  }
+
+  pub fn struct_name(&self) -> String {
+    format!("{}{}", self.timer_struct_name, self.channel_struct_name)
+  }
+}
+impl PartialOrd for TimerChannelInfo {
+  fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+    Some(self.field_name().cmp(&other.field_name()))
+  }
+}
+impl Ord for TimerChannelInfo {
+  fn cmp(&self, other: &Self) -> std::cmp::Ordering {
+    self.field_name().cmp(&other.field_name())
   }
 }
 

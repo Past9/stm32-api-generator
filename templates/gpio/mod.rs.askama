@@ -3,7 +3,7 @@ pub mod {{submodule}};
 {% endfor %}
 
 {% for channel in timer_channels -%}
-pub trait {{channel}} {}
+pub trait {{channel.struct_name()}} {}
 {% endfor %}
 
 pub enum DigitalValue {
