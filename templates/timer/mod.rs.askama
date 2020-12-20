@@ -9,7 +9,7 @@ pub trait Ch3<T: Timer> {}
 pub trait Ch3n<T: Timer> {}
 pub trait Ch4<T: Timer> {}
 
-{% for submodule in submodules -%}
-pub mod {{submodule}}; 
+{% for timer in s.timers -%}
+pub mod {{timer.name.snake()}}; 
 {% endfor %}
 

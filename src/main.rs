@@ -16,7 +16,7 @@ use svd_expander::DeviceSpec;
 
 mod file;
 mod generators;
-mod system_info;
+mod system;
 
 fn main() {
   match run() {

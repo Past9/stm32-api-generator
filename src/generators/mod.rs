@@ -1,4 +1,4 @@
-use crate::{file::OutputDirectory, system_info::SystemInfo};
+use crate::{file::OutputDirectory, system::SystemInfo};
 use anyhow::Result;
 use askama::Template;
 use heck::KebabCase;
@@ -6,13 +6,14 @@ use svd_expander::DeviceSpec;
 
 pub mod clocks;
 pub mod gpio;
-//pub mod timers;
+pub mod timer;
 
 pub fn generate(dry_run: bool, device_spec: &DeviceSpec, out_dir: &OutputDirectory) -> Result<()> {
   let sys_info = SystemInfo::new(device_spec)?;
 
   clocks::generate(dry_run, device_spec, out_dir)?;
   gpio::generate(dry_run, &sys_info, out_dir)?;
+  timer::generate(dry_run, &sys_info, out_dir)?;
 
   let lib_template = LibTemplate {
     device: &device_spec,

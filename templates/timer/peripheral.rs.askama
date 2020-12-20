@@ -1,0 +1,60 @@
+{% let d = d %}
+
+use crate::{ write_val_itf, read_val };
+use crate::{Error, Result};
+
+
+pub struct {{t.name.camel()}} {
+}
+impl {{t.name.camel()}} {
+
+  pub(crate) fn create() -> Self {
+    Self {
+
+    }
+  }
+
+  pub(crate) fn enable(&mut self) {}
+  pub(crate) fn disable(&mut self) -> Result<()> {
+    Ok(())
+  }
+
+
+  pub fn set_prescaler(&mut self, val: u32) -> Result<()> {
+    match val {
+      #[allow(unused_comparisons)]
+      v if v < {{t.prescaler_field.min}} => Err(Error::new("Prescaler value must be at least {{t.prescaler_field.min}}")), 
+      #[allow(unused_comparisons)]
+      v if v > {{t.prescaler_field.max}} => Err(Error::new("Prescaler value must be at most {{t.prescaler_field.max}}")),
+      v => {
+        {{write_val!(d, self.t.prescaler_field.path, "v")}};
+        Ok(())
+      }
+    }
+  }
+
+  pub fn get_prescaler(&self) -> u32 {
+    {{read_val!(d, self.t.prescaler_field.path)}}
+  }
+
+  pub fn set_auto_reload(&mut self, val: u32) -> Result<()> {
+    match val {
+      #[allow(unused_comparisons)]
+      v if v < {{t.auto_reload_field.min}} => Err(Error::new("Auto-reload value must be at least {{t.auto_reload_field.min}}")), 
+      #[allow(unused_comparisons)]
+      v if v > {{t.auto_reload_field.max}} => Err(Error::new("Auto-reload value must be at most {{t.auto_reload_field.max}}")),
+      v => {
+        {{write_val!(d, self.t.auto_reload_field.path, "v")}};
+        Ok(())
+      }
+    }
+  }
+
+  pub fn get_auto_reload(&self) -> u32 {
+    {{read_val!(d, self.t.auto_reload_field.path)}}
+  }
+
+  pub fn get_count(&self) -> u32 {
+    {{read_val!(d, self.t.counter_field.path)}}
+  }
+}

@@ -1,18 +1,22 @@
-use crate::{clear_bit, is_set, reset, set_bit, write_val};
-use crate::{file::OutputDirectory, system::SystemInfo};
-use crate::{generators::ReadWrite, system::gpio::Gpio};
+use crate::{
+  generators::ReadWrite,
+  system::{timer::Timer, SystemInfo},
+};
+use crate::{read_val, write_val};
 use anyhow::Result;
 use askama::Template;
 use svd_expander::DeviceSpec;
 
+use crate::file::OutputDirectory;
+
 pub fn generate(dry_run: bool, sys_info: &SystemInfo, out_dir: &OutputDirectory) -> Result<()> {
-  for gpio in sys_info.gpios.iter() {
+  for timer in sys_info.timers.iter() {
     out_dir.publish(
       dry_run,
-      &format!("src/gpio/{}.rs", gpio.name.snake()),
+      &format!("src/timer/{}.rs", timer.name.snake()),
       &PeripheralTemplate {
-        g: &gpio,
-        d: sys_info.device,
+        t: &timer,
+        d: &sys_info.device,
       }
       .render()?,
     )?;
@@ -20,7 +24,7 @@ pub fn generate(dry_run: bool, sys_info: &SystemInfo, out_dir: &OutputDirectory)
 
   out_dir.publish(
     dry_run,
-    &f!("src/gpio/mod.rs"),
+    &f!("src/timer/mod.rs"),
     &ModTemplate { s: sys_info }.render()?,
   )?;
 
@@ -28,14 +32,14 @@ pub fn generate(dry_run: bool, sys_info: &SystemInfo, out_dir: &OutputDirectory)
 }
 
 #[derive(Template)]
-#[template(path = "gpio/mod.rs.askama", escape = "none")]
+#[template(path = "timer/mod.rs.askama", escape = "none")]
 struct ModTemplate<'a> {
   s: &'a SystemInfo<'a>,
 }
 
 #[derive(Template)]
-#[template(path = "gpio/peripheral.rs.askama", escape = "none")]
+#[template(path = "timer/peripheral.rs.askama", escape = "none")]
 struct PeripheralTemplate<'a> {
-  g: &'a Gpio,
+  t: &'a Timer,
   d: &'a DeviceSpec,
 }

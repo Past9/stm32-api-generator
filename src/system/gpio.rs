@@ -1,42 +1,10 @@
 use anyhow::{anyhow, Result};
-use heck::{CamelCase, SnakeCase};
 use regex::{Captures, Regex};
-use svd_expander::{DeviceSpec, PeripheralSpec, RegisterSpec};
+use svd_expander::{PeripheralSpec, RegisterSpec};
 
-pub struct SystemInfo<'a> {
-  pub device: &'a DeviceSpec,
-  pub gpios: Vec<Gpio>,
-  pub timers: Vec<Timer>,
-}
-impl<'a> SystemInfo<'a> {
-  pub fn new(device: &'a DeviceSpec) -> Result<Self> {
-    let mut system_info = Self {
-      device,
-      gpios: Vec::new(),
-      timers: Vec::new(),
-    };
-    system_info.load_gpios(device)?;
-    system_info.load_timers(device)?;
+use super::{Name, Submodule};
 
-    Ok(system_info)
-  }
-
-  fn load_gpios(&mut self, device: &DeviceSpec) -> Result<()> {
-    for peripheral in device
-      .peripherals
-      .iter()
-      .filter(|p| p.name.to_lowercase().starts_with("gpio"))
-    {
-      self.gpios.push(Gpio::new(peripheral)?);
-    }
-    Ok(())
-  }
-
-  fn load_timers(&self, device: &DeviceSpec) -> Result<()> {
-    Ok(())
-  }
-}
-
+#[derive(Clone)]
 pub struct Gpio {
   pub name: Name,
   pub pins: Vec<Pin>,
@@ -60,8 +28,16 @@ impl Gpio {
       enable_field: f!("rcc.ahbenr.iop{letter}en").to_owned(),
     })
   }
+
+  pub fn submodule(&self) -> Submodule {
+    Submodule {
+      parent_path: "gpio".to_owned(),
+      name: self.name.clone(),
+    }
+  }
 }
 
+#[derive(Clone)]
 pub struct Pin {
   pub name: Name,
   pub alt_funcs: Vec<AltFunc>,
@@ -83,11 +59,11 @@ impl Pin {
   }
 
   pub fn new(letter: &char, number: i32, peripheral: &PeripheralSpec) -> Result<Self> {
-    let pin_name = Name::from(f!("P{letter}{number}"));
+    let pin_name = Name::from(f!("p{letter}{number}"));
 
     let af_register_name = match number {
-      0..=7 => "AFRL",
-      8..=15 => "AFRH",
+      0..=7 => "afrl",
+      8..=15 => "afrh",
       _ => {
         return Err(anyhow!(f!(
           "Pin number {number} out of bounds for alt functions."
@@ -99,7 +75,7 @@ impl Pin {
 
     if let Some(ref afr) = peripheral
       .iter_registers()
-      .find(|r| r.name == af_register_name)
+      .find(|r| r.name.to_lowercase() == af_register_name)
     {
       alt_funcs.extend(AltFunc::new_all(number, &afr)?);
     }
@@ -118,6 +94,7 @@ impl Pin {
   }
 }
 
+#[derive(Clone)]
 pub struct AltFunc {
   pub name: Name,
   pub bit_value: u32,
@@ -172,11 +149,13 @@ impl AltFunc {
   }
 }
 
+#[derive(Clone)]
 pub enum AltFuncKind {
   TimerChannel(TimerChannel),
   Other,
 }
 
+#[derive(Clone, Eq, PartialEq)]
 pub struct TimerChannel {
   pub timer: Name,
   pub channel: Name,
@@ -238,25 +217,24 @@ impl TimerChannel {
     Ok(timer_channel)
   }
 }
-
-pub struct Timer {
-  pub name: Name,
-  pub channels: Vec<Name>,
-}
-
-pub struct Name {
-  pub original: String,
-}
-impl Name {
-  pub fn from<S: Into<String>>(s: S) -> Self {
-    Self { original: s.into() }
+impl PartialOrd for TimerChannel {
+  fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+    match self.timer.partial_cmp(&other.timer) {
+      None => None,
+      Some(ord) => match ord {
+        std::cmp::Ordering::Less => Some(std::cmp::Ordering::Less),
+        std::cmp::Ordering::Equal => self.channel.partial_cmp(&other.channel),
+        std::cmp::Ordering::Greater => Some(std::cmp::Ordering::Greater),
+      },
+    }
   }
-
-  pub fn camel(&self) -> String {
-    self.original.to_camel_case()
-  }
-
-  pub fn snake(&self) -> String {
-    self.original.to_snake_case()
+}
+impl Ord for TimerChannel {
+  fn cmp(&self, other: &Self) -> std::cmp::Ordering {
+    match self.timer.cmp(&other.timer) {
+      std::cmp::Ordering::Less => std::cmp::Ordering::Less,
+      std::cmp::Ordering::Equal => self.channel.cmp(&other.channel),
+      std::cmp::Ordering::Greater => std::cmp::Ordering::Greater,
+    }
   }
 }

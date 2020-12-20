@@ -5,6 +5,7 @@ use anyhow::{anyhow, Result};
 use serde::Deserialize;
 
 enum ClockOutputNameSelection {
+  #[allow(dead_code)]
   TerminalTapsOnly,
   EverythingExceptTerminalTaps,
   Everything,
