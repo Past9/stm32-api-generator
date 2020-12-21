@@ -3,6 +3,7 @@ use crate::gpio::{ PullDirection, OutputType, OutputSpeed, DigitalValue };
 use core::marker::PhantomData;
 use cortex_m::interrupt;
 
+
 {% let d = d %}
 
 use crate::{Error, Result};

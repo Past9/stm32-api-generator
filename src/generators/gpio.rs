@@ -1,4 +1,4 @@
-use crate::{clear_bit, is_set, reset, set_bit, write_val};
+use crate::{clear_bit, is_set, reset, set_bit, system::timer::Timer, write_val};
 use crate::{file::OutputDirectory, system::SystemInfo};
 use crate::{generators::ReadWrite, system::gpio::Gpio};
 use anyhow::Result;

@@ -1,26 +1,20 @@
 use anyhow::{anyhow, Result};
-use svd_expander::PeripheralSpec;
+use svd_expander::{DeviceSpec, PeripheralSpec};
 
-use super::{gpio::TimerChannel, RangedField};
+use super::{gpio::TimerChannel, RangedField, SystemInfo};
 use super::{Name, Submodule};
 
 #[derive(Clone)]
 pub struct Timer {
   pub name: Name,
-  pub channels: Vec<TimerChannel>,
   pub auto_reload_field: RangedField,
   pub prescaler_field: RangedField,
   pub counter_field: RangedField,
 }
 impl Timer {
-  pub fn new(peripheral: &PeripheralSpec, all_channels: Vec<TimerChannel>) -> Result<Self> {
+  pub fn new(device: &DeviceSpec, peripheral: &PeripheralSpec) -> Result<Self> {
     let name = Name::from(&peripheral.name);
     Ok(Self {
-      channels: all_channels
-        .iter()
-        .filter(|c| c.timer == name)
-        .map(|c| c.to_owned())
-        .collect(),
       name,
       auto_reload_field: Self::find_single_field(peripheral, "arr")?,
       prescaler_field: Self::find_single_field(peripheral, "psc")?,
@@ -28,7 +22,7 @@ impl Timer {
     })
   }
 
-  fn find_single_field<'a>(p: &'a PeripheralSpec, name: &str) -> Result<RangedField> {
+  fn find_single_field(p: &PeripheralSpec, name: &str) -> Result<RangedField> {
     match p.iter_fields().find(|f| f.name.to_lowercase() == name) {
       Some(f) => Ok(RangedField {
         path: f.path().to_lowercase(),

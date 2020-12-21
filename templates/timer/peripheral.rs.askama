@@ -58,3 +58,4 @@ impl {{t.name.camel()}} {
     {{read_val!(d, self.t.counter_field.path)}}
   }
 }
+impl Timer for {{t.name.camel()}} {}

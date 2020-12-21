@@ -77,9 +77,7 @@ impl<'a> SystemInfo<'a> {
       .iter()
       .filter(|p| p.name.to_lowercase().starts_with("tim"))
     {
-      self
-        .timers
-        .push(Timer::new(peripheral, self.all_timer_channels())?);
+      self.timers.push(Timer::new(&self.device, peripheral)?);
     }
     Ok(())
   }

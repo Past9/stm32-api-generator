@@ -104,7 +104,7 @@ impl AltFunc {
   pub fn new_all(number: i32, afr: &RegisterSpec) -> Result<Vec<Self>> {
     let mut alt_funcs: Vec<AltFunc> = Vec::new();
 
-    let generic_name_test = Regex::new(r"^af[0-9]+$/i")?;
+    let generic_name_test = Regex::new(r"^af[0-9]+$")?;
 
     let opt_field = afr.fields.iter().find(|f| {
       f.name.to_lowercase() == f!("afrl{number}") || f.name.to_lowercase() == f!("afrh{number}")
@@ -117,11 +117,36 @@ impl AltFunc {
         .flat_map(|vs| vs.values.iter())
       {
         if let Some(ref v) = enum_val.actual_value() {
-          let mut name = enum_val.name.clone();
+          let mut name = enum_val.name.to_lowercase().trim().to_owned();
           if let Some(ref description) = enum_val.description {
-            name = description.clone()
+            name = description.to_lowercase().trim().to_owned();
           }
 
+          let alt_func = if let Some(tc) = match TimerChannel::try_new(number, &name)? {
+            // See if it's a timer channel
+            Some(tc) => Some(Self {
+              name: Name::from(name.clone()),
+              bit_value: *v,
+              kind: AltFuncKind::TimerChannel(tc),
+            }),
+            None => None,
+          } {
+            Some(tc)
+          } else if let Some(o) = match generic_name_test.is_match(&name) {
+            // See if it's any other alt func
+            true => None,
+            false => Some(Self {
+              name: Name::from(name.clone()),
+              bit_value: *v,
+              kind: AltFuncKind::Other,
+            }),
+          } {
+            Some(o)
+          } else {
+            None
+          };
+
+          /*
           let alt_func = match TimerChannel::try_new(number, &name)? {
             Some(tc) => Some(Self {
               name: Name::from(name),
@@ -137,6 +162,7 @@ impl AltFunc {
               }),
             },
           };
+          */
 
           if let Some(af) = alt_func {
             alt_funcs.push(af);
@@ -146,6 +172,20 @@ impl AltFunc {
     }
 
     Ok(alt_funcs)
+  }
+
+  pub fn is_timer_channel(&self) -> bool {
+    match self.kind {
+      AltFuncKind::TimerChannel(_) => true,
+      _ => false,
+    }
+  }
+
+  pub fn as_timer_channel(&self) -> &TimerChannel {
+    match self.kind {
+      AltFuncKind::TimerChannel(ref tc) => tc,
+      _ => panic!("Not a timer channel"),
+    }
   }
 }
 
@@ -162,7 +202,7 @@ pub struct TimerChannel {
 }
 impl TimerChannel {
   pub fn try_new(pin_number: i32, af_name: &str) -> Result<Option<Self>> {
-    let timer_channel_name_test = Regex::new(r"^(tim[0-9]+)_(ch[0-9]n?$)/i")?;
+    let timer_channel_name_test = Regex::new(r"^(tim[0-9]+)_(ch[0-9]n?$)")?;
 
     let timer_channel = match timer_channel_name_test.is_match(&af_name) {
       true => {
