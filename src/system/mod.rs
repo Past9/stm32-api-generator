@@ -1,12 +1,8 @@
 use anyhow::Result;
 use heck::{CamelCase, SnakeCase};
-use svd_expander::DeviceSpec;
+use svd_expander::{DeviceSpec, FieldSpec};
 
-use self::{
-  gpio::Gpio,
-  gpio::{AltFuncKind, TimerChannel},
-  timer::Timer,
-};
+use self::{gpio::AltFuncKind, gpio::Gpio, timer::Timer};
 
 pub mod gpio;
 pub mod timer;
@@ -27,24 +23,6 @@ impl<'a> SystemInfo<'a> {
     system_info.load_timers(device)?;
 
     Ok(system_info)
-  }
-
-  fn all_timer_channels(&self) -> Vec<TimerChannel> {
-    let mut channels = self
-      .gpios
-      .iter()
-      .flat_map(|g| g.pins.iter())
-      .flat_map(|p| p.alt_funcs.iter())
-      .filter_map(|f| match &f.kind {
-        AltFuncKind::Other => None,
-        AltFuncKind::TimerChannel(tc) => Some(tc.clone()),
-      })
-      .collect::<Vec<TimerChannel>>();
-
-    channels.sort();
-    channels.dedup();
-
-    channels
   }
 
   pub fn submodules(&self) -> Vec<Submodule> {
@@ -132,4 +110,35 @@ pub struct RangedField {
   pub path: String,
   pub min: u32,
   pub max: u32,
+}
+
+#[derive(Clone)]
+pub struct EnumField {
+  name: Name,
+  values: Vec<EnumValue>,
+}
+impl EnumField {
+  pub fn new(field: &FieldSpec) -> Self {
+    Self {
+      name: Name::from(&field.name),
+      values: field
+        .enumerated_value_sets
+        .iter()
+        .flat_map(|vs| vs.values.iter())
+        .filter_map(|enum_val| match enum_val.actual_value() {
+          Some(val) => Some(EnumValue {
+            name: Name::from(&enum_val.name),
+            bit_value: val,
+          }),
+          None => None,
+        })
+        .collect::<Vec<EnumValue>>(),
+    }
+  }
+}
+
+#[derive(Clone)]
+pub struct EnumValue {
+  name: Name,
+  bit_value: u32,
 }

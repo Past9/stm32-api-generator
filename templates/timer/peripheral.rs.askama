@@ -1,7 +1,8 @@
 {% let d = d %}
 
-use crate::{ write_val_itf, read_val };
+use crate::{ write_val_itf, read_val, set_bit_itf };
 use crate::{Error, Result};
+use super::BasicTimer;
 
 
 pub struct {{t.name.camel()}} {
@@ -14,8 +15,12 @@ impl {{t.name.camel()}} {
     }
   }
 
-  pub(crate) fn enable(&mut self) {}
+  pub(crate) fn enable(&mut self) {
+    {{set_bit!(d, self.t.enable_field)}};
+  }
+
   pub(crate) fn disable(&mut self) -> Result<()> {
+    {{set_bit!(d, self.t.enable_field)}};
     Ok(())
   }
 
@@ -57,5 +62,10 @@ impl {{t.name.camel()}} {
   pub fn get_count(&self) -> u32 {
     {{read_val!(d, self.t.counter_field.path)}}
   }
+
+  // CHANNELS
+  {% for channel in t.channels %}
+  // {{channel.name.snake()}} {% if channel.input.is_some() %}INPUT {% endif %} {% if channel.output.is_some() %}OUTPUT {% endif %}
+  {% endfor %}
 }
-impl Timer for {{t.name.camel()}} {}
+impl BasicTimer for {{t.name.camel()}} {}

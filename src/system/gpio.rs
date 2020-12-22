@@ -122,17 +122,7 @@ impl AltFunc {
             name = description.to_lowercase().trim().to_owned();
           }
 
-          let alt_func = if let Some(tc) = match TimerChannel::try_new(number, &name)? {
-            // See if it's a timer channel
-            Some(tc) => Some(Self {
-              name: Name::from(name.clone()),
-              bit_value: *v,
-              kind: AltFuncKind::TimerChannel(tc),
-            }),
-            None => None,
-          } {
-            Some(tc)
-          } else if let Some(o) = match generic_name_test.is_match(&name) {
+          let alt_func = if let Some(o) = match generic_name_test.is_match(&name) {
             // See if it's any other alt func
             true => None,
             false => Some(Self {
@@ -146,24 +136,6 @@ impl AltFunc {
             None
           };
 
-          /*
-          let alt_func = match TimerChannel::try_new(number, &name)? {
-            Some(tc) => Some(Self {
-              name: Name::from(name),
-              bit_value: *v,
-              kind: AltFuncKind::TimerChannel(tc),
-            }),
-            None => match generic_name_test.is_match(&name) {
-              true => None,
-              false => Some(Self {
-                name: Name::from(name),
-                bit_value: *v,
-                kind: AltFuncKind::Other,
-              }),
-            },
-          };
-          */
-
           if let Some(af) = alt_func {
             alt_funcs.push(af);
           }
@@ -173,108 +145,9 @@ impl AltFunc {
 
     Ok(alt_funcs)
   }
-
-  pub fn is_timer_channel(&self) -> bool {
-    match self.kind {
-      AltFuncKind::TimerChannel(_) => true,
-      _ => false,
-    }
-  }
-
-  pub fn as_timer_channel(&self) -> &TimerChannel {
-    match self.kind {
-      AltFuncKind::TimerChannel(ref tc) => tc,
-      _ => panic!("Not a timer channel"),
-    }
-  }
 }
 
 #[derive(Clone)]
 pub enum AltFuncKind {
-  TimerChannel(TimerChannel),
   Other,
-}
-
-#[derive(Clone, Eq, PartialEq)]
-pub struct TimerChannel {
-  pub timer: Name,
-  pub channel: Name,
-}
-impl TimerChannel {
-  pub fn try_new(pin_number: i32, af_name: &str) -> Result<Option<Self>> {
-    let timer_channel_name_test = Regex::new(r"^(tim[0-9]+)_(ch[0-9]n?$)")?;
-
-    let timer_channel = match timer_channel_name_test.is_match(&af_name) {
-      true => {
-        let captures = timer_channel_name_test
-          .captures_iter(&af_name)
-          .collect::<Vec<Captures>>();
-
-        if captures.len() == 0 {
-          return Err(anyhow!(
-            "Could not parse timer channel alt func '{}' for pin {}",
-            af_name,
-            pin_number
-          ));
-        } else if captures.len() > 1 {
-          return Err(anyhow!(
-            "Multiple timer channel names found in alt func name '{}' for pin {}",
-            af_name,
-            pin_number
-          ));
-        } else {
-          let timer_name = match captures[0].get(1) {
-            Some(c) => c.as_str().to_owned(),
-            None => {
-              return Err(anyhow!(
-                "Could not find timer name in '{}' for pin {}",
-                af_name,
-                pin_number
-              ));
-            }
-          };
-
-          let channel_name = match captures[0].get(2) {
-            Some(c) => c.as_str().to_owned(),
-            None => {
-              return Err(anyhow!(
-                "Could not find channel name in '{}' for pin {}",
-                af_name,
-                pin_number
-              ));
-            }
-          };
-
-          Some(Self {
-            timer: Name::from(timer_name),
-            channel: Name::from(channel_name),
-          })
-        }
-      }
-      false => None,
-    };
-
-    Ok(timer_channel)
-  }
-}
-impl PartialOrd for TimerChannel {
-  fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
-    match self.timer.partial_cmp(&other.timer) {
-      None => None,
-      Some(ord) => match ord {
-        std::cmp::Ordering::Less => Some(std::cmp::Ordering::Less),
-        std::cmp::Ordering::Equal => self.channel.partial_cmp(&other.channel),
-        std::cmp::Ordering::Greater => Some(std::cmp::Ordering::Greater),
-      },
-    }
-  }
-}
-impl Ord for TimerChannel {
-  fn cmp(&self, other: &Self) -> std::cmp::Ordering {
-    match self.timer.cmp(&other.timer) {
-      std::cmp::Ordering::Less => std::cmp::Ordering::Less,
-      std::cmp::Ordering::Equal => self.channel.cmp(&other.channel),
-      std::cmp::Ordering::Greater => std::cmp::Ordering::Greater,
-    }
-  }
 }

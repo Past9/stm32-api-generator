@@ -2,7 +2,7 @@ use crate::{
   generators::ReadWrite,
   system::{timer::Timer, SystemInfo},
 };
-use crate::{read_val, write_val};
+use crate::{read_val, set_bit, write_val};
 use anyhow::Result;
 use askama::Template;
 use svd_expander::DeviceSpec;
