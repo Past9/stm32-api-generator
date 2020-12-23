@@ -16,7 +16,7 @@ use {{submodule.parent_path}}::{{submodule.name.snake()}}::{{submodule.name.came
 {% endfor %}
 
 pub struct System {
-  no_construct: (),
+  _no_construct: (),
   clocks: Clocks,
   {% for submodule in sys.submodules() -%}
   has_{{submodule.name.snake()}}: bool,
@@ -29,7 +29,7 @@ impl System {
 
   pub fn with_clocks(clock_config: ClockConfig) -> Result<Self> {
     Ok(Self {
-      no_construct: (),
+      _no_construct: (),
       clocks: Clocks::new(clock_config)?,
       {% for submodule in sys.submodules() -%}
       has_{{submodule.name.snake()}}: true,

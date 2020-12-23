@@ -64,7 +64,7 @@ impl {{g.name.camel()}} {
         self.has_{{pin.name.snake()}} = true;
         Ok(())
       },
-      true => Err(Error::new("{{pin.name.camel()}} is already owned by the peripheral.")),
+      true => Err(Error::new("{{pin.name.camel()}} is already owned.")),
     }
   }
   {% endfor %}
