@@ -10,7 +10,7 @@ use crate::{Error, Result};
 
 #[allow(non_camel_case_types)]
 pub struct {{g.name.camel()}} { 
-  _private: (),
+  _no_construct: (),
   {% for pin in g.pins -%}
   has_{{pin.name.snake()}}: bool,
   {% endfor %}
@@ -19,7 +19,7 @@ impl {{g.name.camel()}} {
 
   pub(crate) fn create() -> Self {
     Self {
-      _private: (),
+      _no_construct: (),
       {% for pin in g.pins -%}
       has_{{pin.name.snake()}}: true,
       {% endfor %}
@@ -51,7 +51,7 @@ impl {{g.name.camel()}} {
       true => {
         self.has_{{pin.name.snake()}} = false;
         Ok({{pin.name.camel()}} {
-          _private: ()
+          _no_construct: ()
         })
       },
       false => Err(Error::new("{{pin.name.camel()}} is already taken.")),
@@ -72,7 +72,7 @@ impl {{g.name.camel()}} {
 
 {% for pin in g.pins %} 
 pub struct {{pin.name.camel()}} {
-  _private: ()
+  _no_construct: ()
 }
 impl {{pin.name.camel()}} {
   pub fn as_input(self, pull_dir: PullDirection) -> {{pin.name.camel()}}Input {
@@ -104,7 +104,7 @@ impl {{pin.name.camel()}} {
 }
 
 pub struct {{pin.name.camel()}}Input { 
-  _private: () 
+  _no_construct: () 
 }
 impl {{pin.name.camel()}}Input {
   pub fn read(&self) -> DigitalValue {
@@ -116,7 +116,7 @@ impl {{pin.name.camel()}}Input {
       {{write_val!(d, pin.moder_field, "0b00", false)}};
       {{write_val!(d, pin.pupdr_field, "pull_dir.val()", false)}};
     });
-    Self { _private: () }
+    Self { _no_construct: () }
   }
 
   pub fn teardown(self) -> {{pin.name.camel()}} {
@@ -124,12 +124,12 @@ impl {{pin.name.camel()}}Input {
       {{reset!(d, pin.moder_field, false)}};
       {{reset!(d, pin.pupdr_field, false)}};
     });
-    {{pin.name.camel()}} { _private: () } 
+    {{pin.name.camel()}} { _no_construct: () } 
   }
 }
 
 pub struct {{pin.name.camel()}}Output { 
-  _private: () 
+  _no_construct: () 
 }
 impl {{pin.name.camel()}}Output {
   pub fn write(&mut self, value: DigitalValue) {
@@ -143,7 +143,7 @@ impl {{pin.name.camel()}}Output {
       {{write_val!(d, pin.otyper_field, "output_type.val()", false)}};
       {{write_val!(d, pin.ospeedr_field, "output_speed.val()", false)}};
     });
-    Self { _private: () }
+    Self { _no_construct: () }
   }
 
   pub fn teardown(self) -> {{pin.name.camel()}} {
@@ -154,24 +154,24 @@ impl {{pin.name.camel()}}Output {
       {{reset!(d, pin.ospeedr_field, false)}};
       {{reset!(d, pin.moder_field, false)}};
     });
-    {{pin.name.camel()}} { _private: () } 
+    {{pin.name.camel()}} { _no_construct: () } 
   }
 }
 
 pub struct {{pin.name.camel()}}Analog { 
-  _private: () 
+  _no_construct: () 
 }
 impl {{pin.name.camel()}}Analog {
   fn setup() -> Self {
     {{write_val!(d, pin.moder_field, "0b11")}};
-    Self { _private: () }
+    Self { _no_construct: () }
   }
 
   pub fn teardown(self) -> {{pin.name.camel()}} {
     interrupt::free(|_| {
       {{reset!(d, pin.moder_field)}};
     });
-    {{pin.name.camel()}} { _private: () } 
+    {{pin.name.camel()}} { _no_construct: () } 
   }
 }
 
@@ -212,7 +212,7 @@ impl <AltFunc> {{pin.name.camel()}}AltFunc<AltFunc>
       {{reset!(d, pin.pupdr_field, false)}};
       {{reset!(d, pin.afr_field, false)}};
     });
-    {{pin.name.camel()}} { _private: () } 
+    {{pin.name.camel()}} { _no_construct: () } 
   }
 }
 {% endif %}

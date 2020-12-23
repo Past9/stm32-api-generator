@@ -37,6 +37,8 @@ pub enum {{mul.struct_name}}Value {
 
 
 pub struct ClockConfig {
+  _no_construct: (),
+
   // Oscillator settings 
   {% for osc in oscillators -%}
   {{osc.name}}_freq: u64,
@@ -69,6 +71,8 @@ impl ClockConfig {
     {% endfor %}
   ) -> ClockConfig {
     ClockConfig {
+      _no_construct: (),
+
       // Oscillator settings 
       {% for osc in oscillators -%}
       {% if osc.is_external %}
@@ -235,11 +239,13 @@ impl ClockConfig {
 
 
 pub struct Clocks {
+  _no_construct: (),
   config: ClockConfig
 }
 impl Clocks {
   pub(crate) fn new(config: ClockConfig) -> Result<Clocks> {
     let mut clocks = Clocks {
+      _no_construct: (),
       config
     };
 
@@ -265,6 +271,8 @@ impl Clocks {
 
   pub fn actual_config(&self) -> Result<ClockConfig> {
     Ok(ClockConfig {
+      _no_construct: (),
+
       // Oscillator settings 
       {% for osc in oscillators -%}
       {% if osc.is_external %}

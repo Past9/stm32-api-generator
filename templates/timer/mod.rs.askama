@@ -1,8 +1,4 @@
 
-pub trait BasicTimer { 
-  
-}
-
 {% for timer in s.timers -%}
 pub mod {{timer.name.snake()}}; 
 {% endfor %}

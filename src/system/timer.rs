@@ -81,8 +81,6 @@ impl TimerChannel {
   ) -> Result<Option<Self>> {
     let name = Name::from(format!("Ch{}", channel_number,));
 
-    println!("{} {}", peripheral.name, name.original);
-
     match (
       OutputChannel::new(device, peripheral, channel_number)?,
       InputChannel::new(device, peripheral, channel_number)?,
@@ -93,6 +91,28 @@ impl TimerChannel {
         output,
         input,
       })),
+    }
+  }
+
+  pub fn is_output(&self) -> bool {
+    self.output.is_some()
+  }
+
+  pub fn as_output(&self) -> OutputChannel {
+    match self.output {
+      Some(ref output) => output.clone(),
+      None => panic!("{} is not an output channel", self.name.camel()),
+    }
+  }
+
+  pub fn is_input(&self) -> bool {
+    self.input.is_some()
+  }
+
+  pub fn as_input(&self) -> InputChannel {
+    match self.input {
+      Some(ref input) => input.clone(),
+      None => panic!("{} is not an input channel", self.name.camel()),
     }
   }
 }
@@ -131,6 +151,17 @@ impl OutputChannel {
       compare_mode_field,
     }))
   }
+
+  pub fn has_io_select(&self) -> bool {
+    self.io_select.is_some()
+  }
+
+  pub fn io_select(&self) -> EnumField {
+    match self.io_select {
+      Some(ref f) => f.clone(),
+      None => panic!("Channel output mode does not have an I/O mode select field"),
+    }
+  }
 }
 
 #[derive(Clone)]
@@ -166,5 +197,16 @@ impl InputChannel {
       io_select,
       compare_mode_field,
     }))
+  }
+
+  pub fn has_io_select(&self) -> bool {
+    self.io_select.is_some()
+  }
+
+  pub fn io_select(&self) -> EnumField {
+    match self.io_select {
+      Some(ref f) => f.clone(),
+      None => panic!("Channel input mode does not have an I/O mode select field"),
+    }
   }
 }

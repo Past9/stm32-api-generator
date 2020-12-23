@@ -114,12 +114,14 @@ pub struct RangedField {
 
 #[derive(Clone)]
 pub struct EnumField {
-  name: Name,
-  values: Vec<EnumValue>,
+  pub path: String,
+  pub name: Name,
+  pub values: Vec<EnumValue>,
 }
 impl EnumField {
   pub fn new(field: &FieldSpec) -> Self {
     Self {
+      path: field.path(),
       name: Name::from(&field.name),
       values: field
         .enumerated_value_sets
@@ -139,6 +141,6 @@ impl EnumField {
 
 #[derive(Clone)]
 pub struct EnumValue {
-  name: Name,
-  bit_value: u32,
+  pub name: Name,
+  pub bit_value: u32,
 }
