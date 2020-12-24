@@ -1,8 +1,8 @@
+use crate::{clear_bit, read_val, set_bit, write_val};
 use crate::{
   generators::ReadWrite,
   system::{timer::Timer, SystemInfo},
 };
-use crate::{read_val, set_bit, write_val};
 use anyhow::Result;
 use askama::Template;
 use svd_expander::DeviceSpec;

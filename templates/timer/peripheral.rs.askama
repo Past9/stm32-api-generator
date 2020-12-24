@@ -1,6 +1,6 @@
 {% let d = d %}
 
-use crate::{ write_val_itf, read_val, set_bit_itf };
+use crate::{ write_val_itf, read_val, set_bit_itf, clear_bit_itf };
 use crate::{Error, Result};
 
 
@@ -29,17 +29,17 @@ impl {{t.name.camel()}} {
   }
 
   {% for channel in t.channels %}
-  pub fn take_{{channel.name.snake()}}(&mut self) -> Result<{{t.name.camel()}}{{channel.name.camel()}}> {
+  pub fn take_{{channel.name.snake()}}(&mut self) -> Result<{{channel.name.camel()}}> {
     match self.has_{{channel.name.snake()}} {
       true => {
         self.has_{{channel.name.snake()}} = false;
-        Ok({{t.name.camel()}}{{channel.name.camel()}}::setup())
+        Ok({{channel.name.camel()}}::setup())
       },
       false => Err(Error::new("{{channel.name.camel()}} is already taken."))
     }
   }
 
-  pub fn return_{{channel.name.snake()}}(&mut self, #[allow(unused_variables)] {{channel.name.snake()}}: {{t.name.camel()}}{{channel.name.camel()}}) -> Result<()> {
+  pub fn return_{{channel.name.snake()}}(&mut self, #[allow(unused_variables)] {{channel.name.snake()}}: {{channel.name.camel()}}) -> Result<()> {
     match self.has_{{channel.name.snake()}} {
       false => {
         self.has_{{channel.name.snake()}} = true;
@@ -55,7 +55,7 @@ impl {{t.name.camel()}} {
   }
 
   pub(crate) fn disable(&mut self) -> Result<()> {
-    {{set_bit!(d, self.t.enable_field)}};
+    {{clear_bit!(d, self.t.enable_field)}};
     Ok(())
   }
 
@@ -96,15 +96,26 @@ impl {{t.name.camel()}} {
   pub fn get_count(&self) -> u32 {
     {{read_val!(d, self.t.counter_field.path)}}
   }
+
+  pub fn enable_auto_reload_preload(&mut self) {
+    {{set_bit!(d, self.t.arpe_field)}};
+  }
+
+  pub fn disable_auto_reload_preload(&mut self) {
+    {{clear_bit!(d, self.t.arpe_field)}};
+  }
+
+  pub fn initialize(&mut self) {
+    {{set_bit!(d, self.t.ug_field)}};
+  }
 }
 
 
 {% for channel in t.channels %}
-// {{channel.name.snake()}} {% if channel.input.is_some() %}INPUT {% endif %} {% if channel.output.is_some() %}OUTPUT {% endif %}
-pub struct {{t.name.camel()}}{{channel.name.camel()}} {
+pub struct {{channel.name.camel()}} {
   _no_construct: ()
 }
-impl {{t.name.camel()}}{{channel.name.camel()}} {
+impl {{channel.name.camel()}} {
   pub(crate) fn setup() -> Self {
     Self {
       _no_construct: ()
@@ -114,11 +125,13 @@ impl {{t.name.camel()}}{{channel.name.camel()}} {
   {% if channel.is_output() -%}
   pub fn as_output(self,
     {% if channel.as_output().has_io_select() && channel.as_output().io_select().values.len() > 1 %}
-    mode: {{t.name.camel()}}{{channel.name.camel()}}OutputMode
+    output_mode: {{channel.name.camel()}}OutputMode,
     {% endif %}
-  ) -> {{t.name.camel()}}{{channel.name.camel()}}Output {
-    {{t.name.camel()}}{{channel.name.camel()}}Output::setup(
-      {% if channel.as_output().has_io_select() && channel.as_output().io_select().values.len() > 1 %}mode{% endif %}
+    compare_mode: {{channel.name.camel()}}CompareMode
+  ) -> {{channel.name.camel()}}Output {
+    {{channel.name.camel()}}Output::setup(
+      {% if channel.as_output().has_io_select() && channel.as_output().io_select().values.len() > 1 %}output_mode, {% endif %}
+      compare_mode
     ) 
   } 
   {% endif %}
@@ -126,96 +139,143 @@ impl {{t.name.camel()}}{{channel.name.camel()}} {
   {% if channel.is_input() -%}
   pub fn as_input(self,
     {% if channel.as_input().has_io_select() && channel.as_input().io_select().values.len() > 1 %}
-    mode: {{t.name.camel()}}{{channel.name.camel()}}InputMode
+    input_mode: {{channel.name.camel()}}InputMode,
     {% endif %}
-  ) -> {{t.name.camel()}}{{channel.name.camel()}}Input {
-    {{t.name.camel()}}{{channel.name.camel()}}Input::setup(
-      {% if channel.as_input().has_io_select() && channel.as_input().io_select().values.len() > 1 %}mode{% endif %}
+    capture_filter: {{channel.name.camel()}}CaptureFilter
+  ) -> {{channel.name.camel()}}Input {
+    {{channel.name.camel()}}Input::setup(
+      {% if channel.as_input().has_io_select() && channel.as_input().io_select().values.len() > 1 %}input_mode, {% endif %}
+      capture_filter
     ) 
   } 
   {% endif %}
 }
 
+
+
 {% if channel.is_output() -%}
+
+/// {{channel.as_output().compare_mode.description}}
+pub enum {{channel.name.camel()}}CompareMode {
+  {% for value in channel.as_output().compare_mode.values %}
+  /// {{value.description}}
+  {{value.name.camel()}} = {{value.bit_value}},
+  {% endfor %}
+}
+
 {% if channel.as_output().has_io_select() && channel.as_output().io_select().values.len() > 1 %}
-pub enum {{t.name.camel()}}{{channel.name.camel()}}OutputMode {
+/// {{channel.as_output().io_select().description}}
+pub enum {{channel.name.camel()}}OutputMode {
   {% for value in channel.as_output().io_select().values -%}
+  /// {{value.description}}
   {{value.name.camel()}} = {{value.bit_value}},
   {% endfor %}
 }
 {% endif %}
 
-pub struct {{t.name.camel()}}{{channel.name.camel()}}Output {
+pub struct {{channel.name.camel()}}Output {
   _no_construct: ()
 }
-impl {{t.name.camel()}}{{channel.name.camel()}}Output {
+impl {{channel.name.camel()}}Output {
   {% if channel.as_output().has_io_select() %} 
   pub(crate) fn setup(
     {% if channel.as_output().io_select().values.len() > 1 %}
-    mode: {{t.name.camel()}}{{channel.name.camel()}}OutputMode
+    output_mode: {{channel.name.camel()}}OutputMode,
     {% endif %}
+    compare_mode: {{channel.name.camel()}}CompareMode
   ) -> Self {
     {% if channel.as_output().io_select().values.len() == 0 %}
     {% else if channel.as_output().io_select().values.len() == 1 %}
     {{write_val!(d, channel.as_output().io_select().path, channel.as_output().io_select().values[0].bit_value)}};
     {% else %}
-    let val = match mode {
-      {% for value in channel.as_output().io_select().values -%}
-      {{t.name.camel()}}{{channel.name.camel()}}OutputMode::{{value.name.camel()}} = {{value.bit_value}},
-      {% endfor %}
-    };
-    {{write_val!(d, channel.as_output().io_select().path, "val")}};
+    {{write_val!(d, channel.as_output().io_select().path, "mode as u32")}};
     {% endif %}
+    {{write_val!(d, channel.as_output().compare_mode.path, "compare_mode as u32")}};
+    {{set_bit!(d, channel.as_output().enable_path)}};
     Self {
       _no_construct: ()
     }
   } 
   {% else %}
-  pub(crate) fn setup() -> Self {
+  pub(crate) fn setup(compare_mode: {{channel.name.camel()}}CompareMode) -> Self {
+    {{write_val!(d, channel.as_output().compare_mode.path, "compare_mode as u32")}};
+    {{set_bit!(d, channel.as_output().enable_path)}};
     Self {
       _no_construct: ()
     }
   }
   {% endif %}
+
+  pub fn enable_preload(&mut self) {
+    {{set_bit!(d, channel.as_output().preload_path)}};
+  }
+
+  pub fn disable_preload(&mut self) {
+    {{clear_bit!(d, channel.as_output().preload_path)}};
+  }
+
+  pub fn set_compare_value(&mut self, val: u32) -> Result<()> {
+    match val {
+      #[allow(unused_comparisons)]
+      v if v < {{channel.as_output().compare_field.min}} => Err(Error::new("Compare value must be at least {{channel.as_output().compare_field.min}}")), 
+      #[allow(unused_comparisons)]
+      v if v > {{channel.as_output().compare_field.max}} => Err(Error::new("Compare value must be at most {{channel.as_output().compare_field.max}}")),
+      v => {
+        {{write_val!(d, channel.as_output().compare_field.path, "v")}};
+        Ok(())
+      }
+    }
+  }
 }
 {% endif %}
 
 {% if channel.is_input() -%}
+
+/// {{channel.as_input().capture_filter.description}}
+pub enum {{channel.name.camel()}}CaptureFilter {
+  {% for value in channel.as_input().capture_filter.values -%}
+  /// {{value.description}}
+  {{value.name.camel()}} = {{value.bit_value}},
+  {% endfor %}
+}
+
 {% if channel.as_input().has_io_select() && channel.as_input().io_select().values.len() > 1 %}
-pub enum {{t.name.camel()}}{{channel.name.camel()}}InputMode {
+/// {{channel.as_input().io_select().description}}
+pub enum {{channel.name.camel()}}InputMode {
   {% for value in channel.as_input().io_select().values -%}
+  /// {{value.description}}
   {{value.name.camel()}} = {{value.bit_value}},
   {% endfor %}
 }
 {% endif %}
 
-pub struct {{t.name.camel()}}{{channel.name.camel()}}Input {
+pub struct {{channel.name.camel()}}Input {
   _no_construct: ()
 }
-impl {{t.name.camel()}}{{channel.name.camel()}}Input {
+impl {{channel.name.camel()}}Input {
   {% if channel.as_input().has_io_select() %} 
   pub(crate) fn setup(
     {% if channel.as_input().io_select().values.len() > 1 %}
-    mode: {{t.name.camel()}}{{channel.name.camel()}}InputMode
+    mode: {{channel.name.camel()}}InputMode,
     {% endif %}
+    capture_filter: {{channel.name.camel()}}CaptureFilter
   ) -> Self {
     {% if channel.as_input().io_select().values.len() == 0 %}
     {% else if channel.as_input().io_select().values.len() == 1 %}
     {{write_val!(d, channel.as_input().io_select().path, channel.as_input().io_select().values[0].bit_value)}};
     {% else %}
-    let val = match mode {
-      {% for value in channel.as_input().io_select().values -%}
-      {{t.name.camel()}}{{channel.name.camel()}}InputMode::{{value.name.camel()}} => {{value.bit_value}},
-      {% endfor %}
-    };
-    {{write_val!(d, channel.as_input().io_select().path, "val")}};
+    {{write_val!(d, channel.as_input().io_select().path, "mode as u32")}};
     {% endif %}
+    {{write_val!(d, channel.as_input().capture_filter.path, "capture_filter as u32")}};
+    {{set_bit!(d, channel.as_input().enable_path)}};
     Self {
       _no_construct: ()
     }
   } 
   {% else %}
-  pub(crate) fn setup() -> Self {
+  pub(crate) fn setup(capture_filter: {{channel.name.camel()}}CaptureFilter) -> Self {
+    {{write_val!(d, channel.as_input().capture_filter.path, "capture_filter as u32")}};
+    {{set_bit!(d, channel.as_input().enable_path)}};
     Self {
       _no_construct: ()
     }

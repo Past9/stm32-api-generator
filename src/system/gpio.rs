@@ -1,5 +1,5 @@
 use anyhow::{anyhow, Result};
-use regex::{Captures, Regex};
+use regex::Regex;
 use svd_expander::{PeripheralSpec, RegisterSpec};
 
 use super::{Name, Submodule};

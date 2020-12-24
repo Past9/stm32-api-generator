@@ -1,5 +1,6 @@
 // RED   \x1b[0;31m
 // GREEN  \x1b[0;32m
+// YELLOW  \x1b[0;33m
 // CYAN  \x1b[0;36m
 // NC    \x1b[0m
 
@@ -12,6 +13,12 @@ macro_rules! info {
 macro_rules! error {
   ($($arg:tt)*) => ({
     println!("\x1b[0;31m  [ERROR]\x1b[0m {}", format!($($arg)*));
+  })
+}
+
+macro_rules! warn {
+  ($($arg:tt)*) => ({
+    println!("\x1b[0;33m   [WARN]\x1b[0m {}", format!($($arg)*));
   })
 }
 

@@ -1,8 +1,8 @@
 use anyhow::Result;
 use heck::{CamelCase, SnakeCase};
-use svd_expander::{DeviceSpec, FieldSpec};
+use svd_expander::{DeviceSpec, EnumeratedValueSpec, FieldSpec};
 
-use self::{gpio::AltFuncKind, gpio::Gpio, timer::Timer};
+use self::{gpio::Gpio, timer::Timer};
 
 pub mod gpio;
 pub mod timer;
@@ -55,7 +55,9 @@ impl<'a> SystemInfo<'a> {
       .iter()
       .filter(|p| p.name.to_lowercase().starts_with("tim"))
     {
-      self.timers.push(Timer::new(&self.device, peripheral)?);
+      if let Some(timer) = Timer::new(&self.device, peripheral)? {
+        self.timers.push(timer);
+      };
     }
     Ok(())
   }
@@ -114,6 +116,7 @@ pub struct RangedField {
 
 #[derive(Clone)]
 pub struct EnumField {
+  pub description: String,
   pub path: String,
   pub name: Name,
   pub values: Vec<EnumValue>,
@@ -121,26 +124,46 @@ pub struct EnumField {
 impl EnumField {
   pub fn new(field: &FieldSpec) -> Self {
     Self {
+      description: match &field.description {
+        Some(d) => d.clone(),
+        None => "".to_owned(),
+      },
       path: field.path(),
       name: Name::from(&field.name),
       values: field
         .enumerated_value_sets
         .iter()
         .flat_map(|vs| vs.values.iter())
-        .filter_map(|enum_val| match enum_val.actual_value() {
-          Some(val) => Some(EnumValue {
-            name: Name::from(&enum_val.name),
-            bit_value: val,
-          }),
-          None => None,
-        })
+        .filter_map(EnumValue::new)
         .collect::<Vec<EnumValue>>(),
+    }
+  }
+
+  pub fn clone_values_from(&mut self, other: &EnumField) {
+    for value in other.values.iter() {
+      self.values.push(value.clone());
     }
   }
 }
 
 #[derive(Clone)]
 pub struct EnumValue {
+  pub description: String,
   pub name: Name,
   pub bit_value: u32,
+}
+impl EnumValue {
+  pub fn new(spec: &EnumeratedValueSpec) -> Option<EnumValue> {
+    match spec.actual_value() {
+      Some(val) => Some(EnumValue {
+        description: match &spec.description {
+          Some(d) => d.clone(),
+          None => "".to_owned(),
+        },
+        name: Name::from(&spec.name),
+        bit_value: val,
+      }),
+      None => None,
+    }
+  }
 }
