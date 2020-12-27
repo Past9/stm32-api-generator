@@ -1,24 +1,29 @@
 {% let d = d %}
 
-use crate::{ write_val_itf, read_val, set_bit_itf, clear_bit_itf };
-use crate::{Error, Result};
+use crate::{ write_val_itf, read_val, set_bit_itf, clear_bit_itf, Error, Result, clocks::Clocks };
 
 
 pub struct {{t.name.camel()}} {
   _no_construct: (),
+  source_freq: f32,
   {% for channel in t.channels -%}
   has_{{channel.name.snake()}}: bool,
   {% endfor %}
 }
 impl {{t.name.camel()}} {
 
-  pub(crate) fn create() -> Self {
-    Self {
+  pub(crate) fn create(clocks: &Clocks) -> Result<Self> {
+    Ok(Self {
       _no_construct: (),
+      source_freq: clocks.actual_config()?.to_{{t.name.snake()}}_freq(),
       {% for channel in t.channels -%}
       has_{{channel.name.snake()}}: true,
       {% endfor %}
-    }
+    })
+  }
+
+  pub fn source_freq(&self) -> f32 {
+    self.source_freq
   }
 
   pub fn owns_everything(&self) -> bool {
@@ -51,11 +56,11 @@ impl {{t.name.camel()}} {
   {% endfor %}
 
   pub(crate) fn enable(&mut self) {
-    {{set_bit!(d, self.t.enable_field)}};
+    {{set_bit!(d, self.t.peripheral_enable_field)}};
   }
 
   pub(crate) fn disable(&mut self) -> Result<()> {
-    {{clear_bit!(d, self.t.enable_field)}};
+    {{clear_bit!(d, self.t.peripheral_enable_field)}};
     Ok(())
   }
 
@@ -105,15 +110,33 @@ impl {{t.name.camel()}} {
     {{clear_bit!(d, self.t.arpe_field)}};
   }
 
-  pub fn initialize(&mut self) {
+  pub fn generate_update(&mut self) {
     {{set_bit!(d, self.t.ug_field)}};
   }
+
+  pub fn enable_counter(&mut self) {
+    {{set_bit!(d, self.t.cen_field)}};
+  }
+
+  pub fn disable_counter(&mut self) {
+    {{clear_bit!(d, self.t.cen_field)}};
+  }
+
+  {% if t.has_moe_field() %}
+  pub fn enable_outputs(&mut self) {
+    {{set_bit!(d, self.t.moe_field())}};
+  }
+
+  pub fn disable_outputs(&mut self) {
+    {{clear_bit!(d, self.t.moe_field())}};
+  }
+  {% endif %}
 }
 
 
 {% for channel in t.channels %}
 pub struct {{channel.name.camel()}} {
-  _no_construct: ()
+  _no_construct: (),
 }
 impl {{channel.name.camel()}} {
   pub(crate) fn setup() -> Self {
@@ -123,7 +146,7 @@ impl {{channel.name.camel()}} {
   } 
 
   {% if channel.is_output() -%}
-  pub fn as_output(self,
+  pub fn as_output(&mut self,
     {% if channel.as_output().has_io_select() && channel.as_output().io_select().values.len() > 1 %}
     output_mode: {{channel.name.camel()}}OutputMode,
     {% endif %}

@@ -644,7 +644,7 @@ pub struct Divider {
   pub path: String,
 }
 impl Divider {
-  pub fn is_fixed_value(&self) -> bool {
+  pub fn is_fixed(&self) -> bool {
     self.values.len() == 0
   }
 
@@ -673,11 +673,17 @@ pub struct Multiplier {
   #[serde(default)]
   pub values: HashMap<String, MultiplierOption>,
   #[serde(default)]
+  pub conditional_values: Vec<ConditionalMultiplierOption>,
+  #[serde(default)]
   pub path: String,
 }
 impl Multiplier {
-  pub fn is_fixed_value(&self) -> bool {
-    self.values.len() == 0
+  pub fn is_fixed(&self) -> bool {
+    self.values.len() == 0 && self.conditional_values.len() == 0
+  }
+
+  pub fn is_conditional(&self) -> bool {
+    self.conditional_values.len() > 0
   }
 
   pub fn default_input(&self) -> Result<&MultiplierOption> {
@@ -686,6 +692,12 @@ impl Multiplier {
       None => Err(anyhow!("Multiplier default value not in map")),
     }
   }
+}
+
+#[derive(Deserialize, Debug, Clone)]
+pub struct ConditionalMultiplierOption {
+  pub factor: f32,
+  pub when: String,
 }
 
 #[derive(Deserialize, Debug, Clone)]

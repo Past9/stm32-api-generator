@@ -10,9 +10,11 @@ pub struct Timer {
   pub auto_reload_field: RangedField,
   pub prescaler_field: RangedField,
   pub counter_field: RangedField,
-  pub enable_field: String,
   pub arpe_field: String,
   pub ug_field: String,
+  pub cen_field: String,
+  pub moe_field: Option<String>,
+  pub peripheral_enable_field: String,
   pub channels: Vec<TimerChannel>,
 }
 impl Timer {
@@ -78,7 +80,12 @@ impl Timer {
       counter_field: find_ranged_field(peripheral, "cnt")?,
       arpe_field: find_field_path(peripheral, "arpe")?,
       ug_field: find_field_path(peripheral, "ug")?,
-      enable_field: match device
+      cen_field: find_field_path(peripheral, "cen")?,
+      moe_field: match find_field_path(peripheral, "moe") {
+        Ok(moe) => Some(moe),
+        Err(_) => None,
+      },
+      peripheral_enable_field: match device
         .iter_fields()
         .find(|f| f.name.to_lowercase() == enable_field_name)
       {
@@ -96,6 +103,21 @@ impl Timer {
     Submodule {
       parent_path: "timer".to_owned(),
       name: self.name.clone(),
+      needs_clocks: true,
+    }
+  }
+
+  pub fn has_moe_field(&self) -> bool {
+    self.moe_field.is_some()
+  }
+
+  pub fn moe_field(&self) -> String {
+    match self.moe_field {
+      Some(ref f) => f.clone(),
+      None => panic!(
+        "Timer {} has no MOE (Main Output Enable) field.",
+        self.name.camel()
+      ),
     }
   }
 }

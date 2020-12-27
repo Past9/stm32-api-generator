@@ -17,13 +17,13 @@ pub struct {{g.name.camel()}} {
 }
 impl {{g.name.camel()}} {
 
-  pub(crate) fn create() -> Self {
-    Self {
+  pub(crate) fn create() -> Result<Self> {
+    Ok(Self {
       _no_construct: (),
       {% for pin in g.pins -%}
       has_{{pin.name.snake()}}: true,
       {% endfor %}
-    }
+    })
   }
 
   pub fn owns_everything(&self) -> bool {

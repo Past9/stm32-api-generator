@@ -67,6 +67,7 @@ impl<'a> SystemInfo<'a> {
 pub struct Submodule {
   pub parent_path: String,
   pub name: Name,
+  pub needs_clocks: bool,
 }
 impl PartialOrd for Submodule {
   fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {

@@ -143,25 +143,33 @@ impl ReadWrite for DeviceSpec {
     let field = self.get_field(path).unwrap();
 
     let address = field.address();
-    let mask = field.mask();
     let offset = field.offset;
 
-    let register = self.get_register(&field.parent_path()).unwrap();
-
-    let register_reset_val = match register.reset_value {
-      Some(rv) => rv,
-      None => 0,
-    };
-
-    let register_reset_mask = match register.reset_mask {
+    let reset_mask = match field.reset_mask {
       Some(rm) => rm,
-      None => u32::MAX,
+      None => {
+        warn!(
+          "No reset mask configured for field {}, defaulting to field mask.",
+          path
+        );
+        field.mask()
+      }
     };
 
-    let reset_value = register_reset_mask & register_reset_val & mask >> offset;
+    let reset_value = match field.reset_value {
+      Some(rv) => rv,
+      None => {
+        warn!(
+          "No reset value configured for field {}, defaulting to 0.",
+          path
+        );
+        0
+      }
+    };
+
     let itf = itf(interrupt_free);
 
-    f!("write_val{itf}({address:#010x}, {mask:#034b}, {offset}, {reset_value}) /* Reset {path} */")
+    f!("write_val{itf}({address:#010x}, {reset_mask:#034b}, {offset}, {reset_value}) /* Reset {path} */")
   }
 
   fn set_bit(&self, path: &str, interrupt_free: bool) -> String {

@@ -68,13 +68,13 @@ impl<'a> ClockGenerator<'a> {
       .iter()
       .filter_map(|c| match c {
         ClockComponent::Multiplexer(m) => Some(m.path.clone()),
-        ClockComponent::Divider(d) => match d.is_fixed_value() {
+        ClockComponent::Divider(d) => match d.is_fixed() {
           true => None,
           false => Some(d.path.clone()),
         },
-        ClockComponent::Multiplier(m) => match m.is_fixed_value() {
-          true => None,
-          false => Some(m.path.clone()),
+        ClockComponent::Multiplier(m) => match (m.is_fixed(), m.is_conditional()) {
+          (false, false) => Some(m.path.clone()),
+          _ => None,
         },
         _ => None,
       })
@@ -106,7 +106,7 @@ impl<'a> ClockGenerator<'a> {
         ClockComponent::Divider(d) => d
           .values
           .values()
-          .filter_map(|v| match d.is_fixed_value() {
+          .filter_map(|v| match d.is_fixed() {
             true => None,
             false => Some((d.path.clone(), v.bit_value, v.name.clone())),
           })
@@ -114,7 +114,7 @@ impl<'a> ClockGenerator<'a> {
         ClockComponent::Multiplier(m) => m
           .values
           .values()
-          .filter_map(|v| match m.is_fixed_value() {
+          .filter_map(|v| match m.is_fixed() {
             true => None,
             false => Some((m.path.clone(), v.bit_value, v.name.clone())),
           })
@@ -152,7 +152,9 @@ mod templates {
   use super::ClockSchematic;
   use crate::generators::clocks::schematic;
   use crate::generators::ReadWrite;
-  use crate::{clear_bit, is_set, read_val, set_bit, wait_for_clear, wait_for_set, write_val};
+  use crate::{
+    clear_bit, is_set, read_val, set_bit, wait_for_clear, wait_for_set, wait_for_val, write_val,
+  };
   use anyhow::Result;
   use askama::Template;
   use fstrings::f;
@@ -167,10 +169,11 @@ mod templates {
     flash_latency: FlashLat,
     oscillators: Vec<Osc>,
     multiplexers: Vec<Mux>,
-    variable_dividers: Vec<VarDiv>,
-    variable_multipliers: Vec<VarMul>,
+    configurable_dividers: Vec<VarDiv>,
+    configurable_multipliers: Vec<VarMul>,
     fixed_dividers: Vec<FixedDiv>,
     fixed_multipliers: Vec<FixedMul>,
+    conditional_multipliers: Vec<ConditionalMul>,
     taps: Vec<Tap>,
     has_pll: bool,
     pll_power: String,
@@ -187,26 +190,31 @@ mod templates {
           .multiplexers()
           .map(|m| Mux::new(m))
           .collect::<Result<Vec<Mux>>>()?,
-        variable_dividers: schematic
+        configurable_dividers: schematic
           .dividers()
-          .filter(|v| !v.is_fixed_value())
+          .filter(|v| !v.is_fixed())
           .map(|v| VarDiv::new(v))
           .collect::<Result<Vec<VarDiv>>>()?,
-        variable_multipliers: schematic
+        configurable_multipliers: schematic
           .multipliers()
-          .filter(|v| !v.is_fixed_value())
+          .filter(|v| !v.is_fixed() && !v.is_conditional())
           .map(|v| VarMul::new(v))
           .collect::<Result<Vec<VarMul>>>()?,
         fixed_dividers: schematic
           .dividers()
-          .filter(|v| v.is_fixed_value())
+          .filter(|v| v.is_fixed())
           .map(|v| FixedDiv::new(v))
           .collect::<Result<Vec<FixedDiv>>>()?,
         fixed_multipliers: schematic
           .multipliers()
-          .filter(|v| v.is_fixed_value())
+          .filter(|v| v.is_fixed())
           .map(|v| FixedMul::new(v))
           .collect::<Result<Vec<FixedMul>>>()?,
+        conditional_multipliers: schematic
+          .multipliers()
+          .filter(|v| v.is_conditional())
+          .map(|v| ConditionalMul::new(v))
+          .collect::<Result<Vec<ConditionalMul>>>()?,
         taps: schematic
           .taps()
           .map(|v| Tap::new(v))
@@ -228,10 +236,10 @@ mod templates {
       clocks.oscillators.sort_by_key(|o| o.name.clone());
       clocks.multiplexers.sort_by_key(|o| o.field_name.clone());
       clocks
-        .variable_dividers
+        .configurable_dividers
         .sort_by_key(|o| o.field_name.clone());
       clocks
-        .variable_multipliers
+        .configurable_multipliers
         .sort_by_key(|o| o.field_name.clone());
       clocks.fixed_dividers.sort_by_key(|o| o.field_name.clone());
       clocks
@@ -362,6 +370,37 @@ mod templates {
         is_off: input.public_name() == "off",
       }
     }
+  }
+
+  pub struct ConditionalMul {
+    field_name: String,
+    default: f32,
+    input_field_name: String,
+    input_struct_name: String,
+    conditions: Vec<ConditionalMulOpt>,
+  }
+  impl ConditionalMul {
+    pub fn new(multiplier: &schematic::Multiplier) -> Result<ConditionalMul> {
+      Ok(ConditionalMul {
+        field_name: multiplier.name.to_snake_case(),
+        default: multiplier.default,
+        input_field_name: multiplier.input.clone(),
+        input_struct_name: multiplier.input.to_camel_case(),
+        conditions: multiplier
+          .conditional_values
+          .iter()
+          .map(|v| ConditionalMulOpt {
+            factor: v.factor,
+            when: v.when.to_camel_case(),
+          })
+          .collect(),
+      })
+    }
+  }
+
+  pub struct ConditionalMulOpt {
+    factor: f32,
+    when: String,
   }
 
   pub struct FixedMul {

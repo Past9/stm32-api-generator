@@ -15,7 +15,7 @@ pub enum {{mux.struct_name}}Input {
 
 
 // Divider value options
-{% for div in variable_dividers %}
+{% for div in configurable_dividers %}
 #[derive(Copy, Clone, PartialEq)]
 pub enum {{div.struct_name}}Value {
   {% for div_opt in div.options -%} 
@@ -26,7 +26,7 @@ pub enum {{div.struct_name}}Value {
 
 
 // Multiplier value options
-{% for mul in variable_multipliers %}
+{% for mul in configurable_multipliers %}
 #[derive(Copy, Clone, PartialEq)]
 pub enum {{mul.struct_name}}Value {
   {% for mul_opt in mul.options -%} 
@@ -53,12 +53,12 @@ pub struct ClockConfig {
   {% endfor %}
   
   // Configurable divider inputs
-  {% for div in variable_dividers -%}
+  {% for div in configurable_dividers -%}
   {{div.field_name}}_value: {{div.struct_name}}Value,
   {% endfor %}
   
   // Configurable multiplier inputs
-  {% for mul in variable_multipliers -%}
+  {% for mul in configurable_multipliers -%}
   {{mul.field_name}}_value: {{mul.struct_name}}Value,
   {% endfor %}
 }
@@ -89,12 +89,12 @@ impl ClockConfig {
       {% endfor %}
 
       // Configurable divider values
-      {% for div in variable_dividers -%}
+      {% for div in configurable_dividers -%}
       {{div.field_name}}_value: {{div.struct_name}}Value::{{div.default.struct_name}},
       {% endfor %}
 
       // Configurable multiplier values
-      {% for mul in variable_multipliers -%}
+      {% for mul in configurable_multipliers -%}
       {{mul.field_name}}_value: {{mul.struct_name}}Value::{{mul.default.struct_name}},
       {% endfor %}
     }
@@ -148,7 +148,7 @@ impl ClockConfig {
   }
   {% endfor %}
 
-  {% for div in variable_dividers %}
+  {% for div in configurable_dividers %}
   pub fn {{div.field_name}}_freq(&self) -> f32 {
     self.{{div.input_field_name}}_freq() / match self.{{div.field_name}}_value {
       {% for div_opt in div.options -%}
@@ -172,7 +172,7 @@ impl ClockConfig {
   }
   {% endfor %}
 
-  {% for mul in variable_multipliers %}
+  {% for mul in configurable_multipliers %}
   pub fn {{mul.field_name}}_freq(&self) -> f32 {
     self.{{mul.input_field_name}}_freq() * match self.{{mul.field_name}}_value {
       {% for mul_opt in mul.options -%}
@@ -180,6 +180,17 @@ impl ClockConfig {
       {% endfor %}
     }
   }
+
+  {% for mul in conditional_multipliers %}
+  pub fn {{mul.field_name}}_freq(&self) -> f32 {
+    self.{{mul.input_field_name}}_freq() * match self.{{mul.input_field_name}}_value {
+      {% for mul_cond in mul.conditions -%}
+      {{mul.input_struct_name}}Value::{{mul_cond.when}} => {{mul_cond.factor}}f32,
+      {% endfor -%}
+      _ => {{mul.default}}f32
+    }
+  }
+  {% endfor %}
 
   pub fn {{mul.field_name}}_factor(&self) -> &{{mul.struct_name}}Value {
     &self.{{mul.field_name}}_value
@@ -221,14 +232,14 @@ impl ClockConfig {
     {% endfor %}
 
     // Check multipliers
-    {% for div in variable_dividers %}
+    {% for div in configurable_dividers %}
     if self.{{div.field_name}}_value != expected.{{div.field_name}}_value {
       return Err(Error::new("Clock config mismatch on {{div.field_name}}_value"));
     }
     {% endfor %}
 
     // Check dividers
-    {% for mul in variable_multipliers %}
+    {% for mul in configurable_multipliers %}
     if self.{{mul.field_name}}_value != expected.{{mul.field_name}}_value {
       return Err(Error::new("Clock configuration {{mul.field_name}}_value differs from expected value."));
     }
@@ -294,7 +305,7 @@ impl Clocks {
       {% endfor %}
 
       // Configurable divider values
-      {% for div in variable_dividers -%}
+      {% for div in configurable_dividers -%}
       {{div.field_name}}_value: match {{read_val!(d, div.path)}} {
         {% for option in div.options -%}
         {{option.bit_value}} => {{div.struct_name}}Value::{{option.struct_name}},
@@ -304,7 +315,7 @@ impl Clocks {
       {% endfor %}
 
       // Configurable multiplier values
-      {% for mul in variable_multipliers -%}
+      {% for mul in configurable_multipliers -%}
       {{mul.field_name}}_value: match {{read_val!(d, mul.path)}} {
         {% for option in mul.options -%}
         {{option.bit_value}} => {{mul.struct_name}}Value::{{option.struct_name}},
@@ -379,13 +390,13 @@ impl Clocks {
   } 
 
   fn write_divider_config(&mut self) {
-    {% for div in variable_dividers -%}
+    {% for div in configurable_dividers -%}
     {{write_val!(d, div.path, f!("self.config.{div.field_name}_value as u32"), false)}};
     {% endfor %}
   }
 
   fn write_multiplier_config(&mut self) {
-    {% for mul in variable_multipliers -%}
+    {% for mul in configurable_multipliers -%}
     {{write_val!(d, mul.path, f!("self.config.{mul.field_name}_value as u32"), false)}};
     {% endfor %}
   }
@@ -430,6 +441,7 @@ impl Clocks {
     {% for mux in multiplexers %}
     {% if mux.is_sys_clk_mux %}
     {{write_val!(d, mux.path, f!("self.config.{mux.field_name}_input as u32"), false)}};
+    {{wait_for_val!(d, mux.path, f!("self.config.{mux.field_name}_input as u32"), false)}}?;
     {% endif %}
     {% endfor %}
 

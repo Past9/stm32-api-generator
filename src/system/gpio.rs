@@ -33,6 +33,7 @@ impl Gpio {
     Submodule {
       parent_path: "gpio".to_owned(),
       name: self.name.clone(),
+      needs_clocks: false,
     }
   }
 }

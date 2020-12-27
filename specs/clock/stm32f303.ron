@@ -90,18 +90,42 @@ ClockSchematic(
 		"tim1_source_mux": (
       path: "rcc.cfgr3.tim1sw",
       inputs: { 
-        "p_clk2": ( bit_value: 0), 
+        "apb2_prescaler_apb2_timer_clocks": ( bit_value: 0), 
         "pll_mul_timers": ( bit_value: 1, alias: Some("pll") ), 
       }, 
-      default: "p_clk2"
+      default: "apb2_prescaler_apb2_timer_clocks"
+    ),
+		"tim2_source_mux": (
+      path: "rcc.cfgr3.tim2sw",
+      inputs: { 
+        "apb1_prescaler_apb1_timer_clocks": ( bit_value: 0), 
+        "pll_mul_timers": ( bit_value: 1, alias: Some("pll") ), 
+      }, 
+      default: "apb1_prescaler_apb1_timer_clocks"
+    ),
+		"tim34_source_mux": (
+      path: "rcc.cfgr3.tim34sw",
+      inputs: { 
+        "apb1_prescaler_apb1_timer_clocks": ( bit_value: 0), 
+        "pll_mul_timers": ( bit_value: 1, alias: Some("pll") ), 
+      }, 
+      default: "apb1_prescaler_apb1_timer_clocks"
     ),
 		"tim8_source_mux": (
       path: "rcc.cfgr3.tim8sw", 
       inputs: { 
-        "p_clk2": ( bit_value: 0 ), 
+        "apb2_prescaler_apb2_timer_clocks": ( bit_value: 0 ), 
         "pll_mul_timers": ( bit_value: 1, alias: Some("pll") ), 
       }, 
-      default: "p_clk2"
+      default: "apb2_prescaler_apb2_timer_clocks"
+    ),
+		"tim20_source_mux": (
+      path: "rcc.cfgr3.tim20sw",
+      inputs: { 
+        "apb2_prescaler_apb2_timer_clocks": ( bit_value: 0), 
+        "pll_mul_timers": ( bit_value: 1, alias: Some("pll") ), 
+      }, 
+      default: "apb2_prescaler_apb2_timer_clocks"
     ),
 		"i2c1_clock_mux": (
       path: "rcc.cfgr3.i2c1sw",
@@ -222,7 +246,7 @@ ClockSchematic(
     ),
 		"apb2_prescaler": (
       input: "h_clk", 
-      path: "rcc.cfgr.ppre1",
+      path: "rcc.cfgr.ppre2",
       values: {
         "no_div": ( divisor: 1, bit_value: 0 ),
         "div_2": ( divisor: 2, bit_value: 4 ),
@@ -268,8 +292,20 @@ ClockSchematic(
       default: 2
     ),
 		"pll_mul_timers": (input: "pll_mul", default: 2),
-		"apb1_prescaler_apb1_timer_clocks": (input: "apb1_prescaler", default: 1),
-		"apb2_prescaler_apb2_timer_clocks": (input: "apb2_prescaler", default: 1)
+		"apb1_prescaler_apb1_timer_clocks": (
+      input: "apb1_prescaler", 
+      default: 2,
+      conditional_values: [
+        ( factor: 1, when: "no_div" )
+      ]
+    ),
+		"apb2_prescaler_apb2_timer_clocks": (
+      input: "apb2_prescaler", 
+      default: 2,
+      conditional_values: [
+        ( factor: 1, when: "no_div" )
+      ]
+    )
 	},
   taps: {
     "pll": (input: "pll_source_mux", max: 0, terminal: false),
@@ -286,7 +322,13 @@ ClockSchematic(
     "to_i2c1": (input: "i2c1_clock_mux", max: 0, terminal: true),
     "to_i2c2": (input: "i2c2_clock_mux", max: 0, terminal: true),
     "to_tim1": (input: "tim1_source_mux", max: 0, terminal: true),
+    "to_tim2": (input: "tim2_source_mux", max: 0, terminal: true),
+    "to_tim3": (input: "tim34_source_mux", max: 0, terminal: true),
+    "to_tim4": (input: "tim34_source_mux", max: 0, terminal: true),
+    "to_tim6": (input: "apb1_prescaler_apb1_timer_clocks", max: 0, terminal: true),
+    "to_tim7": (input: "apb1_prescaler_apb1_timer_clocks", max: 0, terminal: true),
     "to_tim8": (input: "tim8_source_mux", max: 0, terminal: true),
+    "to_tim20": (input: "tim20_source_mux", max: 0, terminal: true),
     "to_ahb_core_and_memory_and_dma": (input: "h_clk", max: 0, terminal: true),
     "to_cortex_system_timer": (input: "h_clk_to_cortex_system_timer", max: 0, terminal: true),
     "f_clk_cortex_clock": (input: "h_clk", max: 0, terminal: true),
