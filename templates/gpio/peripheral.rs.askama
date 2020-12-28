@@ -12,7 +12,7 @@ use crate::{Error, Result};
 pub struct {{g.name.camel()}} { 
   _no_construct: (),
   {% for pin in g.pins -%}
-  has_{{pin.name.snake()}}: bool,
+  owns_{{pin.name.snake()}}: bool,
   {% endfor %}
 }
 impl {{g.name.camel()}} {
@@ -21,14 +21,14 @@ impl {{g.name.camel()}} {
     Ok(Self {
       _no_construct: (),
       {% for pin in g.pins -%}
-      has_{{pin.name.snake()}}: true,
+      owns_{{pin.name.snake()}}: true,
       {% endfor %}
     })
   }
 
   pub fn owns_everything(&self) -> bool {
     {% for pin in g.pins -%}
-    self.has_{{pin.name.snake()}} &&
+    self.owns_{{pin.name.snake()}} &&
     {% endfor %}
     true
   }
@@ -47,9 +47,9 @@ impl {{g.name.camel()}} {
 
   {% for pin in g.pins %}
   pub fn take_{{pin.name.snake()}}(&mut self) -> Result<{{pin.name.camel()}}> {
-    match self.has_{{pin.name.snake()}} {
+    match self.owns_{{pin.name.snake()}} {
       true => {
-        self.has_{{pin.name.snake()}} = false;
+        self.owns_{{pin.name.snake()}} = false;
         Ok({{pin.name.camel()}} {
           _no_construct: ()
         })
@@ -59,9 +59,9 @@ impl {{g.name.camel()}} {
   }
 
   pub fn return_{{pin.name.snake()}}(&mut self, #[allow(unused_variables)] {{pin.name.snake()}}: {{pin.name.camel()}}) -> Result<()> {
-    match self.has_{{pin.name.snake()}} {
+    match self.owns_{{pin.name.snake()}} {
       false => {
-        self.has_{{pin.name.snake()}} = true;
+        self.owns_{{pin.name.snake()}} = true;
         Ok(())
       },
       true => Err(Error::new("{{pin.name.camel()}} is already owned.")),

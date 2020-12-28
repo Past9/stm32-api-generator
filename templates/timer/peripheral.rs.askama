@@ -1,7 +1,7 @@
 {% let d = d %}
 
-use crate::{ write_val_itf, read_val, set_bit_itf, clear_bit_itf, Error, Result, clocks::Clocks };
-
+use crate::{ write_val_itf, read_val, set_bit_itf, clear_bit_itf, is_set, Error, Result, clocks::Clocks };
+use super::ChannelPolarity;
 
 pub struct {{t.name.camel()}} {
   _no_construct: (),
@@ -64,6 +64,10 @@ impl {{t.name.camel()}} {
     Ok(())
   }
 
+  pub fn is_enabled(&self) -> bool {
+    {{is_set!(d, self.t.peripheral_enable_field)}}
+  }
+
   pub fn set_prescaler(&mut self, val: u32) -> Result<()> {
     match val {
       #[allow(unused_comparisons)]
@@ -110,6 +114,10 @@ impl {{t.name.camel()}} {
     {{clear_bit!(d, self.t.arpe_field)}};
   }
 
+  pub fn is_auto_reload_preload_enabled(&mut self) -> bool {
+    {{is_set!(d, self.t.arpe_field)}}
+  }
+
   pub fn generate_update(&mut self) {
     {{set_bit!(d, self.t.ug_field)}};
   }
@@ -122,6 +130,10 @@ impl {{t.name.camel()}} {
     {{clear_bit!(d, self.t.cen_field)}};
   }
 
+  pub fn is_counter_enabled(&mut self) -> bool {
+    {{is_set!(d, self.t.cen_field)}}
+  }
+
   {% if t.has_moe_field() %}
   pub fn enable_outputs(&mut self) {
     {{set_bit!(d, self.t.moe_field())}};
@@ -129,6 +141,10 @@ impl {{t.name.camel()}} {
 
   pub fn disable_outputs(&mut self) {
     {{clear_bit!(d, self.t.moe_field())}};
+  }
+
+  pub fn are_outputs_enabled(&mut self) -> bool {
+    {{is_set!(d, self.t.moe_field())}}
   }
   {% endif %}
 }
@@ -197,7 +213,10 @@ pub enum {{channel.name.camel()}}OutputMode {
 {% endif %}
 
 pub struct {{channel.name.camel()}}Output {
-  _no_construct: ()
+  _no_construct: (),
+  {% if channel.as_output().has_complement() %}
+  complement: {{channel.name.camel()}}OutputComplement
+  {% endif %}
 }
 impl {{channel.name.camel()}}Output {
   {% if channel.as_output().has_io_select() %} 
@@ -216,16 +235,44 @@ impl {{channel.name.camel()}}Output {
     {{write_val!(d, channel.as_output().compare_mode.path, "compare_mode as u32")}};
     {{set_bit!(d, channel.as_output().enable_path)}};
     Self {
-      _no_construct: ()
+      _no_construct: (),
+      {% if channel.as_output().has_complement() %}
+      complement: {{channel.name.camel()}}OutputComplement::setup() 
+      {% endif %}
     }
   } 
+
   {% else %}
   pub(crate) fn setup(compare_mode: {{channel.name.camel()}}CompareMode) -> Self {
     {{write_val!(d, channel.as_output().compare_mode.path, "compare_mode as u32")}};
     {{set_bit!(d, channel.as_output().enable_path)}};
     Self {
-      _no_construct: ()
+      _no_construct: (),
+      {% if channel.as_output().has_complement() %}
+      complement: true
+      {% endif %}
     }
+  }
+  {% endif %}
+
+  pub fn teardown(self) -> Result<{{channel.name.camel()}}> {
+    {% if channel.as_output().has_io_select() %} 
+    {{reset!(d, channel.as_output().io_select().path)}};
+    {% endif %}
+    {{reset!(d, channel.as_output().compare_mode.path)}};
+    {{reset!(d, channel.as_output().enable_path)}};
+    Ok(
+      {{channel.name.camel()}} { _no_construct: () }
+    )
+  } 
+
+  {% if channel.as_output().has_complement() %}
+  pub fn complement(&self) -> &{{channel.name.camel()}}OutputComplement {
+    &self.complement
+  }
+
+  pub fn complement_mut(&mut self) -> &mut {{channel.name.camel()}}OutputComplement {
+    &mut self.complement
   }
   {% endif %}
 
@@ -249,7 +296,56 @@ impl {{channel.name.camel()}}Output {
       }
     }
   }
+
+  pub fn set_polarity(&mut self, polarity: ChannelPolarity) {
+    {{write_val!(d, channel.as_output().polarity_path, "polarity as u32")}};
+  }
+
+  pub fn get_polarity(&self) -> ChannelPolarity {
+    match {{is_set!(d, channel.as_output().polarity_path)}} {
+      true => ChannelPolarity::ActiveLow,
+      false => ChannelPolarity::ActiveHigh
+    }
+  }
+
 }
+
+{% if channel.as_output().has_complement() %}
+pub struct {{channel.name.camel()}}OutputComplement {
+  _no_construct: ()
+}
+impl {{channel.name.camel()}}OutputComplement {
+  pub(crate) fn setup() -> Self {
+    Self {
+      _no_construct: ()
+    }
+  }
+
+  pub fn enable(&mut self) {
+    {{set_bit!(d, channel.as_output().complement().enable_path)}};
+  }
+
+  pub fn disable(&mut self) {
+    {{clear_bit!(d, channel.as_output().complement().enable_path)}};
+  }
+
+  pub fn is_enabled(&self) -> bool {
+    {{is_set!(d, channel.as_output().complement().enable_path)}}
+  }
+
+  pub fn set_polarity(&mut self, polarity: ChannelPolarity) {
+    {{write_val!(d, channel.as_output().polarity_path, "polarity as u32")}};
+  }
+
+  pub fn get_polarity(&self) -> ChannelPolarity {
+    match {{is_set!(d, channel.as_output().polarity_path)}} {
+      true => ChannelPolarity::ActiveLow,
+      false => ChannelPolarity::ActiveHigh
+    }
+  }
+}
+{% endif %}
+
 {% endif %}
 
 {% if channel.is_input() -%}

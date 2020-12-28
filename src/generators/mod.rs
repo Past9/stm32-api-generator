@@ -105,7 +105,6 @@ fn itf(interrupt_free: bool) -> &'static str {
 
 pub trait ReadWrite {
   fn write_val(&self, path: &str, expr: &str, interrupt_free: bool) -> String;
-  fn write_bit(&self, path: &str, expr: &str, interrupt_free: bool) -> String;
   fn reset(&self, path: &str, interrupt_free: bool) -> String;
   fn set_bit(&self, path: &str, interrupt_free: bool) -> String;
   fn clear_bit(&self, path: &str, interrupt_free: bool) -> String;
@@ -126,17 +125,6 @@ impl ReadWrite for DeviceSpec {
     let itf = itf(interrupt_free);
 
     f!("write_val{itf}({address:#010x}, {mask:#034b}, {offset}, {expr}) /* Set {path} = {expr} */")
-  }
-
-  fn write_bit(&self, path: &str, expr: &str, interrupt_free: bool) -> String {
-    let field = self.get_field(path).unwrap();
-
-    let address = field.address();
-    let mask = field.mask();
-    let offset = field.offset;
-    let itf = itf(interrupt_free);
-
-    f!("write_bit{itf}({address:#010x}, {mask:#034b}, {offset}, {expr}) /* Set {path} = {expr} */")
   }
 
   fn reset(&self, path: &str, interrupt_free: bool) -> String {
@@ -265,16 +253,6 @@ macro_rules! write_val {
   };
   ($device:ident, $path:expr, $val:expr, $interrupt_free:expr) => {
     $device.write_val(&$path, &$val.to_string(), $interrupt_free);
-  };
-}
-
-#[macro_export]
-macro_rules! write_bit {
-  ($device:ident, $path:expr, $val:expr) => {
-    $device.write_bit(&$path, &$val.to_string(), true);
-  };
-  ($device:ident, $path:expr, $val:expr, $interrupt_free:expr) => {
-    $device.write_bit(&$path, &$val.to_string(), $interrupt_free);
   };
 }
 

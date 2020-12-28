@@ -75,16 +75,13 @@ impl Timer {
 
     Ok(Some(Self {
       name: name.clone(),
-      auto_reload_field: find_ranged_field(peripheral, "arr")?,
-      prescaler_field: find_ranged_field(peripheral, "psc")?,
-      counter_field: find_ranged_field(peripheral, "cnt")?,
-      arpe_field: find_field_path(peripheral, "arpe")?,
-      ug_field: find_field_path(peripheral, "ug")?,
-      cen_field: find_field_path(peripheral, "cen")?,
-      moe_field: match find_field_path(peripheral, "moe") {
-        Ok(moe) => Some(moe),
-        Err(_) => None,
-      },
+      auto_reload_field: try_find_ranged_field(peripheral, "arr")?,
+      prescaler_field: try_find_ranged_field(peripheral, "psc")?,
+      counter_field: try_find_ranged_field(peripheral, "cnt")?,
+      arpe_field: try_find_field_path(peripheral, "arpe")?,
+      ug_field: try_find_field_path(peripheral, "ug")?,
+      cen_field: try_find_field_path(peripheral, "cen")?,
+      moe_field: find_field_path(peripheral, "moe"),
       peripheral_enable_field: match device
         .iter_fields()
         .find(|f| f.name.to_lowercase() == enable_field_name)
@@ -193,6 +190,8 @@ pub struct OutputChannel {
   pub preload_path: String,
   pub compare_field: RangedField,
   pub enable_path: String,
+  pub polarity_path: String,
+  pub complement: Option<OutputComplement>,
 }
 impl OutputChannel {
   pub fn new(
@@ -227,10 +226,12 @@ impl OutputChannel {
         &f!("ccr{channel_number}"),
         "ccr",
       ) {
-        Ok(f) => f,
-        Err(_) => find_ranged_field(peripheral, &f!("ccr{channel_number}"))?,
+        Some(f) => f,
+        None => try_find_ranged_field(peripheral, &f!("ccr{channel_number}"))?,
       },
-      enable_path: find_field_path(peripheral, &f!("cc{channel_number}e"))?,
+      enable_path: try_find_field_path(peripheral, &f!("cc{channel_number}e"))?,
+      polarity_path: try_find_field_path(peripheral, &f!("cc{channel_number}p"))?,
+      complement: OutputComplement::new(device, peripheral, channel_number)?,
     }))
   }
 
@@ -243,6 +244,38 @@ impl OutputChannel {
       Some(ref f) => f.clone(),
       None => panic!("Channel output mode does not have an I/O mode select field"),
     }
+  }
+
+  pub fn has_complement(&self) -> bool {
+    self.complement.is_some()
+  }
+
+  pub fn complement(&self) -> &OutputComplement {
+    match self.complement {
+      Some(ref c) => &c,
+      None => panic!("Output does not have a complementary channel"),
+    }
+  }
+}
+
+#[derive(Clone)]
+pub struct OutputComplement {
+  pub enable_path: String,
+  pub polarity_path: String,
+}
+impl OutputComplement {
+  pub fn new(
+    device: &DeviceSpec,
+    peripheral: &PeripheralSpec,
+    channel_number: u32,
+  ) -> Result<Option<Self>> {
+    Ok(Some(Self {
+      enable_path: match find_field_path(peripheral, &f!("cc{channel_number}ne")) {
+        Some(path) => path,
+        None => return Ok(None),
+      },
+      polarity_path: try_find_field_path(peripheral, &f!("cc{channel_number}np"))?,
+    }))
   }
 }
 
@@ -285,10 +318,10 @@ impl InputChannel {
         &f!("ccr{channel_number}"),
         "ccr",
       ) {
-        Ok(f) => f,
-        Err(_) => find_ranged_field(peripheral, &f!("ccr{channel_number}"))?,
+        Some(f) => f,
+        None => try_find_ranged_field(peripheral, &f!("ccr{channel_number}"))?,
       },
-      enable_path: find_field_path(peripheral, &f!("cc{channel_number}e"))?,
+      enable_path: try_find_field_path(peripheral, &f!("cc{channel_number}e"))?,
     }))
   }
 
@@ -304,9 +337,16 @@ impl InputChannel {
   }
 }
 
-fn find_field_path(p: &PeripheralSpec, name: &str) -> Result<String> {
+fn find_field_path(p: &PeripheralSpec, name: &str) -> Option<String> {
   match p.iter_fields().find(|f| f.name.to_lowercase() == name) {
-    Some(f) => Ok(f.path()),
+    Some(f) => Some(f.path()),
+    None => None,
+  }
+}
+
+fn try_find_field_path(p: &PeripheralSpec, name: &str) -> Result<String> {
+  match find_field_path(p, name) {
+    Some(p) => Ok(p),
     None => Err(anyhow!(
       "Could not find field named '{}' on {}",
       name,
@@ -319,7 +359,7 @@ fn find_ranged_field_in_register(
   p: &PeripheralSpec,
   register_name: &str,
   field_name: &str,
-) -> Result<RangedField> {
+) -> Option<RangedField> {
   match p
     .iter_registers()
     .find(|r| r.name.to_lowercase() == register_name)
@@ -329,33 +369,47 @@ fn find_ranged_field_in_register(
       .iter()
       .find(|f| f.name.to_lowercase() == field_name)
     {
-      Some(f) => Ok(RangedField {
+      Some(f) => Some(RangedField {
         path: f.path().to_lowercase(),
         min: 0,
         max: (2u64.pow(f.width) - 1) as u32,
       }),
-      None => Err(anyhow!(
-        "Could not find field named '{}' on register {} in peripheral {}",
-        field_name,
-        register_name,
-        p.name
-      )),
+      None => None,
     },
+    None => None,
+  }
+}
+
+fn try_find_ranged_field_in_register(
+  p: &PeripheralSpec,
+  register_name: &str,
+  field_name: &str,
+) -> Result<RangedField> {
+  match find_ranged_field_in_register(p, register_name, field_name) {
+    Some(f) => Ok(f),
     None => Err(anyhow!(
-      "Could not find register named '{}' on peripheral {}",
+      "Could not find field named '{}' in register {} on peripheral {}",
+      field_name,
       register_name,
       p.name
     )),
   }
 }
 
-fn find_ranged_field(p: &PeripheralSpec, name: &str) -> Result<RangedField> {
+fn find_ranged_field(p: &PeripheralSpec, name: &str) -> Option<RangedField> {
   match p.iter_fields().find(|f| f.name.to_lowercase() == name) {
-    Some(f) => Ok(RangedField {
+    Some(f) => Some(RangedField {
       path: f.path().to_lowercase(),
       min: 0,
       max: (2u64.pow(f.width) - 1) as u32,
     }),
+    None => None,
+  }
+}
+
+fn try_find_ranged_field(p: &PeripheralSpec, name: &str) -> Result<RangedField> {
+  match find_ranged_field(p, name) {
+    Some(f) => Ok(f),
     None => Err(anyhow!(
       "Could not find field named '{}' on {}",
       name,

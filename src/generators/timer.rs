@@ -1,4 +1,4 @@
-use crate::{clear_bit, read_val, set_bit, write_val};
+use crate::{clear_bit, is_set, read_val, reset, set_bit, write_val};
 use crate::{
   generators::ReadWrite,
   system::{timer::Timer, SystemInfo},

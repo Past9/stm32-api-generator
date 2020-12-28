@@ -19,7 +19,7 @@ pub struct System {
   _no_construct: (),
   clocks: Clocks,
   {% for submodule in sys.submodules() -%}
-  has_{{submodule.name.snake()}}: bool,
+  owns_{{submodule.name.snake()}}: bool,
   {% endfor %}
 }
 impl System {
@@ -32,7 +32,7 @@ impl System {
       _no_construct: (),
       clocks: Clocks::new(clock_config)?,
       {% for submodule in sys.submodules() -%}
-      has_{{submodule.name.snake()}}: true,
+      owns_{{submodule.name.snake()}}: true,
       {% endfor %}
     })
   }
@@ -43,16 +43,16 @@ impl System {
 
   pub fn owns_everything(&self) -> bool {
     {% for submodule in sys.submodules() -%}
-    self.has_{{submodule.name.snake()}} &&
+    self.owns_{{submodule.name.snake()}} &&
     {% endfor %}
     true
   }
 
   {% for submodule in sys.submodules() -%}
   pub fn activate_{{submodule.name.snake()}}(&mut self) -> Result<{{submodule.name.camel()}}> {
-    match self.has_{{submodule.name.snake()}} {
+    match self.owns_{{submodule.name.snake()}} {
       true => {
-        self.has_{{submodule.name.snake()}} = false;
+        self.owns_{{submodule.name.snake()}} = false;
         let mut {{submodule.name.snake()}} = {{submodule.name.camel()}}::create(
           {% if submodule.needs_clocks %}
           &self.clocks
@@ -66,10 +66,10 @@ impl System {
   }
 
   pub fn deactivate_{{submodule.name.snake()}}(&mut self, mut {{submodule.name.snake()}}: {{submodule.name.camel()}}) -> Result<()> {
-    match self.has_{{submodule.name.snake()}} {
+    match self.owns_{{submodule.name.snake()}} {
       false => { 
         {{submodule.name.snake()}}.disable()?; 
-        self.has_{{submodule.name.snake()}} = true;
+        self.owns_{{submodule.name.snake()}} = true;
         Ok(())
       },
       true => Err(Error::new("{{submodule.name.camel()}} is already deactivated.")),

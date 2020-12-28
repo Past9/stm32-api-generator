@@ -3,3 +3,8 @@
 pub mod {{timer.name.snake()}}; 
 {% endfor %}
 
+
+pub enum ChannelPolarity {
+  ActiveHigh = 0,
+  ActiveLow = 1
+}
