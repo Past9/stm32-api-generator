@@ -262,6 +262,7 @@ impl OutputChannel {
 pub struct OutputComplement {
   pub enable_path: String,
   pub polarity_path: String,
+  pub dtg_path: String,
 }
 impl OutputComplement {
   pub fn new(
@@ -275,6 +276,7 @@ impl OutputComplement {
         None => return Ok(None),
       },
       polarity_path: try_find_field_path(peripheral, &f!("cc{channel_number}np"))?,
+      dtg_path: try_find_field_path(peripheral, "dtg")?,
     }))
   }
 }
