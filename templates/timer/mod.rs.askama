@@ -1,10 +1,83 @@
+use core::time::Duration;
 
 {% for timer in s.timers -%}
 pub mod {{timer.name.snake()}}; 
 {% endfor %}
 
+use crate::Error;
+pub type Result<T> = core::result::Result<T, Error>;
+
 
 pub enum ChannelPolarity {
   ActiveHigh = 0,
   ActiveLow = 1
+}
+
+
+pub trait Timer {
+  fn source_freq(&self) -> f32;
+  fn set_prescaler(&mut self, val: u32) -> Result<()>;
+  fn get_prescaler(&self) -> u32;
+  fn set_auto_reload(&mut self, val: u32) -> Result<()>;
+  fn get_auto_reload(&self) -> u32;
+  fn get_count(&self) -> u32;
+  fn enable_auto_reload_preload(&mut self);
+  fn disable_auto_reload_preload(&mut self);
+  fn is_auto_reload_preload_enabled(&self) -> bool;
+  fn generate_update(&mut self);
+  fn enable_counter(&mut self);
+  fn disable_counter(&mut self);
+  fn is_counter_enabled(&self) -> bool;
+  fn start(&mut self);
+  fn stop(&mut self);
+  fn is_running(&self) -> bool;
+
+  fn config_as_pwm(&mut self) {
+    self.enable_auto_reload_preload();
+  }
+
+  fn get_freq(&mut self) -> f32 {
+    self.source_freq() / self.get_auto_reload() as f32
+  }
+
+  fn set_freq(&mut self, freq: f32) -> Result<()> {
+    let cycle_ticks = (self.source_freq() / freq) as u32;
+    self.set_auto_reload(cycle_ticks)?;
+    Ok(())
+  }
+}
+
+pub trait OutputTimer {
+  fn enable_outputs(&mut self);
+  fn disable_outputs(&mut self);
+  fn are_outputs_enabled(&self) -> bool;
+}
+
+pub trait OutputChannel {
+  fn enable_preload(&mut self);
+  fn disable_preload(&mut self);
+  fn set_compare_value(&mut self, val: u32) -> Result<()>;
+  fn get_compare_value(&self) -> u32;
+  fn set_polarity(&mut self, polarity: ChannelPolarity);
+  fn get_polarity(&self) -> ChannelPolarity;
+  fn set_duty_cycle(&mut self, duty_cycle: f32) -> Result<()>;
+
+  fn config_as_pwm(&mut self) {
+    self.enable_preload();
+  }
+
+}
+
+pub trait HasComplement {
+  fn complement(&self) -> &OutputComplement;
+  fn complement_mut(&mut self) -> &mut OutputComplement;
+}
+
+pub trait OutputComplement {
+  fn enable(&mut self);
+  fn disable(&mut self);
+  fn is_enabled(&self) -> bool;
+  fn set_polarity(&mut self, polarity: ChannelPolarity);
+  fn get_polarity(&self) -> ChannelPolarity;
+  fn set_deadtime(&mut self, duration: Duration) -> Result<()>;
 }

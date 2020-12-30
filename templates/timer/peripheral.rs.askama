@@ -1,7 +1,7 @@
 {% let d = d %}
 
 use crate::{ write_val_itf, read_val, set_bit_itf, clear_bit_itf, is_set, Error, Result, clocks::Clocks };
-use super::ChannelPolarity;
+use super::{ Timer, OutputChannel };
 
 pub struct {{t.name.camel()}} {
   _no_construct: (),
@@ -22,10 +22,6 @@ impl {{t.name.camel()}} {
     })
   }
 
-  pub fn source_freq(&self) -> f32 {
-    self.source_freq
-  }
-
   pub fn owns_everything(&self) -> bool {
     {% for channel in t.channels -%}
     self.has_{{channel.name.snake()}} &&
@@ -38,7 +34,7 @@ impl {{t.name.camel()}} {
     match self.has_{{channel.name.snake()}} {
       true => {
         self.has_{{channel.name.snake()}} = false;
-        Ok({{channel.name.camel()}}::setup(self.source_freq))
+        Ok({{channel.name.camel()}}::setup(self.source_freq, &|| self.get_auto_reload()))
       },
       false => Err(Error::new("{{channel.name.camel()}} is already taken."))
     }
@@ -64,11 +60,14 @@ impl {{t.name.camel()}} {
     Ok(())
   }
 
-  pub fn is_enabled(&self) -> bool {
-    {{is_set!(d, self.t.peripheral_enable_field)}}
+
+}
+impl super::Timer for {{t.name.camel()}} { 
+  fn source_freq(&self) -> f32 {
+    self.source_freq
   }
 
-  pub fn set_prescaler(&mut self, val: u32) -> Result<()> {
+  fn set_prescaler(&mut self, val: u32) -> Result<()> {
     match val {
       #[allow(unused_comparisons)]
       v if v < {{t.prescaler_field.min}} => Err(Error::new("Prescaler value must be at least {{t.prescaler_field.min}}")), 
@@ -81,11 +80,11 @@ impl {{t.name.camel()}} {
     }
   }
 
-  pub fn get_prescaler(&self) -> u32 {
+  fn get_prescaler(&self) -> u32 {
     {{read_val!(d, self.t.prescaler_field.path)}}
   }
 
-  pub fn set_auto_reload(&mut self, val: u32) -> Result<()> {
+  fn set_auto_reload(&mut self, val: u32) -> Result<()> {
     match val {
       #[allow(unused_comparisons)]
       v if v < {{t.auto_reload_field.min}} => Err(Error::new("Auto-reload value must be at least {{t.auto_reload_field.min}}")), 
@@ -93,61 +92,87 @@ impl {{t.name.camel()}} {
       v if v > {{t.auto_reload_field.max}} => Err(Error::new("Auto-reload value must be at most {{t.auto_reload_field.max}}")),
       v => {
         {{write_val!(d, self.t.auto_reload_field.path, "v")}};
+
+
+
         Ok(())
       }
     }
   }
 
-  pub fn get_auto_reload(&self) -> u32 {
+  fn get_auto_reload(&self) -> u32 {
     {{read_val!(d, self.t.auto_reload_field.path)}}
   }
 
-  pub fn get_count(&self) -> u32 {
+  fn get_count(&self) -> u32 {
     {{read_val!(d, self.t.counter_field.path)}}
   }
 
-  pub fn enable_auto_reload_preload(&mut self) {
+  fn enable_auto_reload_preload(&mut self) {
     {{set_bit!(d, self.t.arpe_field)}};
   }
 
-  pub fn disable_auto_reload_preload(&mut self) {
+  fn disable_auto_reload_preload(&mut self) {
     {{clear_bit!(d, self.t.arpe_field)}};
   }
 
-  pub fn is_auto_reload_preload_enabled(&mut self) -> bool {
+  fn is_auto_reload_preload_enabled(&self) -> bool {
     {{is_set!(d, self.t.arpe_field)}}
   }
 
-  pub fn generate_update(&mut self) {
+  fn generate_update(&mut self) {
     {{set_bit!(d, self.t.ug_field)}};
   }
 
-  pub fn enable_counter(&mut self) {
+  fn enable_counter(&mut self) {
     {{set_bit!(d, self.t.cen_field)}};
   }
 
-  pub fn disable_counter(&mut self) {
+  fn disable_counter(&mut self) {
     {{clear_bit!(d, self.t.cen_field)}};
   }
 
-  pub fn is_counter_enabled(&mut self) -> bool {
+  fn is_counter_enabled(&self) -> bool {
     {{is_set!(d, self.t.cen_field)}}
   }
 
-  {% if t.has_moe_field() %}
-  pub fn enable_outputs(&mut self) {
+  fn start(&mut self) {
+    {{set_bit!(d, self.t.cen_field)}};
+    {% if t.has_moe_field() %}
+      {{set_bit!(d, self.t.moe_field())}};
+    {% endif %}
+  }
+
+  fn stop(&mut self) {
+    {{clear_bit!(d, self.t.cen_field)}};
+    {% if t.has_moe_field() %}
+      {{clear_bit!(d, self.t.moe_field())}};
+    {% endif %}
+  }
+
+  fn is_running(&self) -> bool {
+    {{is_set!(d, self.t.cen_field)}} &&
+    {%- if t.has_moe_field() %}
+    {{is_set!(d, self.t.moe_field())}} &&
+    {% endif -%}
+    true
+  }
+}
+{% if t.has_moe_field() %}
+impl super::OutputTimer for {{t.name.camel()}} {
+  fn enable_outputs(&mut self) {
     {{set_bit!(d, self.t.moe_field())}};
   }
 
-  pub fn disable_outputs(&mut self) {
+  fn disable_outputs(&mut self) {
     {{clear_bit!(d, self.t.moe_field())}};
   }
 
-  pub fn are_outputs_enabled(&mut self) -> bool {
+  fn are_outputs_enabled(&self) -> bool {
     {{is_set!(d, self.t.moe_field())}}
   }
-  {% endif %}
 }
+{% endif %}
 
 
 {% for channel in t.channels %}
@@ -156,7 +181,7 @@ pub struct {{channel.name.camel()}} {
   source_freq: f32,
 }
 impl {{channel.name.camel()}} {
-  pub(crate) fn setup(source_freq: f32) -> Self {
+  pub(crate) fn setup(source_freq: f32, get_parent_auto_reload: &dyn Fn() -> u32) -> Self {
     Self {
       _no_construct: (),
       source_freq
@@ -164,7 +189,7 @@ impl {{channel.name.camel()}} {
   } 
 
   {% if channel.is_output() -%}
-  pub fn as_output(&mut self,
+  pub fn as_output(self,
     {% if channel.as_output().has_io_select() && channel.as_output().io_select().values.len() > 1 %}
     output_mode: {{channel.name.camel()}}OutputMode,
     {% endif %}
@@ -282,16 +307,17 @@ impl {{channel.name.camel()}}Output {
     &mut self.complement
   }
   {% endif %}
-
-  pub fn enable_preload(&mut self) {
+}
+impl OutputChannel for {{channel.name.camel()}}Output {
+  fn enable_preload(&mut self) {
     {{set_bit!(d, channel.as_output().preload_path)}};
   }
 
-  pub fn disable_preload(&mut self) {
+  fn disable_preload(&mut self) {
     {{clear_bit!(d, channel.as_output().preload_path)}};
   }
 
-  pub fn set_compare_value(&mut self, val: u32) -> Result<()> {
+  fn set_compare_value(&mut self, val: u32) -> Result<()> {
     match val {
       #[allow(unused_comparisons)]
       v if v < {{channel.as_output().compare_field.min}} => Err(Error::new("Compare value must be at least {{channel.as_output().compare_field.min}}")), 
@@ -304,17 +330,31 @@ impl {{channel.name.camel()}}Output {
     }
   }
 
-  pub fn set_polarity(&mut self, polarity: ChannelPolarity) {
+  fn get_compare_value(&self) -> u32 {
+    {{read_val!(d, channel.as_output().compare_field.path)}}
+  }
+
+  fn set_polarity(&mut self, polarity: super::ChannelPolarity) {
     {{write_val!(d, channel.as_output().polarity_path, "polarity as u32")}};
   }
 
-  pub fn get_polarity(&self) -> ChannelPolarity {
+  fn get_polarity(&self) -> super::ChannelPolarity {
     match {{is_set!(d, channel.as_output().polarity_path)}} {
-      true => ChannelPolarity::ActiveLow,
-      false => ChannelPolarity::ActiveHigh
+      true => super::ChannelPolarity::ActiveLow,
+      false => super::ChannelPolarity::ActiveHigh
     }
   }
 
+  fn set_duty_cycle(&mut self, duty_cycle: f32) -> Result<()> {
+    let cycle_ticks = {{read_val!(d, self.t.auto_reload_field.path)}};
+    let dc = match duty_cycle {
+      dc if dc < 0f32 => 0f32,
+      dc if dc > 1f32 => 1f32,
+      dc => dc,
+    };
+    self.set_compare_value((dc * cycle_ticks as f32) as u32)?;
+    Ok(())
+  }
 }
 
 {% if channel.as_output().has_complement() %}
@@ -342,14 +382,14 @@ impl {{channel.name.camel()}}OutputComplement {
     {{is_set!(d, channel.as_output().complement().enable_path)}}
   }
 
-  pub fn set_polarity(&mut self, polarity: ChannelPolarity) {
+  pub fn set_polarity(&mut self, polarity: super::ChannelPolarity) {
     {{write_val!(d, channel.as_output().polarity_path, "polarity as u32")}};
   }
 
-  pub fn get_polarity(&self) -> ChannelPolarity {
+  pub fn get_polarity(&self) -> super::ChannelPolarity {
     match {{is_set!(d, channel.as_output().polarity_path)}} {
-      true => ChannelPolarity::ActiveLow,
-      false => ChannelPolarity::ActiveHigh
+      true => super::ChannelPolarity::ActiveLow,
+      false => super::ChannelPolarity::ActiveHigh
     }
   }
 
@@ -361,7 +401,7 @@ impl {{channel.name.camel()}}OutputComplement {
       n if n >= 128 && n <= 254 => Ok(0b10000000 + (n / 2) - 64),
       n if n >= 256 && n <= 504 => Ok(0b11000000 + (n / 8) - 32),
       n if n >= 512 && n <= 1008 => Ok(0b11100000 + (n / 16) - 32),
-      _ => Err(Error::new("Out of range")),
+      _ => Err(Error::new("Duration out of range")),
     }?;
     {{write_val!(d, channel.as_output().complement().dtg_path, "bits")}};
     Ok(())
