@@ -69,8 +69,8 @@ pub trait OutputChannel {
 }
 
 pub trait HasComplement {
-  fn complement(&self) -> &OutputComplement;
-  fn complement_mut(&mut self) -> &mut OutputComplement;
+  fn complement(&self) -> &dyn OutputComplement;
+  fn complement_mut(&mut self) -> &mut dyn OutputComplement;
 }
 
 pub trait OutputComplement {

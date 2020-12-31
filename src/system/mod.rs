@@ -2,15 +2,17 @@ use anyhow::Result;
 use heck::{CamelCase, SnakeCase};
 use svd_expander::{DeviceSpec, EnumeratedValueSpec, FieldSpec};
 
-use self::{gpio::Gpio, timer::Timer};
+use self::{gpio::Gpio, spi::Spi, timer::Timer};
 
 pub mod gpio;
+pub mod spi;
 pub mod timer;
 
 pub struct SystemInfo<'a> {
   pub device: &'a DeviceSpec,
   pub gpios: Vec<Gpio>,
   pub timers: Vec<Timer>,
+  pub spis: Vec<Spi>,
 }
 impl<'a> SystemInfo<'a> {
   pub fn new(device: &'a DeviceSpec) -> Result<Self> {
@@ -18,9 +20,11 @@ impl<'a> SystemInfo<'a> {
       device,
       gpios: Vec::new(),
       timers: Vec::new(),
+      spis: Vec::new(),
     };
     system_info.load_gpios(device)?;
     system_info.load_timers(device)?;
+    system_info.load_spis(device)?;
 
     Ok(system_info)
   }
@@ -31,6 +35,7 @@ impl<'a> SystemInfo<'a> {
       .iter()
       .map(|g| g.submodule())
       .chain(self.timers.iter().map(|t| t.submodule()))
+      .chain(self.spis.iter().map(|t| t.submodule()))
       .collect::<Vec<Submodule>>();
 
     submodules.sort();
@@ -58,6 +63,17 @@ impl<'a> SystemInfo<'a> {
       if let Some(timer) = Timer::new(&self.device, peripheral)? {
         self.timers.push(timer);
       };
+    }
+    Ok(())
+  }
+
+  fn load_spis(&mut self, device: &DeviceSpec) -> Result<()> {
+    for peripheral in device
+      .peripherals
+      .iter()
+      .filter(|p| p.name.to_lowercase().starts_with("spi"))
+    {
+      self.spis.push(Spi::new(&self.device, peripheral)?);
     }
     Ok(())
   }

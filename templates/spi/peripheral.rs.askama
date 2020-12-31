@@ -1,0 +1,25 @@
+{% let d = d %}
+
+use crate::{ set_bit_itf, clear_bit_itf, Result, clocks::Clocks };
+
+pub struct {{spi.name.camel()}} { 
+  _no_construct: (),
+}
+impl {{spi.name.camel()}} {
+
+  pub(crate) fn create(clocks: &Clocks) -> Result<Self> {
+    Ok(Self {
+      _no_construct: (),
+    })
+  }
+
+  pub(crate) fn enable(&mut self) {
+    {{set_bit!(d, self.spi.peripheral_enable_field)}};
+  }
+
+  pub(crate) fn disable(&mut self) -> Result<()> {
+    {{clear_bit!(d, self.spi.peripheral_enable_field)}};
+    Ok(())
+  }
+
+}

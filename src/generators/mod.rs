@@ -6,6 +6,7 @@ use svd_expander::DeviceSpec;
 
 pub mod clocks;
 pub mod gpio;
+pub mod spi;
 pub mod timer;
 
 pub fn generate(dry_run: bool, device_spec: &DeviceSpec, out_dir: &OutputDirectory) -> Result<()> {
@@ -14,6 +15,7 @@ pub fn generate(dry_run: bool, device_spec: &DeviceSpec, out_dir: &OutputDirecto
   clocks::generate(dry_run, device_spec, out_dir)?;
   gpio::generate(dry_run, &sys_info, out_dir)?;
   timer::generate(dry_run, &sys_info, out_dir)?;
+  spi::generate(dry_run, &sys_info, out_dir)?;
 
   let lib_template = LibTemplate {
     device: &device_spec,

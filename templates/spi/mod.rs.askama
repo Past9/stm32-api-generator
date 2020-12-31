@@ -1,0 +1,21 @@
+
+{% for spi in s.spis -%}
+pub mod {{spi.name.snake()}};
+{% endfor %}
+
+pub enum SpiChannelType {
+  FullDuplex,
+  HalfDuplex,
+  SimplexReceive,
+  SimplexTransmit,
+}
+
+pub enum SpiRole {
+  Master,
+  Slave,
+}
+
+pub enum SpiClockMode {
+  Motorola,
+  Ti,
+}

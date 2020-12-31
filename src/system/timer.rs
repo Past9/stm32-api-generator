@@ -231,7 +231,7 @@ impl OutputChannel {
       },
       enable_path: try_find_field_path(peripheral, &f!("cc{channel_number}e"))?,
       polarity_path: try_find_field_path(peripheral, &f!("cc{channel_number}p"))?,
-      complement: OutputComplement::new(device, peripheral, channel_number)?,
+      complement: OutputComplement::new(peripheral, channel_number)?,
     }))
   }
 
@@ -265,11 +265,7 @@ pub struct OutputComplement {
   pub dtg_path: String,
 }
 impl OutputComplement {
-  pub fn new(
-    device: &DeviceSpec,
-    peripheral: &PeripheralSpec,
-    channel_number: u32,
-  ) -> Result<Option<Self>> {
+  pub fn new(peripheral: &PeripheralSpec, channel_number: u32) -> Result<Option<Self>> {
     Ok(Some(Self {
       enable_path: match find_field_path(peripheral, &f!("cc{channel_number}ne")) {
         Some(path) => path,
@@ -379,22 +375,6 @@ fn find_ranged_field_in_register(
       None => None,
     },
     None => None,
-  }
-}
-
-fn try_find_ranged_field_in_register(
-  p: &PeripheralSpec,
-  register_name: &str,
-  field_name: &str,
-) -> Result<RangedField> {
-  match find_ranged_field_in_register(p, register_name, field_name) {
-    Some(f) => Ok(f),
-    None => Err(anyhow!(
-      "Could not find field named '{}' in register {} on peripheral {}",
-      field_name,
-      register_name,
-      p.name
-    )),
   }
 }
 

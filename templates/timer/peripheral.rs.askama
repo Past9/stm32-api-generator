@@ -1,7 +1,6 @@
 {% let d = d %}
 
 use crate::{ write_val_itf, read_val, set_bit_itf, clear_bit_itf, is_set, Error, Result, clocks::Clocks };
-use super::{ Timer, OutputChannel };
 
 pub struct {{t.name.camel()}} {
   _no_construct: (),
@@ -34,7 +33,7 @@ impl {{t.name.camel()}} {
     match self.has_{{channel.name.snake()}} {
       true => {
         self.has_{{channel.name.snake()}} = false;
-        Ok({{channel.name.camel()}}::setup(self.source_freq, &|| self.get_auto_reload()))
+        Ok({{channel.name.camel()}}::setup(self.source_freq, &|| super::Timer::get_auto_reload(self)))
       },
       false => Err(Error::new("{{channel.name.camel()}} is already taken."))
     }
@@ -308,7 +307,7 @@ impl {{channel.name.camel()}}Output {
   }
   {% endif %}
 }
-impl OutputChannel for {{channel.name.camel()}}Output {
+impl super::OutputChannel for {{channel.name.camel()}}Output {
   fn enable_preload(&mut self) {
     {{set_bit!(d, channel.as_output().preload_path)}};
   }
