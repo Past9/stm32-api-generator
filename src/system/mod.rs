@@ -1,6 +1,6 @@
-use anyhow::Result;
+use anyhow::{anyhow, Result};
 use heck::{CamelCase, SnakeCase};
-use svd_expander::{DeviceSpec, EnumeratedValueSpec, FieldSpec};
+use svd_expander::{DeviceSpec, EnumeratedValueSpec, FieldSpec, PeripheralSpec, RegisterSpec};
 
 use self::{gpio::Gpio, spi::Spi, timer::Timer};
 
@@ -130,6 +130,15 @@ pub struct RangedField {
   pub min: u32,
   pub max: u32,
 }
+impl RangedField {
+  pub fn from_field_spec(f: FieldSpec) -> Self {
+    Self {
+      path: f.path().to_lowercase(),
+      min: 0,
+      max: (2u64.pow(f.width) - 1) as u32,
+    }
+  }
+}
 
 #[derive(Clone)]
 pub struct EnumField {
@@ -139,7 +148,7 @@ pub struct EnumField {
   pub values: Vec<EnumValue>,
 }
 impl EnumField {
-  pub fn new(field: &FieldSpec) -> Self {
+  pub fn from_field_spec(field: FieldSpec) -> Self {
     Self {
       description: match &field.description {
         Some(d) => d.clone(),
@@ -183,4 +192,93 @@ impl EnumValue {
       None => None,
     }
   }
+}
+
+#[allow(dead_code)]
+fn find_field_in_peripheral(p: &PeripheralSpec, name: &str) -> Option<FieldSpec> {
+  p.iter_fields()
+    .find(|f| f.name.to_lowercase() == name.to_lowercase())
+    .map(|f| f.clone())
+}
+
+#[allow(dead_code)]
+fn find_ranged_field_in_peripheral(p: &PeripheralSpec, name: &str) -> Option<RangedField> {
+  find_field_in_peripheral(p, name).map(RangedField::from_field_spec)
+}
+
+#[allow(dead_code)]
+fn find_enum_field_in_peripheral(p: &PeripheralSpec, name: &str) -> Option<EnumField> {
+  find_field_in_peripheral(p, name).map(EnumField::from_field_spec)
+}
+
+#[allow(dead_code)]
+fn try_find_field_in_peripheral(p: &PeripheralSpec, name: &str) -> Result<FieldSpec> {
+  find_field_in_peripheral(p, name).ok_or(anyhow!(
+    "Could not find field {} in peripheral {}",
+    name,
+    p.name
+  ))
+}
+
+#[allow(dead_code)]
+fn try_find_ranged_field_in_peripheral(p: &PeripheralSpec, name: &str) -> Result<RangedField> {
+  find_ranged_field_in_peripheral(p, name).ok_or(anyhow!(
+    "Could not find field {} in peripheral {}",
+    name,
+    p.name
+  ))
+}
+
+#[allow(dead_code)]
+fn try_find_enum_field_in_peripheral(p: &PeripheralSpec, name: &str) -> Result<EnumField> {
+  find_enum_field_in_peripheral(p, name).ok_or(anyhow!(
+    "Could not find field {} in peripheral {}",
+    name,
+    p.name
+  ))
+}
+
+#[allow(dead_code)]
+fn find_field_in_register(r: &RegisterSpec, name: &str) -> Option<FieldSpec> {
+  r.fields
+    .iter()
+    .find(|f| f.name.to_lowercase() == name.to_lowercase())
+    .map(|f| f.clone())
+}
+
+#[allow(dead_code)]
+fn find_ranged_field_in_register(r: &RegisterSpec, name: &str) -> Option<RangedField> {
+  find_field_in_register(r, name).map(RangedField::from_field_spec)
+}
+
+#[allow(dead_code)]
+fn find_enum_field_in_register(r: &RegisterSpec, name: &str) -> Option<EnumField> {
+  find_field_in_register(r, name).map(EnumField::from_field_spec)
+}
+
+#[allow(dead_code)]
+fn try_find_field_in_register(r: &RegisterSpec, name: &str) -> Result<FieldSpec> {
+  find_field_in_register(r, name).ok_or(anyhow!(
+    "Could not find field {} in register {}",
+    name,
+    r.name
+  ))
+}
+
+#[allow(dead_code)]
+fn try_find_ranged_field_in_register(r: &RegisterSpec, name: &str) -> Result<RangedField> {
+  find_ranged_field_in_register(r, name).ok_or(anyhow!(
+    "Could not find field {} in register {}",
+    name,
+    r.name
+  ))
+}
+
+#[allow(dead_code)]
+fn try_find_enum_field_in_register(r: &RegisterSpec, name: &str) -> Result<EnumField> {
+  find_enum_field_in_register(r, name).ok_or(anyhow!(
+    "Could not find field {} in register {}",
+    name,
+    r.name
+  ))
 }

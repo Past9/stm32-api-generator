@@ -1,7 +1,7 @@
 use std::{collections::hash_map::Values, fs};
 use std::{collections::HashMap, path::Path};
 
-use anyhow::{anyhow, Result};
+use anyhow::{anyhow, bail, Result};
 use serde::Deserialize;
 
 enum ClockOutputNameSelection {
@@ -310,11 +310,7 @@ impl ClockSchematic {
     for name in names.iter() {
       for ch in name.to_lowercase().chars() {
         if !allowed_chars.contains(ch) {
-          return Err(anyhow!(
-            "Name '{}' contains invalid character: '{}'",
-            name,
-            ch
-          ));
+          bail!("Name '{}' contains invalid character: '{}'", name, ch);
         }
       }
     }
@@ -331,7 +327,7 @@ impl ClockSchematic {
       match last_name {
         Some(ref ln) => {
           if ln == cur_name {
-            return Err(anyhow!("Duplicate name: {}", cur_name));
+            bail!("Duplicate name: {}", cur_name);
           }
         }
         None => {}
@@ -358,10 +354,10 @@ impl ClockSchematic {
       .collect::<Vec<String>>();
 
     if nonexistent_inputs.len() > 0 {
-      return Err(anyhow!(
+      bail!(
         "Nonexistent inputs: {} (maybe these are terminal taps?)",
         nonexistent_inputs.join(", ")
-      ));
+      );
     }
 
     Ok(())
@@ -380,10 +376,10 @@ impl ClockSchematic {
       .collect::<Vec<String>>();
 
     if unused_outputs.len() > 0 {
-      return Err(anyhow!(
+      bail!(
         "Unused outputs: {} (maybe these are non-terminal taps?)",
         unused_outputs.join(", ")
-      ));
+      );
     }
 
     Ok(())
@@ -398,10 +394,10 @@ impl ClockSchematic {
       .collect::<Vec<String>>();
 
     if multiplexers_with_bad_defaults.len() > 0 {
-      return Err(anyhow!(
+      bail!(
         "Multiplexers have default inputs not in their input lists: {}",
         multiplexers_with_bad_defaults.join(", ")
-      ));
+      );
     }
 
     Ok(())
@@ -419,10 +415,10 @@ impl ClockSchematic {
       .collect::<Vec<String>>();
 
     if dividers_with_bad_defaults.len() > 0 {
-      return Err(anyhow!(
+      bail!(
         "Dividers have default values not in their value lists: {}",
         dividers_with_bad_defaults.join(", ")
-      ));
+      );
     }
 
     Ok(())
@@ -440,10 +436,10 @@ impl ClockSchematic {
       .collect::<Vec<String>>();
 
     if multipliers_with_bad_defaults.len() > 0 {
-      return Err(anyhow!(
+      bail!(
         "Multipliers have default values not in their value lists: {}",
         multipliers_with_bad_defaults.join(", ")
-      ));
+      );
     }
 
     Ok(())

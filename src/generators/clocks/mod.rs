@@ -8,7 +8,7 @@ use crate::file::OutputDirectory;
 use self::templates::ClocksTemplate;
 use askama::Template;
 
-use anyhow::{anyhow, Result};
+use anyhow::{anyhow, bail, Result};
 use schematic::{ClockComponent, ClockSchematic};
 
 pub fn generate(dry_run: bool, d: &DeviceSpec, out_dir: &OutputDirectory) -> Result<()> {
@@ -82,9 +82,7 @@ impl<'a> ClockGenerator<'a> {
 
     for path in input_paths {
       match self.spec.try_get_field(&path) {
-        None => {
-          return Err(anyhow!("No field named '{}' in SVD spec", path));
-        }
+        None => bail!("No field named '{}' in SVD spec", path),
         _ => {}
       }
     }

@@ -6,7 +6,7 @@ mod logging;
 use std::fs::File;
 use std::io::Read;
 
-use anyhow::{anyhow, Result};
+use anyhow::{bail, Result};
 use clap::{App, Arg};
 use glob::glob;
 use heck::KebabCase;
@@ -89,7 +89,7 @@ fn run() -> Result<()> {
 
   let out_dir = OutputDirectory::new(match matches.value_of("out") {
     Some(od) => od,
-    None => return Err(anyhow!("No output directory was provided.")),
+    None => bail!("No output directory was provided."),
   })?;
 
   let file_glob = matches.value_of("files").unwrap_or("./*");
@@ -110,7 +110,7 @@ fn run() -> Result<()> {
 
       let path_str = match entry.clone().into_os_string().into_string() {
         Ok(s) => s,
-        Err(_) => return Err(anyhow!("Could not convert OS String to String")),
+        Err(_) => bail!("Could not convert OS String to String"),
       };
 
       info!("Loading {}", &path_str);

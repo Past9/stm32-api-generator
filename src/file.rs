@@ -2,7 +2,7 @@ use std::fs;
 use std::fs::create_dir_all;
 use std::{io, ops::Deref, path::PathBuf, process::Command};
 
-use anyhow::{anyhow, Result};
+use anyhow::{anyhow, bail, Result};
 use io::Write;
 
 pub struct OutputDirectory {
@@ -21,7 +21,7 @@ impl OutputDirectory {
     path_buf.push(subdir);
     Self::new(match path_buf.into_os_string().into_string() {
       Ok(ref s) => s,
-      Err(_) => return Err(anyhow!("Could not convert path to string")),
+      Err(_) => bail!("Could not convert path to string"),
     })
   }
 
@@ -50,10 +50,10 @@ impl OutputDirectory {
     create_dir_all(match file_path_buf.parent() {
       Some(path) => path,
       None => {
-        return Err(anyhow!(
+        bail!(
           "File path {} has no parent directory",
           &file_path_buf.canonicalize()?.to_string_lossy()
-        ))
+        )
       }
     })?;
 

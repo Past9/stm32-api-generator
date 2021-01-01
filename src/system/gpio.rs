@@ -1,4 +1,4 @@
-use anyhow::{anyhow, Result};
+use anyhow::{bail, Result};
 use regex::Regex;
 use svd_expander::{PeripheralSpec, RegisterSpec};
 
@@ -15,10 +15,10 @@ impl Gpio {
     let letter = match peripheral.name.to_lowercase().chars().nth(4) {
       Some(l) => l,
       None => {
-        return Err(anyhow!(
+        bail!(
           "Peripheral '{}' is not named as expected for a GPIO peripheral (i.e. 'GPIOA')",
           peripheral.name
-        ))
+        )
       }
     };
 
@@ -65,11 +65,7 @@ impl Pin {
     let af_register_name = match number {
       0..=7 => "afrl",
       8..=15 => "afrh",
-      _ => {
-        return Err(anyhow!(f!(
-          "Pin number {number} out of bounds for alt functions."
-        )))
-      }
+      _ => bail!("Pin number {} out of bounds for alt functions.", number),
     };
 
     let mut alt_funcs = Vec::new();
