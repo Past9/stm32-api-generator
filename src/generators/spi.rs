@@ -1,4 +1,4 @@
-use crate::{clear_bit, set_bit};
+use crate::{clear_bit, is_set, read_val, reset, set_bit, write_val};
 use crate::{
   file::OutputDirectory,
   generators::ReadWrite,
@@ -12,7 +12,7 @@ pub fn generate(dry_run: bool, sys_info: &SystemInfo, out_dir: &OutputDirectory)
   for spi in sys_info.spis.iter() {
     out_dir.publish(
       dry_run,
-      &format!("src/spi/{}.rs", spi.name.snake()),
+      &format!("src/spi/{}.rs", spi.struct_name.snake()),
       &PeripheralTemplate {
         spi: &spi,
         d: &sys_info.device,

@@ -1,4 +1,4 @@
-use anyhow::{anyhow, Result};
+use anyhow::{anyhow, bail, Result};
 use heck::{CamelCase, SnakeCase};
 use svd_expander::{DeviceSpec, EnumeratedValueSpec, FieldSpec, PeripheralSpec, RegisterSpec};
 

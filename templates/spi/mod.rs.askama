@@ -1,21 +1,42 @@
 
 {% for spi in s.spis -%}
-pub mod {{spi.name.snake()}};
+pub mod {{spi.struct_name.snake()}};
 {% endfor %}
+
+pub enum BidiMode {
+  TwoLineUnidirectional = 0,
+  OneLineBidirectional = 1
+}
+
+pub enum FrameFormat {
+  MsbFirst = 0,
+  LsbFirst = 1
+}
+
+pub enum BaudRateScale {
+  Div2 = 000,
+  Div4 = 001,
+  Div8 = 010,
+  Div16 = 011,
+  Div32 = 100,
+  Div64 = 101,
+  Div128 = 110,
+  Div256 = 111
+}
+
+pub enum ClockPolarity {
+  IdleLow = 0,
+  IdleHigh = 1
+}
+
+pub enum ClockPhase {
+  FirstClockTransition = 0,
+  SecondClockTransition = 1
+}
 
 pub enum SpiChannelType {
   FullDuplex,
   HalfDuplex,
   SimplexReceive,
   SimplexTransmit,
-}
-
-pub enum SpiRole {
-  Master,
-  Slave,
-}
-
-pub enum SpiClockMode {
-  Motorola,
-  Ti,
 }

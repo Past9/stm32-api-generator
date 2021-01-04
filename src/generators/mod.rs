@@ -85,7 +85,7 @@ struct IncludeCargoTomlTemplate {}
 #[template(path = "lib.rs.askama", escape = "none")]
 struct LibTemplate<'a> {
   pub device: &'a DeviceSpec,
-  pub sys: &'a SystemInfo<'a>, //pub submodules: Vec<SubmoduleModel>,
+  pub sys: &'a SystemInfo<'a>,
 }
 
 #[derive(Template)]

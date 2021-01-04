@@ -95,10 +95,10 @@ impl {{pin.name.camel()}} {
 
   {% if pin.alt_funcs.len() > 0 %}
   #[allow(non_camel_case_types)]
-  pub fn as_alt_func<AltFunc>(self, pull_dir: PullDirection) -> {{pin.name.camel()}}AltFunc<AltFunc> 
+  pub fn as_alt_func<AltFunc>(self, pull_dir: PullDirection, output_speed: OutputSpeed) -> {{pin.name.camel()}}AltFunc<AltFunc> 
   where AltFunc: {{pin.name.camel()}}AltFuncs
   {
-    {{pin.name.camel()}}AltFunc::setup(pull_dir)
+    {{pin.name.camel()}}AltFunc::setup(pull_dir, output_speed)
   }
   {% endif %}
 }
@@ -195,11 +195,12 @@ pub struct {{pin.name.camel()}}AltFunc<AltFunc>
 impl <AltFunc> {{pin.name.camel()}}AltFunc<AltFunc> 
   where AltFunc: {{pin.name.camel()}}AltFuncs
 {
-  fn setup(pull_dir: PullDirection) -> Self {
+  fn setup(pull_dir: PullDirection, output_speed: OutputSpeed) -> Self {
     interrupt::free(|_| {
       {{write_val!(d, pin.pupdr_field, "pull_dir.val()", false)}};
       {{write_val!(d, pin.afr_field, "AltFunc::AFR_VAL", false)}};
       {{write_val!(d, pin.moder_field, "0b10", false)}};
+      {{write_val!(d, pin.ospeedr_field, "output_speed.val()", false)}};
     });
     Self {
       alt_func: PhantomData
