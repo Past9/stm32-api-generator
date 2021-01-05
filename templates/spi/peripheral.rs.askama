@@ -171,6 +171,14 @@ where
     {{is_set!(d, self.spi.ssm_field)}}
   }
 
+  pub fn set_internal_slave_select(&mut self) {
+    {{set_bit!(d, self.spi.ssi_field)}};
+  }
+
+  pub fn clear_internal_slave_select(&mut self) {
+    {{clear_bit!(d, self.spi.ssi_field)}};
+  }
+
   pub fn teardown(mut self) -> SpiI2s{{spi.number}} { 
     P::teardown();
     F::teardown();
