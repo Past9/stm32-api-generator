@@ -24,7 +24,7 @@ pub struct Spi {
   pub ssi_field: String,
   pub mstr_field: String,
 
-  pub ds_field: RangedField,
+  pub ds_field: String,
   pub ssoe_field: String,
   pub frf_field: String,
   pub frxth_field: String,
@@ -109,7 +109,7 @@ impl Spi {
       ssi_field: try_find_field_in_register(cr1, "ssi")?.path(),
       mstr_field: try_find_field_in_register(cr1, "mstr")?.path(),
 
-      ds_field: try_find_ranged_field_in_register(cr2, "ds")?,
+      ds_field: try_find_field_in_register(cr2, "ds")?.path(),
       ssoe_field: try_find_field_in_register(cr2, "ssoe")?.path(),
       frf_field: try_find_field_in_register(cr2, "frf")?.path(),
 

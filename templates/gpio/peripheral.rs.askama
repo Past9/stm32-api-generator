@@ -95,10 +95,10 @@ impl {{pin.name.camel()}} {
 
   {% if pin.alt_funcs.len() > 0 %}
   #[allow(non_camel_case_types)]
-  pub fn as_alt_func<AltFunc>(self, pull_dir: PullDirection, output_speed: OutputSpeed) -> {{pin.name.camel()}}AltFunc<AltFunc> 
+  pub fn as_alt_func<AltFunc>(self, pull_dir: PullDirection, output_type: OutputType, output_speed: OutputSpeed) -> {{pin.name.camel()}}AltFunc<AltFunc> 
   where AltFunc: {{pin.name.camel()}}AltFuncs
   {
-    {{pin.name.camel()}}AltFunc::setup(pull_dir, output_speed)
+    {{pin.name.camel()}}AltFunc::setup(pull_dir, output_type, output_speed)
   }
   {% endif %}
 }
@@ -195,9 +195,10 @@ pub struct {{pin.name.camel()}}AltFunc<AltFunc>
 impl <AltFunc> {{pin.name.camel()}}AltFunc<AltFunc> 
   where AltFunc: {{pin.name.camel()}}AltFuncs
 {
-  fn setup(pull_dir: PullDirection, output_speed: OutputSpeed) -> Self {
+  fn setup(pull_dir: PullDirection, output_type: OutputType, output_speed: OutputSpeed) -> Self {
     interrupt::free(|_| {
       {{write_val!(d, pin.pupdr_field, "pull_dir.val()", false)}};
+      {{write_val!(d, pin.otyper_field, "output_type.val()", false)}};
       {{write_val!(d, pin.afr_field, "AltFunc::AFR_VAL", false)}};
       {{write_val!(d, pin.moder_field, "0b10", false)}};
       {{write_val!(d, pin.ospeedr_field, "output_speed.val()", false)}};
@@ -209,9 +210,11 @@ impl <AltFunc> {{pin.name.camel()}}AltFunc<AltFunc>
 
   pub fn teardown(self) -> {{pin.name.camel()}} {
     interrupt::free(|_| {
-      {{reset!(d, pin.moder_field, false)}};
       {{reset!(d, pin.pupdr_field, false)}};
+      {{reset!(d, pin.otyper_field, false)}};
       {{reset!(d, pin.afr_field, false)}};
+      {{reset!(d, pin.moder_field, false)}};
+      {{reset!(d, pin.ospeedr_field, false)}};
     });
     {{pin.name.camel()}} { _no_construct: () } 
   }

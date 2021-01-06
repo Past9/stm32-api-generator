@@ -1,7 +1,7 @@
 {% let d = d %}
 
 use core::marker::PhantomData;
-use crate::{ set_bit_itf, clear_bit_itf, write_val_itf, read_val, is_set, Result, clocks::Clocks };
+use crate::{ set_bit_itf, clear_bit_itf, write_val_itf, read_val, is_set, Result, Error, clocks::Clocks };
 use super::*;
 
 pub trait FrameFormat {
@@ -151,7 +151,7 @@ where
     {{clear_bit!(d, self.spi.spe_field)}};
   }
 
-  pub fn write(&mut self, val: u16) {
+  pub fn write(&self, val: u16) {
     {{write_val!(d, self.spi.dr_field, "val as u32")}};
   }
 
@@ -177,6 +177,49 @@ where
 
   pub fn clear_internal_slave_select(&mut self) {
     {{clear_bit!(d, self.spi.ssi_field)}};
+  }
+
+  pub fn set_bit_order(&mut self, order: BitOrder) {
+    {{write_val!(d, self.spi.lsbfirst_field, "order as u32")}}; 
+  }
+
+  pub fn get_bit_order(&mut self) -> BitOrder {
+    match {{is_set!(d, self.spi.lsbfirst_field)}} {
+      true => BitOrder::LsbFirst,
+      false => BitOrder::MsbFirst,
+    } 
+  }
+
+  pub fn set_clock_phase(&mut self, order: ClockPhase) {
+    {{write_val!(d, self.spi.cpha_field, "order as u32")}}; 
+  }
+
+  pub fn get_clock_phase(&mut self) -> ClockPhase {
+    match {{is_set!(d, self.spi.cpha_field)}} {
+      true => ClockPhase::FirstTransition,
+      false => ClockPhase::SecondTransition,
+    } 
+  }
+
+  pub fn set_clock_polarity(&mut self, order: ClockPolarity) {
+    {{write_val!(d, self.spi.cpol_field, "order as u32")}}; 
+  }
+
+  pub fn get_clock_polarity(&mut self) -> ClockPolarity {
+    match {{is_set!(d, self.spi.cpol_field)}} {
+      true => ClockPolarity::IdleLow,
+      false => ClockPolarity::IdleHigh,
+    } 
+  }
+
+  pub fn set_data_size(&mut self, num_bits: u32) -> Result<()> {
+    match num_bits {
+      n if n >= 4 && n <= 16 => { 
+        {{write_val!(d, self.spi.ds_field, "n - 1")}}; 
+        Ok(())
+      },
+      _ => Err(Error::new("Data size must be from 4 to 16 bits"))
+    }
   }
 
   pub fn teardown(mut self) -> SpiI2s{{spi.number}} { 

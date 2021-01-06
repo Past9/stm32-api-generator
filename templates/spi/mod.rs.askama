@@ -3,6 +3,11 @@
 pub mod {{spi.struct_name.snake()}};
 {% endfor %}
 
+pub enum BitOrder {
+  MsbFirst = 0,
+  LsbFirst = 1
+}
+
 pub enum BidiMode {
   TwoLineUnidirectional = 0,
   OneLineBidirectional = 1
@@ -30,8 +35,8 @@ pub enum ClockPolarity {
 }
 
 pub enum ClockPhase {
-  FirstClockTransition = 0,
-  SecondClockTransition = 1
+  FirstTransition = 0,
+  SecondTransition = 1
 }
 
 pub enum SpiChannelType {
