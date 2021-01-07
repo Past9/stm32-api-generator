@@ -32,6 +32,8 @@ pub struct Spi {
   pub ldma_rx_field: String,
 
   pub dr_field: String,
+
+  pub bsy_field: String,
 }
 impl Spi {
   pub fn new(device: &DeviceSpec, peripheral: &PeripheralSpec) -> Result<Self> {
@@ -60,7 +62,7 @@ impl Spi {
       .find(|r| r.name.to_lowercase() == "cr1")
     {
       Some(p) => p,
-      None => bail!("Could not find CR1 peripheral"),
+      None => bail!("Could not find CR1 register"),
     };
 
     let cr2 = match peripheral
@@ -68,7 +70,15 @@ impl Spi {
       .find(|r| r.name.to_lowercase() == "cr2")
     {
       Some(p) => p,
-      None => bail!("Could not find CR2 peripheral"),
+      None => bail!("Could not find CR2 register"),
+    };
+
+    let sr = match peripheral
+      .iter_registers()
+      .find(|r| r.name.to_lowercase() == "sr")
+    {
+      Some(p) => p,
+      None => bail!("Could not find SR register"),
     };
 
     let i2scfgr = match peripheral
@@ -118,6 +128,8 @@ impl Spi {
       ldma_rx_field: try_find_field_in_register(cr2, "ldma_rx")?.path(),
 
       dr_field: try_find_field_in_peripheral(peripheral, "dr")?.path(),
+
+      bsy_field: try_find_field_in_register(sr, "bsy")?.path(),
     })
   }
 

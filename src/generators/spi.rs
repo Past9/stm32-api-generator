@@ -1,4 +1,4 @@
-use crate::{clear_bit, is_set, read_val, reset, set_bit, write_val};
+use crate::{clear_bit, is_set, read_val, reset, set_bit, wait_for_clear, wait_for_set, write_val};
 use crate::{
   file::OutputDirectory,
   generators::ReadWrite,

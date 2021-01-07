@@ -238,6 +238,6 @@ pub(crate) fn wait_for_set(address: u32, mask: u32, max_loops: u32) -> Result<()
 
 #[inline]
 #[allow(dead_code)]
-pub(crate) fn wait_for_val_set_itf(address: u32, mask: u32, max_loops: u32) -> Result<()> {
+pub(crate) fn wait_for_set_itf(address: u32, mask: u32, max_loops: u32) -> Result<()> {
   interrupt::free(|_| wait_for_set(address, mask, max_loops))
 }
