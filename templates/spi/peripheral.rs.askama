@@ -1,68 +1,84 @@
 {% let d = d %}
 
 use core::marker::PhantomData;
-use crate::{ set_bit_itf, clear_bit_itf, write_val_itf, read_val, is_set, wait_for_set_itf, wait_for_clear_itf, Result, Error, clocks::Clocks };
+use {{api_path}}::{ set_bit_itf, clear_bit_itf, write_val_itf, read_val, is_set, wait_for_set_itf, wait_for_clear_itf, Result, Error, clocks::Clocks };
 use super::*;
 
+#[allow(dead_code)]
 pub trait FrameFormat {
   fn setup();
   fn teardown();
 }
 
+#[allow(dead_code)]
 pub struct MotorolaFrameFormat { }
 impl FrameFormat for MotorolaFrameFormat {
+  #[allow(dead_code)]
   fn setup() {
     {{clear_bit!(d, self.spi.frf_field)}};
   }
 
+  #[allow(dead_code)]
   fn teardown() {
     {{reset!(d, self.spi.frf_field)}};
   }
 }
 
+#[allow(dead_code)]
 pub struct TiFrameFormat { }
 impl FrameFormat for TiFrameFormat {
+  #[allow(dead_code)]
   fn setup() {
     {{set_bit!(d, self.spi.frf_field)}};
   }
 
+  #[allow(dead_code)]
   fn teardown() {
     {{reset!(d, self.spi.frf_field)}};
   }
 }
 
+#[allow(dead_code)]
 pub trait Role {
   fn setup();
   fn teardown();
 }
 
+#[allow(dead_code)]
 pub struct MasterRole {}
 impl Role for MasterRole {
+  #[allow(dead_code)]
   fn setup() {
     {{set_bit!(d, self.spi.mstr_field)}};
   }
 
+  #[allow(dead_code)]
   fn teardown() {
     {{reset!(d, self.spi.mstr_field)}};
   }
 }
 
+#[allow(dead_code)]
 pub struct SlaveRole {}
 impl Role for SlaveRole {
+  #[allow(dead_code)]
   fn setup() {
     {{clear_bit!(d, self.spi.mstr_field)}};
   }
 
+  #[allow(dead_code)]
   fn teardown() {
     {{reset!(d, self.spi.mstr_field)}};
   }
 }
 
+#[allow(dead_code)]
 pub trait Protocol {
   fn setup();
   fn teardown();
 }
 
+#[allow(dead_code)]
 pub struct SpiProtocol {}
 impl Protocol for SpiProtocol {
   fn setup() { }
@@ -70,6 +86,7 @@ impl Protocol for SpiProtocol {
   fn teardown() { }
 }
 
+#[allow(dead_code)]
 pub struct I2sProtocol {}
 impl Protocol for I2sProtocol {
   fn setup() { }
@@ -78,26 +95,31 @@ impl Protocol for I2sProtocol {
 }
 
 
+#[allow(dead_code)]
 pub struct SpiI2s{{spi.number}} { 
   _no_construct: (),
 }
 impl SpiI2s{{spi.number}} {
 
+  #[allow(dead_code)]
   pub(crate) fn create(clocks: &Clocks) -> Result<Self> {
     Ok(Self {
       _no_construct: (),
     })
   }
 
+  #[allow(dead_code)]
   pub(crate) fn enable(&mut self) {
     {{set_bit!(d, self.spi.peripheral_enable_field)}};
   }
 
+  #[allow(dead_code)]
   pub(crate) fn disable(&mut self) -> Result<()> {
     {{clear_bit!(d, self.spi.peripheral_enable_field)}};
     Ok(())
   }
 
+  #[allow(dead_code)]
   pub fn as_spi<P, F, R>(mut self) -> Spi<P, F, R> 
   where 
     P: Protocol,
@@ -117,7 +139,7 @@ impl SpiI2s{{spi.number}} {
 }
 
 
-
+#[allow(dead_code)]
 pub struct Spi<P, F, R> 
 where 
   P: Protocol,
@@ -134,6 +156,7 @@ where
   F: FrameFormat,
   R: Role
 {
+  #[allow(dead_code)]
   fn setup(&mut self) {
     P::setup();
     F::setup();
@@ -143,46 +166,57 @@ where
     
   }
 
+  #[allow(dead_code)]
   pub fn start(&mut self) {
     {{set_bit!(d, self.spi.spe_field)}};
   }
 
+  #[allow(dead_code)]
   pub fn stop(&mut self) {
     {{clear_bit!(d, self.spi.spe_field)}};
   }
 
+  #[allow(dead_code)]
   pub fn write(&self, val: u16) {
     {{write_val!(d, self.spi.dr_field, "val as u32")}};
   }
 
+  #[allow(dead_code)]
   pub fn read(&self) -> u16 {
     {{read_val!(d, self.spi.dr_field)}} as u16
   }
 
+  #[allow(dead_code)]
   pub fn enable_software_slave_management(&mut self) {
     {{set_bit!(d, self.spi.ssm_field)}};
   }
 
+  #[allow(dead_code)]
   pub fn disable_software_slave_management(&mut self) {
     {{clear_bit!(d, self.spi.ssm_field)}};
   }
 
+  #[allow(dead_code)]
   pub fn is_software_slave_management_disabled(&mut self) -> bool {
     {{is_set!(d, self.spi.ssm_field)}}
   }
 
+  #[allow(dead_code)]
   pub fn set_internal_slave_select(&mut self) {
     {{set_bit!(d, self.spi.ssi_field)}};
   }
 
+  #[allow(dead_code)]
   pub fn clear_internal_slave_select(&mut self) {
     {{clear_bit!(d, self.spi.ssi_field)}};
   }
 
+  #[allow(dead_code)]
   pub fn set_bit_order(&mut self, order: BitOrder) {
     {{write_val!(d, self.spi.lsbfirst_field, "order as u32")}}; 
   }
 
+  #[allow(dead_code)]
   pub fn get_bit_order(&mut self) -> BitOrder {
     match {{is_set!(d, self.spi.lsbfirst_field)}} {
       true => BitOrder::LsbFirst,
@@ -190,10 +224,12 @@ where
     } 
   }
 
+  #[allow(dead_code)]
   pub fn set_clock_phase(&mut self, order: ClockPhase) {
     {{write_val!(d, self.spi.cpha_field, "order as u32")}}; 
   }
 
+  #[allow(dead_code)]
   pub fn get_clock_phase(&mut self) -> ClockPhase {
     match {{is_set!(d, self.spi.cpha_field)}} {
       true => ClockPhase::FirstTransition,
@@ -201,10 +237,12 @@ where
     } 
   }
 
+  #[allow(dead_code)]
   pub fn set_clock_polarity(&mut self, order: ClockPolarity) {
     {{write_val!(d, self.spi.cpol_field, "order as u32")}}; 
   }
 
+  #[allow(dead_code)]
   pub fn get_clock_polarity(&mut self) -> ClockPolarity {
     match {{is_set!(d, self.spi.cpol_field)}} {
       true => ClockPolarity::IdleLow,
@@ -212,6 +250,7 @@ where
     } 
   }
 
+  #[allow(dead_code)]
   pub fn set_data_size(&mut self, num_bits: u32) -> Result<()> {
     match num_bits {
       n if n >= 4 && n <= 16 => { 
@@ -222,18 +261,22 @@ where
     }
   }
 
+  #[allow(dead_code)]
   pub fn is_busy(&mut self) -> bool {
     {{is_set!(d, self.spi.bsy_field)}}
   }
 
+  #[allow(dead_code)]
   pub fn wait_for_busy(&mut self) -> Result<()> {
     {{wait_for_set!(d, self.spi.bsy_field)}}
   }
 
+  #[allow(dead_code)]
   pub fn wait_for_not_busy(&mut self) -> Result<()> {
     {{wait_for_clear!(d, self.spi.bsy_field)}}
   }
 
+  #[allow(dead_code)]
   pub fn teardown(mut self) -> SpiI2s{{spi.number}} { 
     P::teardown();
     F::teardown();

@@ -1,4 +1,6 @@
+{% if !as_source %}
 #![no_std]
+{% endif %}
 
 use core::{mem, ptr};
 use cortex_m::interrupt;
@@ -13,9 +15,11 @@ pub mod timer;
 use clocks::{ Clocks, ClockConfig };
 
 {% for submodule in sys.submodules() -%}
+#[allow(dead_code)]
 use {{submodule.parent_path}}::{{submodule.name.snake()}}::{{submodule.name.camel()}};
 {% endfor %}
 
+#[allow(dead_code)]
 pub struct System {
   _no_construct: (),
   clocks: Clocks,
@@ -24,10 +28,12 @@ pub struct System {
   {% endfor %}
 }
 impl System {
+  #[allow(dead_code)]
   pub fn new() -> Result<Self> {
     Self::with_clocks(ClockConfig::with_default_freqs())
   }
 
+  #[allow(dead_code)]
   pub fn with_clocks(clock_config: ClockConfig) -> Result<Self> {
     Ok(Self {
       _no_construct: (),
@@ -38,10 +44,12 @@ impl System {
     })
   }
 
+  #[allow(dead_code)]
   pub fn clocks(&self) -> &Clocks {
     &self.clocks
   }
 
+  #[allow(dead_code)]
   pub fn owns_everything(&self) -> bool {
     {% for submodule in sys.submodules() -%}
     self.owns_{{submodule.name.snake()}} &&
@@ -50,6 +58,7 @@ impl System {
   }
 
   {% for submodule in sys.submodules() -%}
+  #[allow(dead_code)]
   pub fn activate_{{submodule.name.snake()}}(&mut self) -> Result<{{submodule.name.camel()}}> {
     match self.owns_{{submodule.name.snake()}} {
       true => {
@@ -66,6 +75,7 @@ impl System {
     }
   }
 
+  #[allow(dead_code)]
   pub fn deactivate_{{submodule.name.snake()}}(&mut self, mut {{submodule.name.snake()}}: {{submodule.name.camel()}}) -> Result<()> {
     match self.owns_{{submodule.name.snake()}} {
       false => { 

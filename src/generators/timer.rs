@@ -9,12 +9,18 @@ use svd_expander::DeviceSpec;
 
 use crate::file::OutputDirectory;
 
-pub fn generate(dry_run: bool, sys_info: &SystemInfo, out_dir: &OutputDirectory) -> Result<()> {
+pub fn generate(
+  dry_run: bool,
+  sys_info: &SystemInfo,
+  src_dir: &OutputDirectory,
+  api_path: String,
+) -> Result<()> {
   for timer in sys_info.timers.iter() {
-    out_dir.publish(
+    src_dir.publish(
       dry_run,
-      &format!("src/timer/{}.rs", timer.name.snake()),
+      &format!("timer/{}.rs", timer.name.snake()),
       &PeripheralTemplate {
+        api_path: api_path.clone(),
         t: &timer,
         d: &sys_info.device,
       }
@@ -22,10 +28,14 @@ pub fn generate(dry_run: bool, sys_info: &SystemInfo, out_dir: &OutputDirectory)
     )?;
   }
 
-  out_dir.publish(
+  src_dir.publish(
     dry_run,
-    &f!("src/timer/mod.rs"),
-    &ModTemplate { s: sys_info }.render()?,
+    &f!("timer/mod.rs"),
+    &ModTemplate {
+      api_path: api_path.clone(),
+      s: sys_info,
+    }
+    .render()?,
   )?;
 
   Ok(())
@@ -34,12 +44,14 @@ pub fn generate(dry_run: bool, sys_info: &SystemInfo, out_dir: &OutputDirectory)
 #[derive(Template)]
 #[template(path = "timer/mod.rs.askama", escape = "none")]
 struct ModTemplate<'a> {
+  api_path: String,
   s: &'a SystemInfo<'a>,
 }
 
 #[derive(Template)]
 #[template(path = "timer/peripheral.rs.askama", escape = "none")]
 struct PeripheralTemplate<'a> {
+  api_path: String,
   t: &'a Timer,
   d: &'a DeviceSpec,
 }

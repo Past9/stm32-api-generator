@@ -8,12 +8,18 @@ use anyhow::Result;
 use askama::Template;
 use svd_expander::DeviceSpec;
 
-pub fn generate(dry_run: bool, sys_info: &SystemInfo, out_dir: &OutputDirectory) -> Result<()> {
+pub fn generate(
+  dry_run: bool,
+  sys_info: &SystemInfo,
+  src_dir: &OutputDirectory,
+  api_path: String,
+) -> Result<()> {
   for spi in sys_info.spis.iter() {
-    out_dir.publish(
+    src_dir.publish(
       dry_run,
-      &format!("src/spi/{}.rs", spi.struct_name.snake()),
+      &format!("spi/{}.rs", spi.struct_name.snake()),
       &PeripheralTemplate {
+        api_path: api_path.clone(),
         spi: &spi,
         d: &sys_info.device,
       }
@@ -21,9 +27,9 @@ pub fn generate(dry_run: bool, sys_info: &SystemInfo, out_dir: &OutputDirectory)
     )?;
   }
 
-  out_dir.publish(
+  src_dir.publish(
     dry_run,
-    &f!("src/spi/mod.rs"),
+    &f!("spi/mod.rs"),
     &ModTemplate { s: sys_info }.render()?,
   )?;
 
@@ -39,6 +45,7 @@ struct ModTemplate<'a> {
 #[derive(Template)]
 #[template(path = "spi/peripheral.rs.askama", escape = "none")]
 struct PeripheralTemplate<'a> {
+  api_path: String,
   spi: &'a Spi,
   d: &'a DeviceSpec,
 }

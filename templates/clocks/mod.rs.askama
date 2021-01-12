@@ -1,4 +1,4 @@
-use crate::{ set_bit, clear_bit, write_val, wait_for_val, wait_for_clear, wait_for_set, Result, Error, is_set, read_val };
+use {{api_path}}::{ set_bit, clear_bit, write_val, wait_for_val, wait_for_clear, wait_for_set, Result, Error, is_set, read_val };
 use cortex_m::interrupt;
 
 {% let d = device %}
@@ -36,33 +36,40 @@ pub enum {{mul.struct_name}}Value {
 {% endfor %}
 
 
+#[allow(dead_code)]
 pub struct ClockConfig {
   _no_construct: (),
 
   // Oscillator settings 
   {% for osc in oscillators -%}
+  #[allow(dead_code)]
   {{osc.name}}_freq: u64,
   {% if osc.is_external %}
+  #[allow(dead_code)]
   {{osc.name}}_bypass: bool,
   {% endif %}
   {% endfor %}
   
   // Multiplexer inputs
   {% for mux in multiplexers -%}
+  #[allow(dead_code)]
   {{mux.field_name}}_input: {{mux.struct_name}}Input,
   {% endfor %}
   
   // Configurable divider inputs
   {% for div in configurable_dividers -%}
+  #[allow(dead_code)]
   {{div.field_name}}_value: {{div.struct_name}}Value,
   {% endfor %}
   
   // Configurable multiplier inputs
   {% for mul in configurable_multipliers -%}
+  #[allow(dead_code)]
   {{mul.field_name}}_value: {{mul.struct_name}}Value,
   {% endfor %}
 }
 impl ClockConfig {
+  #[allow(dead_code)]
   pub fn with_freqs(
     {% for osc in oscillators -%}
     {% if osc.is_external %}
@@ -100,6 +107,7 @@ impl ClockConfig {
     }
   }
 
+  #[allow(dead_code)]
   pub fn with_default_freqs() -> ClockConfig {
     Self::with_freqs(
       {% for osc in oscillators -%}
@@ -111,14 +119,17 @@ impl ClockConfig {
   }
 
   {% for osc in oscillators %}
+  #[allow(dead_code)]
   pub fn {{osc.name}}_freq(&self) -> f32 {
     self.{{osc.name}}_freq as f32
   }
   {% if osc.is_external %}
+  #[allow(dead_code)]
   pub fn bypass_{{osc.name}}(&mut self, bypass: bool) {
     self.{{osc.name}}_bypass = bypass;
   }
 
+  #[allow(dead_code)]
   pub fn is_{{osc.name}}_bypassed(&mut self) -> bool {
     self.{{osc.name}}_bypass
   }
@@ -127,6 +138,7 @@ impl ClockConfig {
 
 
   {% for mux in multiplexers %}
+  #[allow(dead_code)]
   pub fn {{mux.field_name}}_freq(&self) -> f32 {
     match self.{{mux.field_name}}_input {
       {% for mux_in in mux.inputs -%}
@@ -139,16 +151,19 @@ impl ClockConfig {
     }
   }
 
+  #[allow(dead_code)]
   pub fn {{mux.field_name}}_input(&self) -> &{{mux.struct_name}}Input {
     &self.{{mux.field_name}}_input
   }
 
+  #[allow(dead_code)]
   pub fn set_{{mux.field_name}}_input(&mut self, input: {{mux.struct_name}}Input) {
     self.{{mux.field_name}}_input = input
   }
   {% endfor %}
 
   {% for div in configurable_dividers %}
+  #[allow(dead_code)]
   pub fn {{div.field_name}}_freq(&self) -> f32 {
     self.{{div.input_field_name}}_freq() / match self.{{div.field_name}}_value {
       {% for div_opt in div.options -%}
@@ -157,22 +172,26 @@ impl ClockConfig {
     }
   }
 
+  #[allow(dead_code)]
   pub fn {{div.field_name}}_divisor(&self) -> &{{div.struct_name}}Value {
     &self.{{div.field_name}}_value
   }
 
+  #[allow(dead_code)]
   pub fn set_{{div.field_name}}_divisor(&mut self, divisor: {{div.struct_name}}Value) {
     self.{{div.field_name}}_value = divisor
   }
   {% endfor %}
 
   {% for div in fixed_dividers %}
+  #[allow(dead_code)]
   pub fn {{div.field_name}}_freq(&self) -> f32 {
     self.{{div.input_field_name}}_freq() / {{div.divisor}}f32
   }
   {% endfor %}
 
   {% for mul in configurable_multipliers %}
+  #[allow(dead_code)]
   pub fn {{mul.field_name}}_freq(&self) -> f32 {
     self.{{mul.input_field_name}}_freq() * match self.{{mul.field_name}}_value {
       {% for mul_opt in mul.options -%}
@@ -182,6 +201,7 @@ impl ClockConfig {
   }
 
   {% for mul in conditional_multipliers %}
+  #[allow(dead_code)]
   pub fn {{mul.field_name}}_freq(&self) -> f32 {
     self.{{mul.input_field_name}}_freq() * match self.{{mul.input_field_name}}_value {
       {% for mul_cond in mul.conditions -%}
@@ -192,27 +212,32 @@ impl ClockConfig {
   }
   {% endfor %}
 
+  #[allow(dead_code)]
   pub fn {{mul.field_name}}_factor(&self) -> &{{mul.struct_name}}Value {
     &self.{{mul.field_name}}_value
   }
 
+  #[allow(dead_code)]
   pub fn set_{{mul.field_name}}_factor(&mut self, factor: {{mul.struct_name}}Value) {
     self.{{mul.field_name}}_value = factor
   }
   {% endfor %}
 
   {% for mul in fixed_multipliers %}
+  #[allow(dead_code)]
   pub fn {{mul.field_name}}_freq(&self) -> f32 {
     self.{{mul.input_field_name}}_freq() * {{mul.factor}}f32
   }
   {% endfor %}
 
   {% for tap in taps -%}
+  #[allow(dead_code)]
   pub fn {{tap.field_name}}_freq(&self) -> f32 {
     self.{{tap.input_field_name}}_freq()
   }
   {% endfor %}
 
+  #[allow(dead_code)]
   pub fn check_against_expected(&self, expected: &ClockConfig) -> Result<()> {
     // Check oscillators
     {% for osc in oscillators -%}
@@ -249,11 +274,13 @@ impl ClockConfig {
 }
 
 
+#[allow(dead_code)]
 pub struct Clocks {
   _no_construct: (),
   config: ClockConfig
 }
 impl Clocks {
+  #[allow(dead_code)]
   pub(crate) fn new(config: ClockConfig) -> Result<Clocks> {
     let mut clocks = Clocks {
       _no_construct: (),
@@ -272,14 +299,17 @@ impl Clocks {
     Ok(clocks)
   }
 
+  #[allow(dead_code)]
   pub fn check_config(&self) -> Result<()> {
     self.config.check_against_expected(&self.actual_config()?)
   }
 
+  #[allow(dead_code)]
   pub fn requested_config(&self) -> &ClockConfig {
     &self.config
   } 
 
+  #[allow(dead_code)]
   pub fn actual_config(&self) -> Result<ClockConfig> {
     Ok(ClockConfig {
       _no_construct: (),
@@ -328,14 +358,17 @@ impl Clocks {
 
   {% for osc in oscillators %}
   {% if osc.is_external %}
+  #[allow(dead_code)]
   pub fn is_{{osc.name}}_on(&self) -> bool {
     {{is_set!(d, osc.ext_power)}}
   }
 
+  #[allow(dead_code)]
   pub fn is_{{osc.name}}_ready(&self) -> bool {
     {{is_set!(d, osc.ext_ready)}}
   }
 
+  #[allow(dead_code)]
   pub fn is_{{osc.name}}_bypassed(&self) -> bool {
     {{is_set!(d, osc.ext_bypass)}}
   }
@@ -343,6 +376,7 @@ impl Clocks {
   {% endfor %}
 
 
+  #[allow(dead_code)]
   fn stop(&mut self) -> Result<()> {
     {% for osc in oscillators %} 
     {% if osc.is_external %}
@@ -375,12 +409,14 @@ impl Clocks {
     Ok(())
   }
 
+  #[allow(dead_code)]
   fn write_config(&mut self) {
     self.write_multiplexer_config();
     self.write_divider_config();
     self.write_multiplier_config();
   }
 
+  #[allow(dead_code)]
   fn write_multiplexer_config(&mut self) {
     {% for mux in multiplexers -%}
     {% if !mux.is_sys_clk_mux -%}
@@ -389,18 +425,21 @@ impl Clocks {
     {% endfor %}
   } 
 
+  #[allow(dead_code)]
   fn write_divider_config(&mut self) {
     {% for div in configurable_dividers -%}
     {{write_val!(d, div.path, f!("self.config.{div.field_name}_value as u32"), false)}};
     {% endfor %}
   }
 
+  #[allow(dead_code)]
   fn write_multiplier_config(&mut self) {
     {% for mul in configurable_multipliers -%}
     {{write_val!(d, mul.path, f!("self.config.{mul.field_name}_value as u32"), false)}};
     {% endfor %}
   }
 
+  #[allow(dead_code)]
   fn start(&mut self) -> Result<()> {
     {% for osc in oscillators %} 
     {% if osc.is_external %}

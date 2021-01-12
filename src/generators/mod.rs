@@ -9,56 +9,83 @@ pub mod gpio;
 pub mod spi;
 pub mod timer;
 
-pub fn generate(dry_run: bool, device_spec: &DeviceSpec, out_dir: &OutputDirectory) -> Result<()> {
+pub fn generate(
+  dry_run: bool,
+  device_spec: &DeviceSpec,
+  out_dir: &OutputDirectory,
+  as_source: bool,
+) -> Result<OutputDirectory> {
   let sys_info = SystemInfo::new(device_spec)?;
 
-  clocks::generate(dry_run, device_spec, out_dir)?;
-  gpio::generate(dry_run, &sys_info, out_dir)?;
-  timer::generate(dry_run, &sys_info, out_dir)?;
-  spi::generate(dry_run, &sys_info, out_dir)?;
+  let (base_dir, src_dir, includes_dir, api_path) = match as_source {
+    true => {
+      let api_name = format!("{}_api", device_spec.name.to_kebab_case());
+      let base_dir = out_dir.to_owned();
+      let src_dir = out_dir.new_in_subdir(&format!("src/{}", api_name))?;
+      let includes_dir = out_dir.clone();
+      let api_path = format!("crate::{}", api_name);
+      (base_dir, src_dir, includes_dir, api_path)
+    }
+    false => {
+      let base_dir = out_dir.new_in_subdir(&format!("{}-api", device_spec.name.to_kebab_case()))?;
+      let src_dir = base_dir.new_in_subdir("src")?;
+      let includes_dir = base_dir.new_in_subdir("includes")?;
+      let api_path = "crate".to_owned();
+      (base_dir, src_dir, includes_dir, api_path)
+    }
+  };
+
+  clocks::generate(dry_run, device_spec, &src_dir, api_path.clone())?;
+  gpio::generate(dry_run, &sys_info, &src_dir, api_path.clone())?;
+  timer::generate(dry_run, &sys_info, &src_dir, api_path.clone())?;
+  spi::generate(dry_run, &sys_info, &src_dir, api_path.clone())?;
 
   let lib_template = LibTemplate {
+    as_source,
     device: &device_spec,
     sys: &sys_info,
   };
 
-  out_dir.publish(
+  includes_dir.publish(dry_run, "memory.x", &IncludeMemoryXTemplate {}.render()?)?;
+  includes_dir.publish(
     dry_run,
-    "includes/memory.x",
-    &IncludeMemoryXTemplate {}.render()?,
-  )?;
-  out_dir.publish(
-    dry_run,
-    "includes/openocd.cfg",
+    "openocd.cfg",
     &IncludeOpenOcdCfgTemplate {}.render()?,
   )?;
-  out_dir.publish(
+  includes_dir.publish(
     dry_run,
-    "includes/openocd.gdb",
+    "openocd.gdb",
     &IncludeOpenOcdGdbTemplate {}.render()?,
   )?;
-  out_dir.publish(
-    dry_run,
-    "includes/build.rs",
-    &IncludeBuildRsTemplate {}.render()?,
-  )?;
-  out_dir.publish(
-    dry_run,
-    "includes/Cargo.toml",
-    &IncludeCargoTomlTemplate {}.render()?,
-  )?;
-  out_dir.publish(dry_run, "src/lib.rs", &lib_template.render()?)?;
-  out_dir.publish(dry_run, ".rustfmt.toml", &RustFmtTemplate {}.render()?)?;
-  out_dir.publish(
-    dry_run,
-    "Cargo.toml",
-    &CargoTemplate {
-      crate_name: format!("{}-api", &device_spec.name.to_kebab_case()),
-    }
-    .render()?,
-  )?;
+  includes_dir.publish(dry_run, "build.rs", &IncludeBuildRsTemplate {}.render()?)?;
 
-  Ok(())
+  if !as_source {
+    includes_dir.publish(
+      dry_run,
+      "Cargo.toml",
+      &IncludeCargoTomlTemplate {}.render()?,
+    )?;
+  }
+
+  if as_source {
+    src_dir.publish(dry_run, "mod.rs", &lib_template.render()?)?;
+  } else {
+    src_dir.publish(dry_run, "lib.rs", &lib_template.render()?)?;
+  }
+
+  if !as_source {
+    base_dir.publish(dry_run, ".rustfmt.toml", &RustFmtTemplate {}.render()?)?;
+    base_dir.publish(
+      dry_run,
+      "Cargo.toml",
+      &CargoTemplate {
+        crate_name: format!("{}-api", &device_spec.name.to_kebab_case()),
+      }
+      .render()?,
+    )?;
+  }
+
+  Ok(base_dir)
 }
 
 #[derive(Template)]
@@ -84,6 +111,7 @@ struct IncludeCargoTomlTemplate {}
 #[derive(Template)]
 #[template(path = "lib.rs.askama", escape = "none")]
 struct LibTemplate<'a> {
+  pub as_source: bool,
   pub device: &'a DeviceSpec,
   pub sys: &'a SystemInfo<'a>,
 }

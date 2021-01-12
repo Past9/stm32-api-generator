@@ -11,10 +11,19 @@ use askama::Template;
 use anyhow::{anyhow, bail, Result};
 use schematic::{ClockComponent, ClockSchematic};
 
-pub fn generate(dry_run: bool, d: &DeviceSpec, out_dir: &OutputDirectory) -> Result<()> {
+pub fn generate(
+  dry_run: bool,
+  d: &DeviceSpec,
+  out_dir: &OutputDirectory,
+  api_path: String,
+) -> Result<()> {
   let clock_spec_filepath = format!("specs/clock/{}.ron", d.name.to_lowercase());
 
-  ClockGenerator::from_ron_file(clock_spec_filepath, d)?.generate(dry_run, out_dir)?;
+  ClockGenerator::from_ron_file(clock_spec_filepath, d)?.generate(
+    dry_run,
+    out_dir,
+    api_path.to_owned(),
+  )?;
 
   Ok(())
 }
@@ -47,10 +56,10 @@ impl<'a> ClockGenerator<'a> {
     Ok(generator)
   }
 
-  pub fn generate(&self, dry_run: bool, out_dir: &OutputDirectory) -> Result<()> {
-    let clocks_file = ClocksTemplate::new(&self.schematic, &self.spec)?.render()?;
+  pub fn generate(&self, dry_run: bool, src_dir: &OutputDirectory, api_path: String) -> Result<()> {
+    let clocks_file = ClocksTemplate::new(&self.schematic, &self.spec, api_path)?.render()?;
 
-    out_dir.publish(dry_run, &f!("src/clocks.rs"), &clocks_file)?;
+    src_dir.publish(dry_run, &f!("clocks.rs"), &clocks_file)?;
 
     Ok(())
   }
@@ -162,6 +171,7 @@ mod templates {
   #[derive(Template)]
   #[template(path = "clocks/mod.rs.askama", escape = "none")]
   pub struct ClocksTemplate<'a> {
+    api_path: String,
     device: &'a DeviceSpec,
     sys_clk_mux: Mux,
     flash_latency: FlashLat,
@@ -178,8 +188,13 @@ mod templates {
     pll_ready: String,
   }
   impl<'a> ClocksTemplate<'a> {
-    pub fn new(schematic: &ClockSchematic, spec: &'a DeviceSpec) -> Result<ClocksTemplate<'a>> {
+    pub fn new(
+      schematic: &ClockSchematic,
+      spec: &'a DeviceSpec,
+      api_path: String,
+    ) -> Result<ClocksTemplate<'a>> {
       let mut clocks = ClocksTemplate {
+        api_path,
         device: spec,
         sys_clk_mux: Mux::new(schematic.get_sys_clk_mux()?)?,
         flash_latency: FlashLat::new(schematic.flash_latency()),

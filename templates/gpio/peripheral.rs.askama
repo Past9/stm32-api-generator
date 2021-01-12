@@ -1,13 +1,14 @@
-use crate::{ set_bit_itf, clear_bit_itf, write_val, write_val_itf, is_set };
-use crate::gpio::{ PullDirection, OutputType, OutputSpeed, DigitalValue };
+use {{api_path}}::{ set_bit_itf, clear_bit_itf, write_val, write_val_itf, is_set };
+use {{api_path}}::gpio::{ PullDirection, OutputType, OutputSpeed, DigitalValue };
 use core::marker::PhantomData;
 use cortex_m::interrupt;
 
 
 {% let d = d %}
 
-use crate::{Error, Result};
+use {{api_path}}::{Error, Result};
 
+#[allow(dead_code)]
 #[allow(non_camel_case_types)]
 pub struct {{g.name.camel()}} { 
   _no_construct: (),
@@ -17,6 +18,7 @@ pub struct {{g.name.camel()}} {
 }
 impl {{g.name.camel()}} {
 
+  #[allow(dead_code)]
   pub(crate) fn create() -> Result<Self> {
     Ok(Self {
       _no_construct: (),
@@ -26,6 +28,7 @@ impl {{g.name.camel()}} {
     })
   }
 
+  #[allow(dead_code)]
   pub fn owns_everything(&self) -> bool {
     {% for pin in g.pins -%}
     self.owns_{{pin.name.snake()}} &&
@@ -33,10 +36,12 @@ impl {{g.name.camel()}} {
     true
   }
   
+  #[allow(dead_code)]
   pub(crate) fn enable(&mut self) {
     {{set_bit!(d, self.g.enable_field)}}
   }
 
+  #[allow(dead_code)]
   pub(crate) fn disable(&mut self) -> Result<()> {
     if !self.owns_everything() {
       return Err(Error::new("{{g.name.camel()}} must own all of its pins before being disabled."))
@@ -46,6 +51,7 @@ impl {{g.name.camel()}} {
   }
 
   {% for pin in g.pins %}
+  #[allow(dead_code)]
   pub fn take_{{pin.name.snake()}}(&mut self) -> Result<{{pin.name.camel()}}> {
     match self.owns_{{pin.name.snake()}} {
       true => {
@@ -58,6 +64,7 @@ impl {{g.name.camel()}} {
     }
   }
 
+  #[allow(dead_code)]
   pub fn return_{{pin.name.snake()}}(&mut self, #[allow(unused_variables)] {{pin.name.snake()}}: {{pin.name.camel()}}) -> Result<()> {
     match self.owns_{{pin.name.snake()}} {
       false => {
@@ -71,14 +78,17 @@ impl {{g.name.camel()}} {
 }
 
 {% for pin in g.pins %} 
+#[allow(dead_code)]
 pub struct {{pin.name.camel()}} {
   _no_construct: ()
 }
 impl {{pin.name.camel()}} {
+  #[allow(dead_code)]
   pub fn as_input(self, pull_dir: PullDirection) -> {{pin.name.camel()}}Input {
     {{pin.name.camel()}}Input::setup(pull_dir) 
   }
 
+  #[allow(dead_code)]
   pub fn as_output(
     self, 
     pull_dir: PullDirection, 
@@ -88,12 +98,14 @@ impl {{pin.name.camel()}} {
     {{pin.name.camel()}}Output::setup(pull_dir, output_type, output_speed)
   }
 
+  #[allow(dead_code)]
   pub fn as_analog(self) -> {{pin.name.camel()}}Analog {
     {{pin.name.camel()}}Analog::setup() 
   }
 
 
   {% if pin.alt_funcs.len() > 0 %}
+  #[allow(dead_code)]
   #[allow(non_camel_case_types)]
   pub fn as_alt_func<AltFunc>(self, pull_dir: PullDirection, output_type: OutputType, output_speed: OutputSpeed) -> {{pin.name.camel()}}AltFunc<AltFunc> 
   where AltFunc: {{pin.name.camel()}}AltFuncs
@@ -103,14 +115,17 @@ impl {{pin.name.camel()}} {
   {% endif %}
 }
 
+#[allow(dead_code)]
 pub struct {{pin.name.camel()}}Input { 
   _no_construct: () 
 }
 impl {{pin.name.camel()}}Input {
+  #[allow(dead_code)]
   pub fn read(&self) -> DigitalValue {
     DigitalValue::from_bool({{is_set!(d, pin.idr_field)}})
   }
 
+  #[allow(dead_code)]
   fn setup(pull_dir: PullDirection) -> Self {
     interrupt::free(|_| {
       {{write_val!(d, pin.moder_field, "0b00", false)}};
@@ -119,6 +134,7 @@ impl {{pin.name.camel()}}Input {
     Self { _no_construct: () }
   }
 
+  #[allow(dead_code)]
   pub fn teardown(self) -> {{pin.name.camel()}} {
     interrupt::free(|_| {
       {{reset!(d, pin.moder_field, false)}};
@@ -128,14 +144,17 @@ impl {{pin.name.camel()}}Input {
   }
 }
 
+#[allow(dead_code)]
 pub struct {{pin.name.camel()}}Output { 
   _no_construct: () 
 }
 impl {{pin.name.camel()}}Output {
+  #[allow(dead_code)]
   pub fn write(&mut self, value: DigitalValue) {
     {{write_val!(d, pin.odr_field, "value.val()")}};
   }
 
+  #[allow(dead_code)]
   fn setup(pull_dir: PullDirection, output_type: OutputType, output_speed: OutputSpeed) -> Self {
     interrupt::free(|_| {
       {{write_val!(d, pin.moder_field, "0b01", false)}};
@@ -146,6 +165,7 @@ impl {{pin.name.camel()}}Output {
     Self { _no_construct: () }
   }
 
+  #[allow(dead_code)]
   pub fn teardown(self) -> {{pin.name.camel()}} {
     interrupt::free(|_| {
       {{reset!(d, pin.odr_field, false)}};
@@ -158,15 +178,18 @@ impl {{pin.name.camel()}}Output {
   }
 }
 
+#[allow(dead_code)]
 pub struct {{pin.name.camel()}}Analog { 
   _no_construct: () 
 }
 impl {{pin.name.camel()}}Analog {
+  #[allow(dead_code)]
   fn setup() -> Self {
     {{write_val!(d, pin.moder_field, "0b11")}};
     Self { _no_construct: () }
   }
 
+  #[allow(dead_code)]
   pub fn teardown(self) -> {{pin.name.camel()}} {
     interrupt::free(|_| {
       {{reset!(d, pin.moder_field)}};
@@ -176,16 +199,19 @@ impl {{pin.name.camel()}}Analog {
 }
 
 {% if pin.alt_funcs.len() > 0 %}
+#[allow(dead_code)]
 pub trait {{pin.name.camel()}}AltFuncs { 
   const AFR_VAL: u32;
 }
 {% for alt_func in pin.alt_funcs -%}
+#[allow(dead_code)]
 pub struct {{pin.name.camel()}}{{alt_func.name.camel()}}; // {{alt_func.name.snake()}} {{alt_func.bit_value}}
 impl {{pin.name.camel()}}AltFuncs for {{pin.name.camel()}}{{alt_func.name.camel()}} {
   const AFR_VAL: u32 = {{alt_func.bit_value}};
 }
 {% endfor %}
 
+#[allow(dead_code)]
 #[allow(non_camel_case_types)]
 pub struct {{pin.name.camel()}}AltFunc<AltFunc> 
   where AltFunc: {{pin.name.camel()}}AltFuncs
@@ -195,6 +221,7 @@ pub struct {{pin.name.camel()}}AltFunc<AltFunc>
 impl <AltFunc> {{pin.name.camel()}}AltFunc<AltFunc> 
   where AltFunc: {{pin.name.camel()}}AltFuncs
 {
+  #[allow(dead_code)]
   fn setup(pull_dir: PullDirection, output_type: OutputType, output_speed: OutputSpeed) -> Self {
     interrupt::free(|_| {
       {{write_val!(d, pin.pupdr_field, "pull_dir.val()", false)}};
@@ -208,6 +235,7 @@ impl <AltFunc> {{pin.name.camel()}}AltFunc<AltFunc>
     }
   }
 
+  #[allow(dead_code)]
   pub fn teardown(self) -> {{pin.name.camel()}} {
     interrupt::free(|_| {
       {{reset!(d, pin.pupdr_field, false)}};

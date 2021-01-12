@@ -9,7 +9,6 @@ use std::io::Read;
 use anyhow::{bail, Result};
 use clap::{App, Arg};
 use glob::glob;
-use heck::KebabCase;
 
 use file::OutputDirectory;
 use svd_expander::DeviceSpec;
@@ -85,6 +84,12 @@ fn run() -> Result<()> {
         .help("Run the generator but don't save any files or run the post-processing commands.")
         .takes_value(false),
     )
+    .arg(
+      Arg::with_name("as-source")
+        .long("as-source")
+        .help("Put the files in an existing crate instead of making a new crate.")
+        .takes_value(false),
+    )
     .get_matches();
 
   let out_dir = OutputDirectory::new(match matches.value_of("out") {
@@ -101,6 +106,7 @@ fn run() -> Result<()> {
   let build_debug = matches.is_present("build-debug");
   let build_docs = matches.is_present("build-docs");
   let dry_run = matches.is_present("dry-run");
+  let as_source = matches.is_present("as-source");
 
   let mut found_file = false;
   for entry in glob(file_glob)? {
@@ -119,13 +125,13 @@ fn run() -> Result<()> {
       let xml = &mut String::new();
       File::open(path_str).unwrap().read_to_string(xml)?;
       let spec = DeviceSpec::from_xml(xml)?;
-      let crate_out_dir = out_dir.new_in_subdir(&format!("{}-api", spec.name.to_kebab_case()))?;
+      //let crate_out_dir = out_dir.new_in_subdir(&format!("{}-api", spec.name.to_kebab_case()))?;
 
-      generators::generate(dry_run, &spec, &crate_out_dir)?;
+      let base_dir = generators::generate(dry_run, &spec, &out_dir, as_source)?;
 
       file::post_process(
         dry_run,
-        &crate_out_dir.get_path()?,
+        &base_dir.get_path()?,
         run_fix,
         run_format,
         run_check,

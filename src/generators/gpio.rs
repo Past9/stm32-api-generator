@@ -5,12 +5,18 @@ use anyhow::Result;
 use askama::Template;
 use svd_expander::DeviceSpec;
 
-pub fn generate(dry_run: bool, sys_info: &SystemInfo, out_dir: &OutputDirectory) -> Result<()> {
+pub fn generate(
+  dry_run: bool,
+  sys_info: &SystemInfo,
+  src_dir: &OutputDirectory,
+  api_path: String,
+) -> Result<()> {
   for gpio in sys_info.gpios.iter() {
-    out_dir.publish(
+    src_dir.publish(
       dry_run,
-      &format!("src/gpio/{}.rs", gpio.name.snake()),
+      &format!("gpio/{}.rs", gpio.name.snake()),
       &PeripheralTemplate {
+        api_path: api_path.clone(),
         g: &gpio,
         d: sys_info.device,
       }
@@ -18,9 +24,9 @@ pub fn generate(dry_run: bool, sys_info: &SystemInfo, out_dir: &OutputDirectory)
     )?;
   }
 
-  out_dir.publish(
+  src_dir.publish(
     dry_run,
-    &f!("src/gpio/mod.rs"),
+    &f!("gpio/mod.rs"),
     &ModTemplate { s: sys_info }.render()?,
   )?;
 
@@ -36,6 +42,7 @@ struct ModTemplate<'a> {
 #[derive(Template)]
 #[template(path = "gpio/peripheral.rs.askama", escape = "none")]
 struct PeripheralTemplate<'a> {
+  api_path: String,
   g: &'a Gpio,
   d: &'a DeviceSpec,
 }

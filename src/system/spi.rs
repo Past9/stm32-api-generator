@@ -81,22 +81,6 @@ impl Spi {
       None => bail!("Could not find SR register"),
     };
 
-    let i2scfgr = match peripheral
-      .iter_registers()
-      .find(|r| r.name.to_lowercase() == "i2scfgr")
-    {
-      Some(p) => p,
-      None => bail!("Could not find I2SCFGR peripheral"),
-    };
-
-    let i2spr = match peripheral
-      .iter_registers()
-      .find(|r| r.name.to_lowercase() == "i2spr")
-    {
-      Some(p) => p,
-      None => bail!("Could not find I2SPR peripheral"),
-    };
-
     Ok(Self {
       name,
       struct_name,

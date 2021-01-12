@@ -3,21 +3,25 @@
 pub mod {{spi.struct_name.snake()}};
 {% endfor %}
 
+#[allow(dead_code)]
 pub enum BitOrder {
   MsbFirst = 0,
   LsbFirst = 1
 }
 
+#[allow(dead_code)]
 pub enum BidiMode {
   TwoLineUnidirectional = 0,
   OneLineBidirectional = 1
 }
 
+#[allow(dead_code)]
 pub enum FrameFormat {
   MsbFirst = 0,
   LsbFirst = 1
 }
 
+#[allow(dead_code)]
 pub enum BaudRateScale {
   Div2 = 000,
   Div4 = 001,
@@ -29,16 +33,19 @@ pub enum BaudRateScale {
   Div256 = 111
 }
 
+#[allow(dead_code)]
 pub enum ClockPolarity {
   IdleLow = 0,
   IdleHigh = 1
 }
 
+#[allow(dead_code)]
 pub enum ClockPhase {
   FirstTransition = 0,
   SecondTransition = 1
 }
 
+#[allow(dead_code)]
 pub enum SpiChannelType {
   FullDuplex,
   HalfDuplex,

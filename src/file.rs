@@ -5,6 +5,7 @@ use std::{io, ops::Deref, path::PathBuf, process::Command};
 use anyhow::{anyhow, bail, Result};
 use io::Write;
 
+#[derive(Clone)]
 pub struct OutputDirectory {
   dir_path: String,
 }
